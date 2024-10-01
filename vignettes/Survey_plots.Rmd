@@ -1,0 +1,53 @@
+---
+title: "Survey plots"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Survey_plots}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(OMESurvey)
+
+# get some data
+data = OMESurvey::survey_example
+
+```
+
+*This vignette provides examples for the simple creation of survey plots across different output types*
+
+## Number of responses across questions in a theme
+
+In this case we can use `plot_theme()` to create a horizontal bar chart. Depending on the "Kind" arguement we can create a formatted data frame, a ggplot or a plotly graph.
+
+#### {.tabset}
+
+#### ggplot
+
+```{r plot theme - ggplot}
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+```
+
+
+#### plotly
+
+```{r plot theme - plotly}
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'plotly')
+```
+
+#### data.frame
+
+```{r plot theme - data.fram}
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'data.frame')
+```
+
+
+#### {-}

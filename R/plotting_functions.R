@@ -4,7 +4,7 @@
 #' @param data survey data
 #' @param theme A string containing the theme name (with or without "_" as spacing).
 #' @param theme_columns column index relating to theme
-#' @param kind what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "table"
+#' @param kind what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "data.frame".
 #' @param rm99 Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.
 #' @param survey_values survey_values
 #'
@@ -56,7 +56,7 @@ plot_theme <- function(data,
   expected_values = survey_values[[best_index[1]]]
   data_format$answer = factor(data_format$answer, levels = expected_values)
 
-  if(kind == 'table'){
+  if(kind == 'data.frame'){
     return(data_format)
   }
 
