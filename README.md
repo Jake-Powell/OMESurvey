@@ -1,11 +1,40 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 # OMESurvey
-----
 
+<!-- badges: start -->
+<!-- badges: end -->
 
-📦 The `OMESurvey` package contains tools for analysing survey data for the OME, in particular (for now) converting raw survey data into publishable excel workbooks.
+📦 The `OMESurvey` package contains tools for analysing survey data for
+the OME, in particular (for now) converting raw survey data into
+publishable excel workbooks.
 
 ## Installation
-You can install `OMESurvey` by calling the following command:
-```{r}
-devtools::install_github("Jake-Powell/OMESurvey", dependencies = TRUE) #for development version
+
+You can install the development version of OMESurvey from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("Jake-Powell/OMEStools")
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+``` r
+library(OMESurvey)
+data = OMESurvey::survey_example
+
+## Add theme information
+
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+```
+
+<img src="man/figures/README-example-1.png" width="100%" />
+
+``` r
+## basic example code
 ```
