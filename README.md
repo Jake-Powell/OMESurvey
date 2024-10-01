@@ -17,24 +17,18 @@ You can install the development version of OMESurvey from
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("Jake-Powell/OMEStools")
+devtools::install_github("Jake-Powell/OMESurvey")
 ```
 
-## Example
+## Examples
 
-This is a basic example which shows you how to solve a common problem:
+Creating survey results for a given theme
 
 ``` r
 library(OMESurvey)
 data = OMESurvey::survey_example
 
-## Add theme information
-
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
 ```
 
 <img src="man/figures/README-example-1.png" width="100%" />
-
-``` r
-## basic example code
-```
