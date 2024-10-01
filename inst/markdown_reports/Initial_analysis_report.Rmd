@@ -1,0 +1,217 @@
+---
+title: "Initial analysis"
+output: html_document
+---
+
+
+###### {-} 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(plotly)
+library(htmltools)
+library(sf)
+library(here)
+library(flextable)
+library(ggrepel)
+library(downloadthis)
+
+interactive_colour <- function(n){
+  color = c('#f46d43', "#FDAE6B", '#848484', '#e6e6e6')
+  if(n==2){
+    return(color[c(1,4)])
+  }
+  color[1:n]
+}
+color_binary <- c('#f46d43', '#e6e6e6')
+palette = 'Oranges'
+```
+
+```{r data}
+df <- readr::read_csv("/Users/jakepowell/Desktop/OME/Pilot/Data/Year 7_Survey Responses.csv") # pilot data location
+
+
+group = c('Maths_in_Year_7' |> rep(6),
+          'The_value_of_learning_maths'|> rep(7), 
+          'Year_7_maths_lessons'|> rep(12), 
+          'Learning_maths_outside_of_lessons'|> rep(4),
+          'Your_confidence_in_maths'|> rep(12), 
+          'Your_enjoyment_of_maths'|> rep(7),
+          'Your_feelings_when_doing_maths'|> rep(6), 
+          'What_is_mathsXX'|> rep(7))              
+
+names(df)[6:ncol(df)] = paste0(group, '__', names(df)[6:ncol(df)]) 
+names(df) = names(df) |> stringr::str_replace_all(pattern = ' ', replacement = '_')
+
+df$`Group_/_class` = df$`Group_/_class` |> stringr::str_replace_all(pattern = '/','-')
+school = df$Barcode_ID |> as.character() |>  substr(3, 5)
+school_and_class = paste0(school,'__', df$`Group_/_class`)
+
+pilot = data.frame(df[,1:4], school, school_and_class, df[5:ncol(df)])
+for(i in 1:ncol(pilot)){
+  pilot[,i][pilot[,i] == 'N-A'] = NA
+  pilot[,i] = pilot[,i] |> stringr::str_to_sentence()
+}
+
+
+survey_data = pilot
+survey_name = 'Year 7 pilot study'
+report_kind = 'interactive'
+```
+
+```{css, echo = FALSE}
+/* from https://ianlunn.github.io/Hover/ */
+.hvr-sweep-to-left {
+  display: inline-block;
+  vertical-align: middle;
+  -webkit-transform: perspective(1px) translateZ(0);
+  transform: perspective(1px) translateZ(0);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+  position: relative;
+  -webkit-transition-property: color;
+  transition-property: color;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+}
+.hvr-sweep-to-left:before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f46d43;
+  -webkit-transform: scaleX(0);
+  transform: scaleX(0);
+  -webkit-transform-origin: 100% 50%;
+  transform-origin: 100% 50%;
+  -webkit-transition-property: transform;
+  transition-property: transform;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+  -webkit-transition-timing-function: ease-out;
+  transition-timing-function: ease-out;
+}
+.hvr-sweep-to-left:hover, .hvr-sweep-to-left:focus, .hvr-sweep-to-left:active {
+  color: white;
+}
+.hvr-sweep-to-left:hover:before, .hvr-sweep-to-left:focus:before, .hvr-sweep-to-left:active:before {
+  -webkit-transform: scaleX(1);
+  transform: scaleX(1);
+}
+
+.blackbox {
+  padding: 1em;
+  background: #FDAE6B;
+  border: 2px solid #e6e6e6;
+  border-radius: 10px;
+}
+.center {
+  text-align: center;
+}
+```
+
+
+*In this document we produce an initial automated analysis of the `r survey_name` survey.*
+
+### Evaluate Participation
+
+```{r, headline numbers}
+no_rows = nrow(survey_data)
+empty_index = which(is.na(survey_data$First_Name) & is.na(survey_data$Surname))
+no_empty_surv = length(empty_index)
+valid_percent = ((no_rows-no_empty_surv)/no_rows*100) |> round(1)
+
+empty_surv_ID = survey_data$Barcode_ID[empty_index]
+
+participation = survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test
+participation[is.na(participation)] = 'Participating'
+if(no_empty_surv > 0){
+  participation[empty_index] = 'Blank'
+}
+
+participation_table = participation |> table() |> data.frame()
+participation_table$percent = (participation_table$Freq / sum(participation_table$Freq) *100) |> round(1)
+
+if(no_empty_surv > 0){
+participation_table$percent_no_blank = (participation_table$Freq / sum(participation_table$Freq[participation_table$participation != 'Blank']) *100) |> round(1)
+participation_table$percent_no_blank[participation_table$participation == 'Blank'] = '-'
+}
+
+participation_table = participation_table[order(participation_table$Freq, decreasing = T),]
+names(participation_table) = c('Participation', 'No responses', '%', '% (exc. blanks)')
+
+table_to_show =  participation_table |> DT::datatable(extensions = 'Buttons',
+                  rownames = FALSE,
+                  options = list(scrollX = TRUE,
+                                 pageLength = min(nrow(participation_table), 10),
+                                 dom = 'Btp',
+                                 buttons = c('copy', 'csv', 'excel', 'pdf'),
+                                 paging=F,
+                                 ordering=F))
+
+
+fig <- participation_table |> plot_ly(labels = ~Participation,
+                                      values = ~`No responses`,
+                                      textposition = 'outside',
+                                      textinfo = 'label+percent', title = 'Participation') |>
+  add_pie(hole = 0.6) |>
+  layout(title = "",  showlegend = F,
+                      xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                      yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
+         )
+
+
+fig_no_blanks <- participation_table[participation_table$Participation !='Blank',] |> plot_ly(labels = ~Participation,
+                                      values = ~`No responses`,
+                                      textposition = 'outside',
+                                      textinfo = 'label+percent') |>
+  add_pie(hole = 0.6) |>
+  layout(title = "",  showlegend = F,
+                      xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+                      yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE)
+         )
+
+
+```
+
+`r if(no_empty_surv == 0){paste0("The survey data contains ", no_rows, " returned and scanned questionnaires, there are no blank surveys.")}`
+
+`r if(no_empty_surv > 0){paste0("Out of the ", no_rows, " returned and scanned questionnaires, ", no_rows - no_empty_surv, " (", valid_percent, "%) include a pupil's name. The remaining ", no_empty_surv, " copies are  blank (those without first name and surname)")}`
+
+
+`r if(no_empty_surv > 0){"<details>"}`
+`r if(no_empty_surv > 0){"<summary>Barcodes of blank scanned questionnaires</summary>"}`
+`r if(no_empty_surv > 0){paste0(empty_surv_ID, collapse = ', ')}`
+`r if(no_empty_surv > 0){"</details>"}`
+
+`r if(no_empty_surv > 0){""}`
+
+Below we produce a chart and table summarising the participation of individuals across the survey.
+
+##### {.tabset}
+
+###### Chart
+
+```{r, fig.fullwidth=TRUE, fig.dim = c(10, 4)}
+fig
+```
+
+###### Table
+
+```{r}
+table_to_show
+```
+##### {-}
+
+***
+
+### Clean Data
+### Evaluate Missingness and Distributions of Survey Item Responses
+### Evaluate Dimensionality of Survey Items - Part 1 (Confirmatory Factor Analysis, CFA)
+### Evaluate Dimensionality of Survey Items - Part 2 (Exploratory Graph Analysis, EGA)
+### Explore Latent Groups (Latent Class Analysis, LCA)
+### Item-wise School Comparison
+### Scale-wise School Comparison
+### Scale-wise Class Comparison

@@ -1,0 +1,27 @@
+Package: OMESurvey
+Title: Tools for analysing survey data for the Observatory of Mathematical Education
+Version: 0.0.0.9000
+Authors@R: 
+    person("Jake", "Powell", , "Jake.Powell2@nottingham.ac.uk", role = c("aut", "cre"),
+           comment = c(ORCID = "YOUR-ORCID-ID"))
+Description: Tools for analysing survey data.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    ggplot2,
+    grDevices,
+    openxlsx,
+    plotly,
+    stringr
+Suggests: 
+    DT,
+    knitr,
+    rmarkdown,
+    tibble
+VignetteBuilder: knitr
+Depends: 
+    R (>= 2.10)
+LazyData: true
+URL: https://jake-powell.github.io/OMESurvey/

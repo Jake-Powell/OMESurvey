@@ -1,0 +1,326 @@
+---
+title: "Missingness"
+output: html_document
+---
+
+###### {-} 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(plotly)
+library(htmltools)
+library(sf)
+library(here)
+library(flextable)
+library(ggrepel)
+library(downloadthis)
+
+interactive_colour <- function(n){
+  color = c('#f46d43', "#FDAE6B", '#848484', '#e6e6e6')
+  if(n==2){
+    return(color[c(1,4)])
+  }
+  color[1:n]
+}
+color_binary <- c('#f46d43', '#e6e6e6')
+palette = 'Oranges'
+```
+
+```{r data}
+# survey_data = pilot
+# survey_name = 'Year 7 pilot study'
+# report_kind = 'interactive'
+```
+
+```{css, echo = FALSE}
+/* from https://ianlunn.github.io/Hover/ */
+.hvr-sweep-to-left {
+  display: inline-block;
+  vertical-align: middle;
+  -webkit-transform: perspective(1px) translateZ(0);
+  transform: perspective(1px) translateZ(0);
+  box-shadow: 0 0 1px rgba(0, 0, 0, 0);
+  position: relative;
+  -webkit-transition-property: color;
+  transition-property: color;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+}
+.hvr-sweep-to-left:before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f46d43;
+  -webkit-transform: scaleX(0);
+  transform: scaleX(0);
+  -webkit-transform-origin: 100% 50%;
+  transform-origin: 100% 50%;
+  -webkit-transition-property: transform;
+  transition-property: transform;
+  -webkit-transition-duration: 0.3s;
+  transition-duration: 0.3s;
+  -webkit-transition-timing-function: ease-out;
+  transition-timing-function: ease-out;
+}
+.hvr-sweep-to-left:hover, .hvr-sweep-to-left:focus, .hvr-sweep-to-left:active {
+  color: white;
+}
+.hvr-sweep-to-left:hover:before, .hvr-sweep-to-left:focus:before, .hvr-sweep-to-left:active:before {
+  -webkit-transform: scaleX(1);
+  transform: scaleX(1);
+}
+
+.blackbox {
+  padding: 1em;
+  background: #FDAE6B;
+  border: 2px solid #e6e6e6;
+  border-radius: 10px;
+}
+.center {
+  text-align: center;
+}
+```
+
+
+*In this document we explore 'missingness' in the `r survey_name` survey.*
+
+### Overall 
+
+```{r, full dataset of detail of participants}
+# Make a data frame of participants with, number of missed questions, percent missed, response detail, and demographics.
+participants = survey_data[[participant_ID]]
+demographics = survey_data[,match(demographic_columns, names(survey_data))]
+
+questions_index = stringr::str_detect(names(survey_data), pattern = '__') |> which()
+no_questions = length(questions_index)
+no_participants = nrow(survey_data)
+questions_data = survey_data[,questions_index] |> as.data.frame()
+missing_questions_by_student = apply(survey_data[,questions_index],1,function(x){sum(is.na(x))})
+complete_missing = which(missing_questions_by_student == no_questions)
+
+missing_info = rep('Unknown reason', length(complete_missing))
+missing_info[!is.na(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing])] = survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing][!is.na(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing])]
+missing_full = rep('', no_participants)
+missing_full[complete_missing] = missing_info
+
+blank_record =  rep('No', no_participants)
+blank_record[which(is.na(survey_data$First_Name) & is.na(survey_data$First_Name) ) ] = 'Yes'
+
+q99ed = apply(survey_data[,questions_index],1,function(x){sum(x == '99')})
+
+
+missingness_dataset = data.frame(participants, demographics, no_questions - missing_questions_by_student, missing_questions_by_student, q99ed, missing_full, blank_record)
+names(missingness_dataset) = c('ID', demographic_columns, 'Number of questions answered', 'Number of missing questions','Number of questions with multiple enties', 'Tickbox info', 'Blank Record?')
+```
+
+#### Empty surveys
+```{r, overall details}
+questions_index = stringr::str_detect(names(survey_data), pattern = '__') |> which()
+no_questions = length(questions_index)
+no_participants = nrow(survey_data)
+
+questions_data = survey_data[,questions_index] |> as.data.frame()
+missing_questions_by_student = apply(survey_data[,questions_index],1,function(x){sum(is.na(x))})
+complete_missing = which(missing_questions_by_student == no_questions)
+
+missing_info = rep('Unknown reason', length(complete_missing))
+missing_info[!is.na(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing])] = survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing][!is.na(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing])]
+if('First_Name' %in% names(survey_data)){
+  missing_info[is.na(survey_data[['First_Name']][complete_missing])] = 'Blank record'
+}
+missing_table = missing_info |> table(useNA = 'ifany') |> data.frame()
+names(missing_table) = c('Reason', 'Number of participants')
+
+IDs_missing_no_reason = survey_data$Barcode_ID[complete_missing[missing_info == 'Unknown reason']]
+
+complete_miss_percent = (length(complete_missing)/no_participants*100) |> round(digits = 2)
+
+blanks = sum(missing_info == 'Blank record')
+miss_true = ((length(complete_missing) - blanks)/(no_participants-blanks)*100) |> round(digits = 2)
+
+
+missing_table_true = missing_info[missing_info != 'Blank record'] |> table(useNA = 'ifany') |> data.frame()
+missing_table_true$percent = (missing_table_true$Freq/sum(missing_table_true$Freq)*100) |> round(2)
+missing_table_true$percentb = (missing_table_true$Freq/(no_participants-blanks)*100) |> round(2)
+
+names(missing_table_true) = c('Reason', 'Number of participants', '% of empty', '% of participants')
+```
+
+In this section we look for surveys in the study where no question has been answered. This is true for `r complete_miss_percent`% (`r length(complete_missing)`/`r no_participants`) of records in the survey dataset. Below we group these records into absence/consent reasons and blank records.
+
+```{r, missing table}
+missing_table |>  DT::datatable(extensions = 'Buttons',
+                  rownames = FALSE,
+                  options = list(scrollX = TRUE,
+                                 pageLength = min(nrow(missing_table), 10),
+                                 dom = 'Btp',
+                                 buttons = c('copy', 'csv', 'excel', 'pdf'),
+                                 paging=F,
+                                 ordering=F))
+```
+
+Note that we define a blank record to be one where the first name field is blank and the other reasons (excluding unknown) is provided by the absence/consent information from the beginning of the survey. These are potentially when the participant was present but chose not to complete the survey, their IDs are outline below. 
+
+DT
+The blank records do not represent actual participants therefore we will remove them from the exploration going forward. With these removed only **`r miss_true`% (`r length(complete_missing)-blanks`/`r no_participants-blanks`)** participants do not answer any of the questions.
+
+Therefore, the reason for empty records (with percentages) are outlined below.
+
+```{r, missing table 2}
+missing_table_true |>  DT::datatable(extensions = 'Buttons',
+                  rownames = FALSE,
+                  options = list(scrollX = TRUE,
+                                 pageLength = min(nrow(missing_table_true), 10),
+                                 dom = 'Btp',
+                                 buttons = c('copy', 'csv', 'excel', 'pdf'),
+                                 paging=F,
+                                 ordering=F))
+```
+
+***
+
+#### Missingness by question
+
+```{r, missingness by question}
+questions_index = stringr::str_detect(names(survey_data), pattern = '__') |> which()
+no_questions = length(questions_index)
+no_participants = nrow(survey_data)
+
+questions_data = survey_data[,questions_index] |> as.data.frame()
+missing_questions_by_student = apply(survey_data[,questions_index],1,function(x){sum(is.na(x))})
+complete_missing = union(which(missing_questions_by_student == no_questions),which(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test == 'Chose not to participate'))
+
+no_participate_but_answers = which(missing_questions_by_student[survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test == 'Chose not to participate'] != no_questions)
+
+questions_data = questions_data[-complete_missing,]
+no_participants = nrow(questions_data)
+missing_questions = apply(questions_data,2,function(x){sum(is.na(x))}) 
+
+theme_question = names(questions_data) |> stringr::str_split('__')
+themes = lapply(theme_question, function(x){x[1]}) |> stringr::str_replace_all('_',' ') |> stringr::str_replace_all('XX','?')
+questions = lapply(theme_question, function(x){x[2]}) |> stringr::str_replace_all('_',' ') |> stringr::str_replace_all('XX','?')
+
+
+# Data for plot and create plot.
+missing_questions_df = data.frame(question_number = 1:length(missing_questions),
+                                  theme = themes, 
+                                  questions = questions,
+                                  participants = as.numeric(missing_questions))
+missing_questions_df$percent = (missing_questions_df$participants / no_participants *100) |> round(2)
+missing_questions_df$text = paste0('Q: ', missing_questions_df$questions,
+                                   '<br> Theme: ', missing_questions_df$theme,
+                                   '<br> Percentage: ', missing_questions_df$percent, '%',
+                                   '<br> Number: ', missing_questions_df$participants)
+fig <- plot_ly(missing_questions_df, x = ~question_number, y = ~percent, type = 'bar', color = ~theme,
+               hovertext = ~text, hoverinfo = 'text') |>
+  layout(title = "",
+         xaxis = list(title = "Question"),
+         yaxis = list (title = "% of Participants that did not answer question"),
+         showlegend = FALSE) 
+
+
+# Linear regression
+fit = lm(percent~question_number, data = missing_questions_df)
+coeff = fit$coefficients
+```
+
+In this section we look at the proportion of missingness by question, to attempt to find patterns in the questions that are missed the most. For example, are the later questions missed due to time constraints / participants getting bored. 
+
+Note that in this section we remove responses where no questions were answered, and participants that chose to participate (`r length(no_participate_but_answers)` answered the survey but do not consent).
+
+```{r, percent questions answered , fig.fullwidth=TRUE, fig.dim = c(10, 4)}
+fig
+```
+
+Fitting a linear regression between percentage of participants not answering a question against the question number gives a baseline non-answer rate of **`r coeff[1] |> round(2)`** where every **`r (1/coeff[2]) |> round(1) `** questions the non-answer rate increases by 1%.
+
+
+#### Missingness by participant
+
+```{r, missingness by participant}
+questions_index = stringr::str_detect(names(survey_data), pattern = '__') |> which()
+no_questions = length(questions_index)
+no_participants = nrow(survey_data)
+
+questions_data = survey_data[,questions_index] |> as.data.frame()
+missing_questions_by_student = apply(survey_data[,questions_index],1,function(x){sum(is.na(x))})
+complete_missing = union(which(missing_questions_by_student == no_questions),which(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test == 'Chose not to participate'))
+
+no_participate_but_answers = which(missing_questions_by_student[survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test == 'Chose not to participate'] != no_questions)
+
+questions_data = questions_data[-complete_missing,]
+no_participants = nrow(questions_data)
+missing_questions_by_part = apply(questions_data,1,function(x){sum(is.na(x))}) 
+
+no_question_missed_by_individual = table(missing_questions_by_part) |> data.frame()
+no_question_missed_by_individual$percent = (no_question_missed_by_individual$Freq / sum(no_question_missed_by_individual$Freq)*100)|>round(2)
+names(no_question_missed_by_individual) = c('Number of questions missed', 'Number of participants', 'Percentage of participants')
+
+
+# Look in to the questions missed by the participants that leave one question.
+single_miss = questions_data[which(missing_questions_by_part == 1) |> as.numeric(),]
+questions_by_single_miss = apply(single_miss,2,function(x){sum(is.na(x))}) 
+missing_questions_df = data.frame(question_number = 1:length(missing_questions),
+                                  theme = themes, 
+                                  questions = questions,
+                                  participants = questions_by_single_miss |> as.numeric())
+missing_questions_df$percent = (missing_questions_df$participants / sum(questions_by_single_miss) *100) |> round(2)
+missing_questions_df$text = paste0('Q: ', missing_questions_df$questions,
+                                   '<br> Theme: ', missing_questions_df$theme,
+                                   '<br> Percentage: ', missing_questions_df$percent, '%',
+                                   '<br> Number: ', missing_questions_df$participants)
+fig <- plot_ly(missing_questions_df, x = ~question_number, y = ~participants, type = 'bar', color = ~theme,
+               hovertext = ~text, hoverinfo = 'text') |>
+  layout(yaxis = list(title = ""),
+         xaxis = list(title = "Question"),
+         title = "Number of Participants that did not answer question <br> (of those that missed a single question)",
+         showlegend = FALSE) 
+
+```
+
+In this section we look at the proportion of missingness by participant.
+
+Note that in this section we remove responses where no questions were answered, and participants that do not consent (`r no_participate_but_answers` answered the survey but do not consent).
+
+Begin by grouping the participants by the number of questions they missed.
+
+```{r, table questions missed by participant}
+no_question_missed_by_individual |>  DT::datatable(extensions = 'Buttons',
+                  rownames = FALSE,
+                  options = list(scrollX = TRUE,
+                                 pageLength = min(nrow(no_question_missed_by_individual), 10),
+                                 dom = 'Btp',
+                                 buttons = c('copy', 'csv', 'excel', 'pdf'),
+                                 paging=ifelse(nrow(no_question_missed_by_individual)>10,T,F),
+                                 ordering=F))
+```
+
+To see if participants that complete most of the survey struggle with the same question lets plot which questions were missed by participants that only miss a single question.
+
+```{r, number missed questions (only miss single) , fig.fullwidth=TRUE, fig.dim = c(10, 4)}
+fig
+```
+
+:::: {.blackbox data-latex=""}
+
+You can download participants missingness information together with the number of questions with multiple answers, empty record information and demographics below.
+
+```{r,eval =  report_kind == 'interactive' }
+missingness_dataset |>
+  download_this(
+    output_name = "participant_missingness",
+    output_extension = ".xlsx",
+    button_label = "Download missingness information of participants",
+    button_type = "default",
+    has_icon = TRUE,
+    icon = "fa fa-save",
+    class = "hvr-sweep-to-left",
+    self_contained =  T
+  )
+```
+::::
+
+***
