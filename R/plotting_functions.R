@@ -1,4 +1,3 @@
-
 #' plot survey theme result
 #'
 #' @param data survey data
@@ -8,7 +7,7 @@
 #' @param rm99 Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.
 #' @param survey_values survey_values
 #'
-#' @return either a plotly object, ggplot object or a dataframe depending on `kind`.
+#' @return either a plotly object, ggplot object or a data frame depending on `kind`.
 #' @export
 #'
 plot_theme <- function(data,
@@ -47,7 +46,7 @@ plot_theme <- function(data,
   data_format = do.call(rbind, freq_tables)
   names(data_format) = c('question', 'answer', 'count', 'percent')
 
-  unique_values = data_format$answer |> unique() ; unique_values = unique_values[!is.na(unique_values)] |> as.character()
+  unique_values = data_format$answer |> as.character() |> unique() ; unique_values = unique_values[!is.na(unique_values)] |> as.character()
 
   # Generate the expected values if not given.
   best_index = lapply(survey_values, function(x){
@@ -65,6 +64,7 @@ plot_theme <- function(data,
   # 1) Create ggpplot
   ##########
   colo = get_OME_colours(n = length(expected_values), type = 'contrast')
+
 
   if(kind == 'ggplot'){
     p <- ggplot2::ggplot(data = data_format,

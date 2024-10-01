@@ -17,11 +17,18 @@ library(OMESurvey)
 
 ```{r load some data}
 data = OMESurvey::survey_example
+
+# Clean such that "N-A" values equal NA, fix any casing issues
+for(i in 1:ncol(data)){
+  data[,i][data[,i] == 'N-A'] = NA
+  data[,i] = data[,i] |> stringr::str_to_sentence() 
+}
+
 ```
 
 ## Number of responses across questions in a theme
 
-In this case we can use `plot_theme()` to create a horizontal bar chart. Depending on the "Kind" argument we can create a formatted data frame, a ggplot or a plotly graph.
+In this case we can use `plot_theme()` to create a horizontal bar chart. Depending on the "Kind" argument we can create a ggplot, a plotly figure or a formatted data frame.
 
 ### {.tabset}
 
@@ -53,4 +60,6 @@ df |> DT::datatable(extensions = 'Buttons',
 
 ### {-}
 
+
+Note that here we use default `survey_values = OMESurvey::survey_values` is used to find the expected values of the survey questions and the order to show the answers in the legend. For custom survey values you can change the `survey_values`. The function uses colours from `OMESurvey::get_OME_colours()`, if other colours are desired use '+'/'|>' to pipe further arguments to the ggplot/plotly objects, or you can create your own plot from the data frame output.
 ***
