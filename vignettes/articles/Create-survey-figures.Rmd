@@ -21,9 +21,9 @@ data = OMESurvey::survey_example
 
 ## Number of responses across questions in a theme
 
-In this case we can use `plot_theme()` to create a horizontal bar chart. Depending on the "Kind" arguement we can create a formatted data frame, a ggplot or a plotly graph.
+In this case we can use `plot_theme()` to create a horizontal bar chart. Depending on the "Kind" argument we can create a formatted data frame, a ggplot or a plotly graph.
 
-#### {.tabset}
+### {.tabset}
 
 #### ggplot
 
@@ -40,9 +40,17 @@ OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'plotly')
 
 #### data.frame
 
-```{r plot theme - data.fram}
-OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'data.frame')
+```{r plot theme data frame}
+df = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'data.frame')
+df |> DT::datatable(extensions = 'Buttons',
+                  rownames = F,
+                  options = list(scrollY = 300,
+                                 dom = 'Bt',
+                                 buttons = c('copy', 'csv', 'excel', 'pdf'),
+                                 paging=FALSE,
+                                 ordering=F))
 ```
 
+### {-}
 
-#### {-}
+***
