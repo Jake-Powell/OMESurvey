@@ -11,14 +11,13 @@ knitr::opts_chunk$set(
 
 ```{r setup}
 library(OMESurvey)
-
-# get some data
-data = OMESurvey::survey_example
 ```
 
-
-
 *This vignette provides examples for the simple creation of survey plots across different output types*
+
+```{r load some data}
+data = OMESurvey::survey_example
+```
 
 ## Number of responses across questions in a theme
 

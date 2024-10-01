@@ -109,7 +109,7 @@ to_sheet_single_survey_question <- function(data,
   start_row = 2
 
   #Add OME logo to top left
-  openxlsx::insertImage(wb, sheet = sheet,file = paste0(system.file(package = "OMEStools"), "/logo.png"), width = 700/400, height = 228/400, startRow = 2, startCol = 1)
+  openxlsx::insertImage(wb, sheet = sheet,file = paste0(system.file(package = "OMESurvey"), "/logo.png"), width = 700/400, height = 228/400, startRow = 2, startCol = 1)
   # Add question + theme(title)
   openxlsx::writeData(wb, sheet = sheet, x = 'Theme:', startRow = start_row, startCol = 3)
   openxlsx::writeData(wb, sheet = sheet, x = theme, startRow = start_row, startCol = 4)
@@ -272,7 +272,7 @@ to_sheet_theme_summary <- function(data,
   start_row = 2
 
   #Add OME logo to top left
-  openxlsx::insertImage(wb, sheet = sheet,file = paste0(system.file(package = "OMEStools"), "/logo.png"), width = 700/400, height = 228/400, startRow = 2, startCol = 1)
+  openxlsx::insertImage(wb, sheet = sheet,file = paste0(system.file(package = "OMESurvey"), "/logo.png"), width = 700/400, height = 228/400, startRow = 2, startCol = 1)
   # Add question + theme(title)
   openxlsx::writeData(wb, sheet = sheet, x = 'Theme:', startRow = start_row, startCol = 3)
   openxlsx::writeData(wb, sheet = sheet, x = theme, startRow = start_row, startCol = 4)
@@ -351,7 +351,7 @@ add_TOC_sheet <- function(wb,
   ## 1) Create TOC sheet.
   openxlsx::addWorksheet(wb, 'Contents', gridLines = F)
   #Add OME logo to top left
-  openxlsx::insertImage(wb, sheet = 'Contents',file = paste0(system.file(package = "OMEStools"), "/logo.png"), width = 700/400, height = 228/400, startRow = 2, startCol = 1)
+  openxlsx::insertImage(wb, sheet = 'Contents',file = paste0(system.file(package = "OMESurvey"), "/logo.png"), width = 700/400, height = 228/400, startRow = 2, startCol = 1)
   # Header (Table of Contents)
   openxlsx::writeData(wb, sheet = 'Contents', x = 'Table of Contents', startRow = 2, startCol = 4)
   main_title = openxlsx::createStyle(fontSize = 18, textDecoration = "bold", halign = "center")

@@ -54,7 +54,7 @@ create_missingness_report <- function(survey_data,
   # 2) Render basic stats_static document.
   if(report_kind == 'static'){
     if(!is.null(reference_docx)){
-      rmarkdown::render(paste0(system.file(package = "OMEStools"), "/markdown_reports/missingness_report.Rmd"),
+      rmarkdown::render(paste0(system.file(package = "OMESurvey"), "/markdown_reports/missingness_report.Rmd"),
                         params = list(survey_data = survey_data,
                                       survey_name = survey_name,
                                       report_kind = report_kind,
@@ -65,7 +65,7 @@ create_missingness_report <- function(survey_data,
                         output_dir = output_dir,
                         output_format = rmarkdown::word_document(reference_docx = reference_docx, toc = TRUE, toc_depth = 4))
     }else{
-      rmarkdown::render(paste0(system.file(package = "OMEStools"), "/markdown_reports/missingness_report.Rmd"),
+      rmarkdown::render(paste0(system.file(package = "OMESurvey"), "/markdown_reports/missingness_report.Rmd"),
                         params = list(survey_data = survey_data,
                                       survey_name = survey_name,
                                       report_kind = report_kind,
@@ -79,7 +79,7 @@ create_missingness_report <- function(survey_data,
   }
 
   if(report_kind == 'interactive'){
-    rmarkdown::render(paste0(system.file(package = "OMEStools"), "/markdown_reports/missingness_report.Rmd"),
+    rmarkdown::render(paste0(system.file(package = "OMESurvey"), "/markdown_reports/missingness_report.Rmd"),
                       params = list(survey_data = survey_data,
                                     survey_name = survey_name,
                                     report_kind = report_kind,
@@ -150,7 +150,7 @@ create_initial_analysis_report <- function(survey_data,
   # 2) Render basic stats_static document.
   if(report_kind == 'static'){
     if(!is.null(reference_docx)){
-      rmarkdown::render(paste0(system.file(package = "OMEStools"), "/markdown_reports/Initial_analysis_report.Rmd"),
+      rmarkdown::render(paste0(system.file(package = "OMESurvey"), "/markdown_reports/Initial_analysis_report.Rmd"),
                         params = list(survey_data = survey_data,
                                       survey_name = survey_name,
                                       report_kind = report_kind,
@@ -161,7 +161,7 @@ create_initial_analysis_report <- function(survey_data,
                         output_dir = output_dir,
                         output_format = rmarkdown::word_document(reference_docx = reference_docx, toc = TRUE, toc_depth = 4))
     }else{
-      rmarkdown::render(paste0(system.file(package = "OMEStools"), "/markdown_reports/Initial_analysis_report.Rmd"),
+      rmarkdown::render(paste0(system.file(package = "OMESurvey"), "/markdown_reports/Initial_analysis_report.Rmd"),
                         params = list(survey_data = survey_data,
                                       survey_name = survey_name,
                                       report_kind = report_kind,
@@ -175,7 +175,7 @@ create_initial_analysis_report <- function(survey_data,
   }
 
   if(report_kind == 'interactive'){
-    rmarkdown::render(paste0(system.file(package = "OMEStools"), "/markdown_reports/Initial_analysis_report.Rmd"),
+    rmarkdown::render(paste0(system.file(package = "OMESurvey"), "/markdown_reports/Initial_analysis_report.Rmd"),
                       params = list(survey_data = survey_data,
                                     survey_name = survey_name,
                                     report_kind = report_kind,

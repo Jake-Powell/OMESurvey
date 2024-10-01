@@ -16,7 +16,7 @@ plot_theme <- function(data,
                        theme_columns = NA,
                        kind = 'ggplot',
                        rm99 = TRUE,
-                       survey_values = OMEStools::survey_values){
+                       survey_values = OMESurvey::survey_values){
   if(!is.na(theme)){
     theme_columns = get_theme_columns(data, theme)
   }

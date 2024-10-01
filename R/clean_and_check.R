@@ -14,7 +14,7 @@
 #' @inheritParams to_sheet_single_survey_question
 #' @param ID_column the name of the ID column. Default is "Barcode_ID".
 #' @param question_columns The index of the question columns.
-#' @param survey_values A list of possible survey question answers by default it takes the values from `OMEStools::survey_values`.
+#' @param survey_values A list of possible survey question answers by default it takes the values from `OMESurvey::survey_values`.
 #' @param format Either 'list' where the result for each question is another element in a list or 'table' which concatenates all the results into a single table.
 #' @param exclude_99 Logical (TRUE/FALSE) for whether to exclude '99' from the non-expected values.
 #' @param first_name_column the name of the "First Name' column. Default is "First_Name".
@@ -25,7 +25,7 @@
 #'
 check_question_columns <- function(data,
                                    question_columns,
-                                   survey_values = OMEStools::survey_values,
+                                   survey_values = OMESurvey::survey_values,
                                    format = 'table',
                                    exclude_99 = TRUE){
   data = data |> as.data.frame()
