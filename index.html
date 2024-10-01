@@ -32,6 +32,14 @@
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
 <li class="nav-item"><a class="nav-link" href="reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="articles/Create-OME-branded-excel-output.html">Create OME branded excel output</a></li>
+    <li><a class="dropdown-item" href="articles/Create-survey-figures.html">Create survey figures</a></li>
+    <li><a class="dropdown-item" href="articles/Preparation-and-initial-survey-analysis.html">Preparation and initial survey analysis</a></li>
+  </ul>
+</li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -56,22 +64,18 @@
 <p>You can install the development version of OMESurvey from <a href="https://github.com/" class="external-link">GitHub</a> with:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("devtools")</span></span>
-<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"Jake-Powell/OMEStools"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">devtools</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"Jake-Powell/OMESurvey"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="example">Example<a class="anchor" aria-label="anchor" href="#example"></a>
+<h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
-<p>This is a basic example which shows you how to solve a common problem:</p>
+<p>Creating survey results for a given theme</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jake-powell.github.io/OMESurvey/">OMESurvey</a></span><span class="op">)</span></span>
 <span><span class="va">data</span> <span class="op">=</span> <span class="fu">OMESurvey</span><span class="fu">::</span><span class="va"><a href="reference/survey_example.html">survey_example</a></span></span>
 <span></span>
-<span><span class="co">## Add theme information</span></span>
-<span></span>
 <span><span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu"><a href="reference/plot_theme.html">plot_theme</a></span><span class="op">(</span><span class="va">data</span>, theme <span class="op">=</span> <span class="st">'Theme_1'</span>, kind <span class="op">=</span> <span class="st">'ggplot'</span><span class="op">)</span></span></code></pre></div>
 <p><img src="reference/figures/README-example-1.png" width="100%"></p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co">## basic example code</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">

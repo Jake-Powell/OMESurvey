@@ -1,8 +1,11 @@
 pandoc: 3.1.11
 pkgdown: 2.1.1
 pkgdown_sha: ~
-articles: {}
-last_built: 2024-10-01T13:43Z
+articles:
+  articles/Create-OME-branded-excel-output: Create-OME-branded-excel-output.html
+  articles/Create-survey-figures: Create-survey-figures.html
+  articles/Preparation-and-initial-survey-analysis: Preparation-and-initial-survey-analysis.html
+last_built: 2024-10-01T14:59Z
 urls:
   reference: https://jake-powell.github.io/OMESurvey/reference
   article: https://jake-powell.github.io/OMESurvey/articles
