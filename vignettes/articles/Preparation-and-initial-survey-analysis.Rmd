@@ -2,19 +2,17 @@
 title: "Preparation and initial survey analysis"
 ---
 
-```{r, include = FALSE, eval = F}
+```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-requireNamespace("tibble", quietly = TRUE)
-requireNamespace("DT", quietly = TRUE)
-
 ```
 
 ```{r setup}
 library(OMESurvey)
 ```
+
 
 *This article shows how to use tools from * **OMESurvey** *to check and clean the provided survey data and produce an initial report on 'missingness' in the survey*
 

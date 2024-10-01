@@ -20,7 +20,7 @@ plot_theme(
 
 \item{theme_columns}{column index relating to theme}
 
-\item{kind}{what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "table"}
+\item{kind}{what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "data.frame".}
 
 \item{rm99}{Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.}
 

@@ -1,5 +1,5 @@
 ---
-title: "Creating branded Excel documents of survey results"
+title: "Create OME branded excel output"
 ---
 
 ```{r, include = FALSE}

@@ -1,10 +1,5 @@
 ---
-title: "Survey plots"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{Survey_plots}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "Create survey figures"
 ---
 
 ```{r, include = FALSE}
@@ -19,8 +14,9 @@ library(OMESurvey)
 
 # get some data
 data = OMESurvey::survey_example
-
 ```
+
+
 
 *This vignette provides examples for the simple creation of survey plots across different output types*
 
