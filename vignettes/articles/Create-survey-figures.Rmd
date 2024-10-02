@@ -61,5 +61,5 @@ df |> DT::datatable(extensions = 'Buttons',
 ### {-}
 
 
-Note that here we use default `survey_values = OMESurvey::survey_values` is used to find the expected values of the survey questions and the order to show the answers in the legend. For custom survey values you can change the `survey_values`. The function uses colours from `OMESurvey::get_OME_colours()`, if other colours are desired use '+'/'|>' to pipe further arguments to the ggplot/plotly objects, or you can create your own plot from the data frame output.
+Note that here we use default `survey_values = OMESurvey::survey_values` is used to find the expected values of the survey questions and the order to show the answers in the legend. For custom survey values you can change the `survey_values`. The function uses colours from `OMESurvey::get_OME_colours()`. For the plots either a ggplot or plotly object are returned, therefore + or |> can be used to update the plot (e.g layout/colours, etc). Or you can create your own plot from the data frame output.
 ***
