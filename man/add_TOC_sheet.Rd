@@ -13,6 +13,9 @@ add_TOC_sheet(wb, link_text = NULL, return_pos = c(1, 1))
 
 \item{return_pos}{integer pair, of the row and column index to place the return to contents link on the sheets in the wb.}
 }
+\value{
+openxlsx workbook with TOC added.
+}
 \description{
 Add table of contents to an workbook
 }

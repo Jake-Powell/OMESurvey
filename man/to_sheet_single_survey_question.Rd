@@ -26,6 +26,9 @@ to_sheet_single_survey_question(
 
 \item{sheet}{the sheet name}
 }
+\value{
+returns openxlsx workbook with new sheet added
+}
 \description{
 Add response to single survey question
 }

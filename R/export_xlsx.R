@@ -7,7 +7,7 @@
 #' @param wb the workbook to append the sheet to (requires append_to = TRUE)
 #' @param sheet the sheet name
 #'
-#' @return
+#' @return returns openxlsx workbook with new sheet added
 #' @export
 to_sheet_single_survey_question <- function(data,
                                             question_column,
@@ -336,7 +336,7 @@ to_sheet_theme_summary <- function(data,
 #' @param link_text character vector of the text displayed for the linked text in the TOC sheet. Must have the same length as the number of sheets in wb.
 #' @param return_pos integer pair, of the row and column index to place the return to contents link on the sheets in the wb.
 #'
-#' @return
+#' @return openxlsx workbook with TOC added.
 #' @export
 #'
 add_TOC_sheet <- function(wb,
