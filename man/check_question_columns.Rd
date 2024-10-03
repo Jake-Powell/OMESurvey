@@ -9,7 +9,7 @@
 check_question_columns(
   data,
   question_columns,
-  survey_values = OMEStools::survey_values,
+  survey_values = OMESurvey::survey_values,
   format = "table",
   exclude_99 = TRUE
 )
@@ -29,7 +29,7 @@ check_IDs(
 
 \item{question_columns}{The index of the question columns.}
 
-\item{survey_values}{A list of possible survey question answers by default it takes the values from \code{OMEStools::survey_values}.}
+\item{survey_values}{A list of possible survey question answers by default it takes the values from \code{OMESurvey::survey_values}.}
 
 \item{format}{Either 'list' where the result for each question is another element in a list or 'table' which concatenates all the results into a single table.}
 

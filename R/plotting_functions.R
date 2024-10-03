@@ -10,6 +10,10 @@
 #' @return either a plotly object, ggplot object or a data frame depending on `kind`.
 #' @export
 #'
+#'
+#' @description
+#' See `Create survey figures` article for examples.
+
 plot_theme <- function(data,
                        theme = NA,
                        theme_columns = NA,
@@ -112,14 +116,25 @@ plot_theme <- function(data,
 
 
 
+#' Plot survey theme result by demographic
+#'
+#' @inheritParams plot_theme
+#' @param demographic_column the index of the demographic column
+#' @param agree_values The answers that correspond to agree.
+#'
+#' @return either a plotly object, ggplot object or a data frame depending on `kind`.
+#' @export
+#'
+#' @description
+#' See `Create survey figures` article for examples.
+#'
 plot_theme_by_demographic <- function(data,
                                       theme = NA,
                                       theme_columns = NA,
                                       demographic_column,
                                       agree_values = c('Agree a little', 'Agree a lot'),
                                       kind = 'ggplot',
-                                      rm99 = TRUE,
-                                      ...){
+                                      rm99 = TRUE){
   ##########
   # 1) Setup.
   ##########
@@ -168,7 +183,7 @@ plot_theme_by_demographic <- function(data,
   data_format = data_format[,c(1,2,4,3)]
   rownames(data_format) = 1:nrow(data_format)
   data_format$value  = data_format$value |> as.numeric()
-  if(kind == 'table'){
+  if(kind == 'data.frame'){
     names(data_format)[1] = 'demographic'
     return(data_format)
   }
@@ -195,26 +210,28 @@ plot_theme_by_demographic <- function(data,
   }
 
   if(kind == 'plotly'){
-    data_format$hover = paste0(data_format$answer, '<br>',
-                               data_format$count, ' Responses', '<br>',
-                               data_format$percent |> round(1), '%')
-    data_format$wrap_q = stringr::str_wrap(data_format$question,width = 20) |>
+    df = data_format[data_format$type == 'percent',]
+    df$hover = paste0(df$question, '<br>',
+                      names(data)[1] |> stringr::str_to_sentence(),
+                      ': ', df$demographic, '<br>',
+                      df$value |> round(1), '% of responses')
+    df$wrap_q = stringr::str_wrap(df$question,width = 20) |>
       stringr::str_replace_all('\n', '<br>')
 
-    fig = data_format |>
-      plotly::group_by(answer) |>
+    fig = df |>
+      plotly::group_by(demographic) |>
       plotly::plot_ly(type = 'bar',
                       y = ~wrap_q,
-                      x = ~count,
-                      color = ~answer,
+                      x = ~value,
+                      color = ~demographic,
                       colors = colo,
                       orientation = 'h',
                       hovertext = ~hover, hoverinfo = 'text'
                       # showlegend = TRUE,
                       # marker = list(color = ~color)
       ) |>
-      plotly::layout(xaxis = list(title = "Number of responses"),
-                     yaxis = list(title = ''), barmode = 'stack'
+      plotly::layout(xaxis = list(title = "Agree or strongly agree (%)"),
+                     yaxis = list(title = '')
                      # hovermode = 'y unified'
       )
     return(fig)
