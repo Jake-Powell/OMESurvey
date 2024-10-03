@@ -92,7 +92,6 @@ OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column
 
 ```{r plot theme demo data frame}
 # Get school information
-
 df = OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'data.frame')
 
 df |> DT::datatable(extensions = 'Buttons',
