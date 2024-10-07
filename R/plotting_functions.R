@@ -194,8 +194,8 @@ plot_theme_by_demographic <- function(data,
   colo = get_OME_colours(n = length(demo_values), type = 'contrast')
 
   if(kind == 'ggplot'){
-    p <- ggplot2::ggplot(data = data_format[data_format$type == 'percent',],
-                         ggplot2::aes(x = question, y = value, fill = factor(demographic))
+    df = data_format[data_format$type == 'percent',]
+    p <- ggplot2::ggplot(data = df, ggplot2::aes(x = forcats::fct_reorder(question,value), y = value, fill = factor(demographic))
     )+
       ggplot2::geom_bar(position="dodge", stat="identity") +
       ggplot2::scale_fill_manual(values = colo,
