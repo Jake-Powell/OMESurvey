@@ -57,6 +57,15 @@ plot_theme <- function(data,
     return(sum(x %in% unique_values))
   }) |> unlist() |> which.max()
   expected_values = survey_values[[best_index[1]]]
+
+  # Check for extra values in the data that are not included in the expected values.
+  missing = unique_values[!unique_values %in% expected_values]
+  if(length(missing > 0)){
+    warning(paste0('The expected answers are: "',
+                   paste0(expected_values, collapse = '", "'),
+                   '" which does not include the following found in the data: "',
+                   paste0(missing, collapse = '", "'), '"'))
+  }
   data_format$answer = factor(data_format$answer, levels = expected_values)
 
   if(kind == 'data.frame'){

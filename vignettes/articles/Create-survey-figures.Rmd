@@ -38,7 +38,6 @@ In this case we can use `plot_theme()` to create a horizontal bar chart. Dependi
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
 ```
 
-
 #### plotly
 
 ```{r plot theme - plotly}
@@ -62,6 +61,31 @@ df |> DT::datatable(extensions = 'Buttons',
 
 
 Note that here we use default `survey_values = OMESurvey::survey_values` is used to find the expected values of the survey questions and the order to show the answers in the legend. For custom survey values you can change the `survey_values`. The function uses colours from `OMESurvey::get_OME_colours()`. For the plots either a ggplot or plotly object are returned, therefore + or |> can be used to update the plot (e.g layout/colours, etc). Or you can create your own plot from the data frame output.
+
+For example if you want to swap the bar order but keep the same colourscheme.
+
+```{r, plot theme - ggplot 2}
+# Use custom survey_values with the order of the values reversed
+p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot',
+                      survey_values = list(agree = c("Agree a lot", "Agree a little", "Neither",           "Disagree a little", "Disagree a lot") |> rev()))
+
+# Get OME colours
+colo = get_OME_colours(n = 5, type = 'contrast') 
+# Swap to the original colour order
+p + ggplot2::scale_fill_manual(values = colo |> rev(), guide = ggplot2::guide_legend(reverse = TRUE)) 
+```
+
+Note further a warning will be given if the answers to the questions do not align with the survey values. Where the unexpected answers will be set to NA (for ggplot).
+
+```{r, plot theme - ggplot 3, warning=T}
+data_issue = data
+data_issue$Theme_1__Question_1[1] = 'Ohh Dear...'
+
+# Use custom survey_values with the order of the values reversed
+OMESurvey::plot_theme(data_issue, theme = 'Theme_1', kind = 'ggplot')
+
+```
+
 ***
 
 ## Number of responses across questions in a theme with a demographic
