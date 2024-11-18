@@ -128,3 +128,20 @@ df |> DT::datatable(extensions = 'Buttons',
 ```
 
 ### {-}
+
+## Adding OME logo to ggplot
+
+You can also add the OME logo to plots using `add_logo()`.
+
+```{r}
+# Add logo.
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> add_logo()
+
+# Add logo, speciify position.
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> add_logo(position = 'top right')
+
+# Add logo, speciify position and sizing arguement.
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> add_logo(position = 'top left',logo_sizing = c(0.3, 0.5))
+
+
+```

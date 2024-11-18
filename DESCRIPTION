@@ -13,16 +13,20 @@ Imports:
     forcats,
     ggplot2,
     grDevices,
+    gridExtra,
     openxlsx,
     plotly,
+    png,
     stringr
 Suggests: 
     DT,
     knitr,
     rmarkdown,
+    testthat (>= 3.0.0),
     tibble
 VignetteBuilder: knitr
 Depends: 
     R (>= 2.10)
 LazyData: true
 URL: https://jake-powell.github.io/OMESurvey/
+Config/testthat/edition: 3

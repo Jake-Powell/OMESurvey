@@ -1,5 +1,6 @@
 #' plot survey theme result
 #'
+#'
 #' @param data survey data
 #' @param theme A string containing the theme name (with or without "_" as spacing).
 #' @param theme_columns column index relating to theme
@@ -11,9 +12,9 @@
 #' @export
 #'
 #'
+#'
 #' @description
 #' See `Create survey figures` article for examples.
-
 plot_theme <- function(data,
                        theme = NA,
                        theme_columns = NA,
@@ -249,3 +250,48 @@ plot_theme_by_demographic <- function(data,
 
 }
 
+#' Add OME logo to a ggplot object
+#'
+#' @param p ggplot object
+#' @param type Specifies the type on logo. Either 'bw' or 'standard'.
+#' @param position Specifies the logo position. Either 'top left', 'top right', 'bottom left' or 'bottom right'
+#' @param logo_sizing A numeric vector of length 2. The first element defines the amount of vertical spacing the logo uses (default is 11% of the figure height). The second element defines the logo width (min 0, max 1 default is 0.2)
+
+#'
+#' @return original plot with the logo added.
+#' @export
+#'
+#'@details
+#'This function currently always adds the logo outside the original plot (In an extended margin).
+#'
+#'Note that you cannot use '+' to add this to the ggplot object, as the function returns a non-ggplot object (as we use gridExtra::grid.arrange() to add the logo). This should always be the last step of creating a plot.
+#'
+#' PLay around with the logo sizing parameter until you find your desired logo size.
+#'
+#' @examples
+add_logo <- function(p,
+                     type ='',
+                     position = 'bottom right',
+                     logo_sizing = c(.11,0.2)){
+  heights = c(1-logo_sizing[1], logo_sizing[1])
+
+  filepath = paste0(system.file(package = "OMESurvey"), "/logos/OME_whiteBack_with_text.png")
+  l = grid::rasterGrob(png::readPNG(filepath), interpolate = TRUE)
+
+  p3 <- ggplot2::ggplot(mapping = ggplot2::aes(x = 0:1, y = 1)) +
+    ggplot2::theme_void()
+
+  if(grepl('left', position)){
+    p3 = p3 + ggplot2::annotation_custom(l, xmin = 0, xmax = logo_sizing[2])
+
+  }else{
+    p3 = p3 + ggplot2::annotation_custom(l, xmin = 1 - logo_sizing[2], xmax = 1)
+  }
+
+
+  if(grepl('bottom', position)){
+    return(gridExtra::grid.arrange(p, p3, heights = heights))
+  }else{
+    return(gridExtra::grid.arrange(p3, p, heights = heights |> rev()))
+  }
+}
