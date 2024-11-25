@@ -131,17 +131,57 @@ df |> DT::datatable(extensions = 'Buttons',
 
 ## Adding OME logo to ggplot
 
-You can also add the OME logo to plots using `add_logo()`.
+You can also add the OME logo to ggplot objects using `add_logo()`.
+
+Note however to do this we use the gridExtra::grid.arrange() function to add the logo into the margin which causes the object to no longer be a ggplot object. Thus, you cannot use '+' to change the plot after adding the logo.
 
 ```{r}
 # Add logo.
-OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> add_logo()
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::add_logo()
 
 # Add logo, speciify position.
-OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> add_logo(position = 'top right')
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::add_logo(position = 'top right')
 
 # Add logo, speciify position and sizing arguement.
-OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> add_logo(position = 'top left',logo_sizing = c(0.3, 0.5))
-
-
+OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::add_logo(position = 'top left',logo_sizing = c(0.3, 0.5))
 ```
+
+## Formatted bar charts from data column
+
+We can use `plot_bar()` to create bar charts of a single column within survey data. 
+
+### {.tabset}
+
+#### ggplot
+
+```{r plot bar - ggplot}
+OMESurvey::plot_bar(data, column = 5, kind = 'ggplot')
+```
+
+#### plotly
+
+```{r plot bar - plotly}
+OMESurvey::plot_bar(data, column = 5, kind = 'plotly')
+```
+
+#### data.frame
+
+```{r plot bar data frame}
+df = OMESurvey::plot_bar(data, column = 5, kind = 'data.frame')
+df |> DT::datatable(extensions = 'Buttons',
+                  rownames = F,
+                  options = list(scrollY = 300,
+                                 dom = 'Bt',
+                                 buttons = c('copy', 'csv', 'excel', 'pdf'),
+                                 paging=FALSE,
+                                 ordering=F))
+```
+
+### {-}
+
+Note that you can include NA in the bar charts by using passing arguments to `table()` via `...`. Moreover, for ggplot outputs we can include numbers on the plot y setting `showValue = TRUE`.
+
+```{r}
+OMESurvey::plot_bar(data, column = 5, kind = 'ggplot', showValue = TRUE, useNA = 'always')
+```
+
