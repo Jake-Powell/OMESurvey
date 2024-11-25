@@ -295,3 +295,138 @@ add_logo <- function(p,
     return(gridExtra::grid.arrange(p3, p, heights = heights |> rev()))
   }
 }
+
+
+#' Plot OME bar plot
+#' @inheritParams plot_theme
+#' @param column column index or name to select the data.
+#' @param type Either 'vertical' or 'horizontal'. Default is 'horizontal'.
+#' @param showValue Flag (TRUE/FALSE) for whether to display the values on the plot.
+#' @param ... parameters for table(). I.e whether you want to include NA or not by using useNA = 'always' or 'ifany'.
+#'
+#' @return either a data.frame, ggplot object or plotly object.
+#' @export
+#'
+#' @examples
+plot_bar <- function(data,
+                     column,
+                     type = 'horizontal',
+                     kind = 'ggplot',
+                     rm99 = TRUE,
+                     showValue = FALSE,
+                     ...){
+
+  ##########
+  # 1) Setup.
+  ##########
+
+  # A) Slice the part of the data we need.
+  if(is.numeric(column)) column = names(data)[column]
+  data = data[[column]]
+  if(rm99) data[which(data == '99')] = NA
+
+  ##########
+  # 2) Format data
+  ##########
+  data_format = data |> table(...) |> as.data.frame()
+  if(kind == 'data.frame'){
+    names(data_format) = c(column |> stringr::str_replace_all('_', ' '), 'Number of responses')
+    return(data_format)
+  }
+
+  ##########
+  # 3) Create plots
+  ##########
+  colo = get_OME_colours(n = 1, type = 'contrast')
+
+  names(data_format) = c('question','value')
+  if(kind == 'ggplot'){
+    df = data_format
+    if(type == 'vertical'){
+      p <- ggplot2::ggplot(data = df, ggplot2::aes(x = forcats::fct_reorder(question,value,
+                                                                            .fun = function(x){-x}), y = value))+
+        ggplot2::geom_bar(position="dodge", stat="identity", fill = colo) +
+        ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 20)) +
+        ggplot2::xlab('')+
+        ggplot2::ylab('Number of responses') +
+        ggplot2::ggtitle(paste0('Responses by "',
+                                column |> stringr::str_replace_all('_', ' '),
+                                '"') |> stringr::str_wrap(width = 50)) +
+        ggplot2::scale_y_continuous(expand = c(0, 0)) +
+        ggplot2::theme(
+          plot.background = ggplot2::element_rect(fill = "white"),
+          panel.background = ggplot2::element_rect(fill = "white"),
+          axis.line.x = ggplot2::element_line(color = "black"),
+          panel.grid.major.y = ggplot2::element_line(color = "grey",
+                                                     size = 0.5,
+                                                     linetype = 2)
+        )
+
+      if(showValue){
+        p = p + ggplot2::geom_text(ggplot2::aes(label=value), vjust=-0.1) +
+          ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, max(df$value)*1.1))
+      }
+
+      return(p)
+    }else{
+      p <- ggplot2::ggplot(data = df, ggplot2::aes(x = forcats::fct_reorder(question,value,
+                                                                            .fun = function(x){x}), y = value))+
+        ggplot2::geom_bar(position="dodge", stat="identity", fill = colo) +
+        ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 20)) +
+        ggplot2::xlab('') +
+        ggplot2::ylab('Number of responses') +
+        ggplot2::ggtitle(paste0('Responses by "',
+                                column |> stringr::str_replace_all('_', ' '),
+                                '"') |> stringr::str_wrap(width = 50)) +
+        ggplot2::coord_flip() +
+        ggplot2::scale_y_continuous(expand = c(0, 0)) +
+        ggplot2::theme(
+          plot.background = ggplot2::element_rect(fill = "white"),
+          panel.background = ggplot2::element_rect(fill = "white"),
+          axis.line.y = ggplot2::element_line(color = "black"),
+          panel.grid.major.x = ggplot2::element_line(color = "grey",
+                                                     size = 0.5,
+                                                     linetype = 2)
+        )
+
+      if(showValue){
+        p = p + ggplot2::geom_text(ggplot2::aes(label=value), hjust=-0.1) +
+          ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, max(df$value)*1.1))
+      }
+
+      return(p)
+    }
+
+
+  }
+
+  if(kind == 'plotly'){
+    df = data_format
+    df = df[order(df$value),]
+    df$question = factor(df$question, levels = df$question)
+    df$percent = (df$value / sum(df$value)*100) |> round(2)
+    df$hover = paste0(df$question, ': ', df$value, '<br>',
+                      df$percent, '% of responses')
+    df$wrap_q = stringr::str_wrap(df$question,width = 20) |>
+      stringr::str_replace_all('\n', '<br>')
+    df$wrap_q =  factor(df$wrap_q, levels = df$wrap_q)
+    fig = df |>
+      plotly::plot_ly(type = 'bar',
+                      y = ~wrap_q,
+                      x = ~value,
+                      color = colo,
+                      colors = colo,
+                      orientation = 'h',
+                      hovertext = ~hover, hoverinfo = 'text'
+                      # showlegend = TRUE,
+                      # marker = list(color = ~color)
+      ) |>
+      plotly::layout(xaxis = list(title = "Number of responses"),
+                     yaxis = list(title = '')
+                     # hovermode = 'y unified'
+      )
+    return(fig)
+
+  }
+
+}
