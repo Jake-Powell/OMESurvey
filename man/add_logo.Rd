@@ -22,9 +22,21 @@ original plot with the logo added.
 Add OME logo to a ggplot object
 }
 \details{
-This function currently always adds the logo outside the original plot (In an extended margin).
+This function currently only works for ggplot objects and always adds the logo outside the original plot (In an extended margin).
 
 Note that you cannot use '+' to add this to the ggplot object, as the function returns a non-ggplot object (as we use gridExtra::grid.arrange() to add the logo). This should always be the last step of creating a plot.
 
-PLay around with the logo sizing parameter until you find your desired logo size.
+Play around with the logo sizing parameter until you find your desired logo size.
+}
+\examples{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Load in some example survey data and create a plot.
+data = OMESurvey::survey_example
+p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+
+# Add logo to plot either top right or bottom right.
+p |> OMESurvey::add_logo(position = 'top right')
+p |> OMESurvey::add_logo(position = 'bottom right', logo_sizing = c(0.21, 0.3))
+
+\dontshow{\}) # examplesIf}
 }

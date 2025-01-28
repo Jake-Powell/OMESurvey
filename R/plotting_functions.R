@@ -11,10 +11,16 @@
 #' @return either a plotly object, ggplot object or a data frame depending on `kind`.
 #' @export
 #'
+#'@examplesIf FALSE
+#' # Load in some example survey data.
+#' data = OMESurvey::survey_example
+#'
+#' # Create the theme plot.
+#' p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
 #'
 #'
-#' @description
-#' See `Create survey figures` article for examples.
+#' @details
+#' See `Create survey figures` article for further examples.
 plot_theme <- function(data,
                        theme = NA,
                        theme_columns = NA,
@@ -135,7 +141,20 @@ plot_theme <- function(data,
 #' @return either a plotly object, ggplot object or a data frame depending on `kind`.
 #' @export
 #'
-#' @description
+#'@examplesIf FALSE
+#' # Load in some example survey data.
+#' data = OMESurvey::survey_example
+#'
+#' # Add a school olumnusing the barcode.
+#' school = data$Barcode_ID |> as.character() |>  substr(3, 5)
+#' data$school = school
+#' school_column = ncol(data)
+#'
+#' # Create the theme by demographic plot.
+#' OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'ggplot')
+#'
+#'
+#' @details
 #' See `Create survey figures` article for examples.
 #'
 plot_theme_by_demographic <- function(data,
@@ -256,19 +275,26 @@ plot_theme_by_demographic <- function(data,
 #' @param type Specifies the type on logo. Either 'bw' or 'standard'.
 #' @param position Specifies the logo position. Either 'top left', 'top right', 'bottom left' or 'bottom right'
 #' @param logo_sizing A numeric vector of length 2. The first element defines the amount of vertical spacing the logo uses (default is 11% of the figure height). The second element defines the logo width (min 0, max 1 default is 0.2)
-
 #'
 #' @return original plot with the logo added.
 #' @export
 #'
+#'@examplesIf FALSE
+#' # Load in some example survey data and create a plot.
+#' data = OMESurvey::survey_example
+#' p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+#'
+#' # Add logo to plot either top right or bottom right.
+#' p |> OMESurvey::add_logo(position = 'top right')
+#' p |> OMESurvey::add_logo(position = 'bottom right', logo_sizing = c(0.21, 0.3))
+#'
+#'
 #'@details
-#'This function currently always adds the logo outside the original plot (In an extended margin).
+#'This function currently only works for ggplot objects and always adds the logo outside the original plot (In an extended margin).
 #'
 #'Note that you cannot use '+' to add this to the ggplot object, as the function returns a non-ggplot object (as we use gridExtra::grid.arrange() to add the logo). This should always be the last step of creating a plot.
 #'
-#' PLay around with the logo sizing parameter until you find your desired logo size.
-#'
-#' @examples
+#' Play around with the logo sizing parameter until you find your desired logo size.
 add_logo <- function(p,
                      type ='',
                      position = 'bottom right',
@@ -307,7 +333,14 @@ add_logo <- function(p,
 #' @return either a data.frame, ggplot object or plotly object.
 #' @export
 #'
-#' @examples
+#'@examplesIf FALSE
+#' # Load in some example survey data and create a plot.
+#' data = OMESurvey::survey_example
+#'
+#' # Create bar plot for column 5.
+#' OMESurvey::plot_bar(data, column = 5, kind = 'ggplot')
+#'
+#'
 plot_bar <- function(data,
                      column,
                      type = 'horizontal',

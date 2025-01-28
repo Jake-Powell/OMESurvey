@@ -30,5 +30,18 @@ plot_theme(
 either a plotly object, ggplot object or a data frame depending on \code{kind}.
 }
 \description{
-See \verb{Create survey figures} article for examples.
+plot survey theme result
+}
+\details{
+See \verb{Create survey figures} article for further examples.
+}
+\examples{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Load in some example survey data.
+data = OMESurvey::survey_example
+
+# Create the theme plot.
+p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+
+\dontshow{\}) # examplesIf}
 }

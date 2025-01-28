@@ -4,7 +4,15 @@
 \alias{plot_bar}
 \title{Plot OME bar plot}
 \usage{
-plot_bar(data, column, type = "horizontal", kind = "ggplot", ...)
+plot_bar(
+  data,
+  column,
+  type = "horizontal",
+  kind = "ggplot",
+  rm99 = TRUE,
+  showValue = FALSE,
+  ...
+)
 }
 \arguments{
 \item{data}{survey data}
@@ -15,6 +23,10 @@ plot_bar(data, column, type = "horizontal", kind = "ggplot", ...)
 
 \item{kind}{what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "data.frame".}
 
+\item{rm99}{Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.}
+
+\item{showValue}{Flag (TRUE/FALSE) for whether to display the values on the plot.}
+
 \item{...}{parameters for table(). I.e whether you want to include NA or not by using useNA = 'always' or 'ifany'.}
 }
 \value{
@@ -22,4 +34,14 @@ either a data.frame, ggplot object or plotly object.
 }
 \description{
 Plot OME bar plot
+}
+\examples{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Load in some example survey data and create a plot.
+data = OMESurvey::survey_example
+
+# Create bar plot for column 5.
+OMESurvey::plot_bar(data, column = 5, kind = 'ggplot')
+
+\dontshow{\}) # examplesIf}
 }

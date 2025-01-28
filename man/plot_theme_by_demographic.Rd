@@ -33,5 +33,23 @@ plot_theme_by_demographic(
 either a plotly object, ggplot object or a data frame depending on \code{kind}.
 }
 \description{
+Plot survey theme result by demographic
+}
+\details{
 See \verb{Create survey figures} article for examples.
+}
+\examples{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+# Load in some example survey data.
+data = OMESurvey::survey_example
+
+# Add a school olumnusing the barcode.
+school = data$Barcode_ID |> as.character() |>  substr(3, 5)
+data$school = school
+school_column = ncol(data)
+
+# Create the theme by demographic plot.
+OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'ggplot')
+
+\dontshow{\}) # examplesIf}
 }
