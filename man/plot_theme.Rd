@@ -33,7 +33,7 @@ either a plotly object, ggplot object or a data frame depending on \code{kind}.
 plot survey theme result
 }
 \details{
-See \verb{Create survey figures} article for further examples.
+See \code{vignette("Create-survey-figures", package = "OMESurvey")} article for further examples.
 }
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
