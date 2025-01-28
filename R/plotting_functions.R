@@ -20,7 +20,9 @@
 #'
 #'
 #' @details
-#' See `Create survey figures` article for further examples.
+#' See \code{vignette("Create-survey-figures", package = "OMESurvey")} article for further examples.
+#'
+#'
 plot_theme <- function(data,
                        theme = NA,
                        theme_columns = NA,
