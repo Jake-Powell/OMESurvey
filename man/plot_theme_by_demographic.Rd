@@ -19,9 +19,9 @@ plot_theme_by_demographic(
 
 \item{theme}{A string containing the theme name (with or without "_" as spacing).}
 
-\item{theme_columns}{column index relating to theme}
+\item{theme_columns}{column index relating to theme. This input is overwritten by the columns found by parameter 'theme' if inputte.}
 
-\item{demographic_column}{the index of the demographic column}
+\item{demographic_column}{the index of the demographic column.}
 
 \item{agree_values}{The answers that correspond to agree.}
 
@@ -43,13 +43,16 @@ See \verb{Create survey figures} article for examples.
 # Load in some example survey data.
 data = OMESurvey::survey_example
 
-# Add a school olumnusing the barcode.
+# Add a school column using the barcode.
 school = data$Barcode_ID |> as.character() |>  substr(3, 5)
 data$school = school
 school_column = ncol(data)
 
 # Create the theme by demographic plot.
-OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'ggplot')
+OMESurvey::plot_theme_by_demographic(data,
+theme = 'Theme_1',
+demographic_column = school_column,
+kind = 'ggplot')
 
 \dontshow{\}) # examplesIf}
 }

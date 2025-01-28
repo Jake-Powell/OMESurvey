@@ -7,11 +7,11 @@
 add_logo(p, type = "", position = "bottom right", logo_sizing = c(0.11, 0.2))
 }
 \arguments{
-\item{p}{ggplot object}
+\item{p}{ggplot object.}
 
 \item{type}{Specifies the type on logo. Either 'bw' or 'standard'.}
 
-\item{position}{Specifies the logo position. Either 'top left', 'top right', 'bottom left' or 'bottom right'}
+\item{position}{Specifies the logo position. Either 'top left', 'top right', 'bottom left' or 'bottom right'.}
 
 \item{logo_sizing}{A numeric vector of length 2. The first element defines the amount of vertical spacing the logo uses (default is 11\% of the figure height). The second element defines the logo width (min 0, max 1 default is 0.2)}
 }

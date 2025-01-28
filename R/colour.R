@@ -1,10 +1,21 @@
 #' get colours for the OME
 #'
-#' @param n the number of colours
-#' @param type either "complementary" or "constrast"
+#' @param n the number of colours.
+#' @param type either "complementary" or "contrast".
 #'
-#' @return a vector of colours
+#' @return a vector of colours.
 #' @export
+#'
+#' @examplesIf FALSE
+#' get_OME_colours(3) |> scales::show_col()
+#' get_OME_colours(3, type = 'contrast') |> scales::show_col()
+#' get_OME_colours(10, type = 'contrast') |> scales::show_col()
+#'
+#' @details
+#' OME complementary colours = c("#10263A","#009BC2", "#37B4B0").
+#' OME contrast colours = c("#009BC2", "#10263A", '#d7386b').
+#'
+#' If more than 3 colours are specified we interpolate the colours using `grDevices::colorRampPalette()`.
 #'
 get_OME_colours <- function(n, type = 'complementary'){
   OME_colours = c("#10263A","#009BC2", "#37B4B0")

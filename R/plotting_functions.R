@@ -3,10 +3,10 @@
 #'
 #' @param data survey data
 #' @param theme A string containing the theme name (with or without "_" as spacing).
-#' @param theme_columns column index relating to theme
+#' @param theme_columns column index relating to theme. This input is overwritten by the columns found by parameter 'theme' if inputte.
 #' @param kind what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "data.frame".
 #' @param rm99 Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.
-#' @param survey_values survey_values
+#' @param survey_values A list of survey answer types and their allowble values. Default is OMESurvey::survey_values.
 #'
 #' @return either a plotly object, ggplot object or a data frame depending on `kind`.
 #' @export
@@ -137,7 +137,7 @@ plot_theme <- function(data,
 #' Plot survey theme result by demographic
 #'
 #' @inheritParams plot_theme
-#' @param demographic_column the index of the demographic column
+#' @param demographic_column the index of the demographic column.
 #' @param agree_values The answers that correspond to agree.
 #'
 #' @return either a plotly object, ggplot object or a data frame depending on `kind`.
@@ -147,13 +147,16 @@ plot_theme <- function(data,
 #' # Load in some example survey data.
 #' data = OMESurvey::survey_example
 #'
-#' # Add a school olumnusing the barcode.
+#' # Add a school column using the barcode.
 #' school = data$Barcode_ID |> as.character() |>  substr(3, 5)
 #' data$school = school
 #' school_column = ncol(data)
 #'
 #' # Create the theme by demographic plot.
-#' OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'ggplot')
+#' OMESurvey::plot_theme_by_demographic(data,
+#' theme = 'Theme_1',
+#' demographic_column = school_column,
+#' kind = 'ggplot')
 #'
 #'
 #' @details
@@ -273,9 +276,9 @@ plot_theme_by_demographic <- function(data,
 
 #' Add OME logo to a ggplot object
 #'
-#' @param p ggplot object
+#' @param p ggplot object.
 #' @param type Specifies the type on logo. Either 'bw' or 'standard'.
-#' @param position Specifies the logo position. Either 'top left', 'top right', 'bottom left' or 'bottom right'
+#' @param position Specifies the logo position. Either 'top left', 'top right', 'bottom left' or 'bottom right'.
 #' @param logo_sizing A numeric vector of length 2. The first element defines the amount of vertical spacing the logo uses (default is 11% of the figure height). The second element defines the logo width (min 0, max 1 default is 0.2)
 #'
 #' @return original plot with the logo added.

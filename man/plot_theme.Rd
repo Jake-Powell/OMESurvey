@@ -18,13 +18,13 @@ plot_theme(
 
 \item{theme}{A string containing the theme name (with or without "_" as spacing).}
 
-\item{theme_columns}{column index relating to theme}
+\item{theme_columns}{column index relating to theme. This input is overwritten by the columns found by parameter 'theme' if inputte.}
 
 \item{kind}{what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "data.frame".}
 
 \item{rm99}{Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.}
 
-\item{survey_values}{survey_values}
+\item{survey_values}{A list of survey answer types and their allowble values. Default is OMESurvey::survey_values.}
 }
 \value{
 either a plotly object, ggplot object or a data frame depending on \code{kind}.
