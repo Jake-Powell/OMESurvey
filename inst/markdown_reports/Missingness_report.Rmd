@@ -1,6 +1,7 @@
 ---
 title: "Missingness"
 output: html_document
+always_allow_html: yes
 ---
 
 ###### {-} 
@@ -13,6 +14,9 @@ library(here)
 library(flextable)
 library(ggrepel)
 library(downloadthis)
+library(DT)
+library(webshot)
+if(is.null(webshot:::find_phantom())){webshot::install_phantomjs()}
 
 interactive_colour <- function(n){
   color = c('#f46d43', "#FDAE6B", '#848484', '#e6e6e6')
@@ -125,8 +129,14 @@ no_participants = nrow(survey_data)
 questions_data = survey_data[,questions_index] |> as.data.frame()
 missing_questions_by_student = apply(survey_data[,questions_index],1,function(x){sum(is.na(x))})
 complete_missing = which(missing_questions_by_student == no_questions)
+complete_miss_percent = (length(complete_missing)/no_participants*100) |> round(digits = 2)
 
-missing_info = rep('Unknown reason', length(complete_missing))
+if(length(complete_missing) == 0){
+  do_missing_table = FALSE
+}else{
+  do_missing_table = TRUE
+  
+  missing_info = rep('Unknown reason', length(complete_missing))
 missing_info[!is.na(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing])] = survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing][!is.na(survey_data$Tick_Appropriate_Box_Only_if_the_Child_did_not_take_the_Test[complete_missing])]
 if('First_Name' %in% names(survey_data)){
   missing_info[is.na(survey_data[['First_Name']][complete_missing])] = 'Blank record'
@@ -136,7 +146,6 @@ names(missing_table) = c('Reason', 'Number of participants')
 
 IDs_missing_no_reason = survey_data$Barcode_ID[complete_missing[missing_info == 'Unknown reason']]
 
-complete_miss_percent = (length(complete_missing)/no_participants*100) |> round(digits = 2)
 
 blanks = sum(missing_info == 'Blank record')
 miss_true = ((length(complete_missing) - blanks)/(no_participants-blanks)*100) |> round(digits = 2)
@@ -147,12 +156,15 @@ missing_table_true$percent = (missing_table_true$Freq/sum(missing_table_true$Fre
 missing_table_true$percentb = (missing_table_true$Freq/(no_participants-blanks)*100) |> round(2)
 
 names(missing_table_true) = c('Reason', 'Number of participants', '% of empty', '% of participants')
+}
+
 ```
 
-In this section we look for surveys in the study where no question has been answered. This is true for `r complete_miss_percent`% (`r length(complete_missing)`/`r no_participants`) of records in the survey dataset. Below we group these records into absence/consent reasons and blank records.
+In this section we look for surveys in the study where no question has been answered. This is true for `r complete_miss_percent`% (`r length(complete_missing)`/`r no_participants`) of records in the survey dataset. `r if(do_missing_table){print("Below we group these records into absence/consent reasons and blank records.")}`
 
-```{r, missing table}
-missing_table |>  DT::datatable(extensions = 'Buttons',
+```{r, missing table, eval = do_missing_table}
+if(report_kind == 'interactive'){
+  missing_table |>  DT::datatable(extensions = 'Buttons',
                   rownames = FALSE,
                   options = list(scrollX = TRUE,
                                  pageLength = min(nrow(missing_table), 10),
@@ -160,16 +172,19 @@ missing_table |>  DT::datatable(extensions = 'Buttons',
                                  buttons = c('copy', 'csv', 'excel', 'pdf'),
                                  paging=F,
                                  ordering=F))
+}else{
+  missing_table |> DT::datatable(rownames = FALSE)
+}
+
 ```
 
-Note that we define a blank record to be one where the first name field is blank and the other reasons (excluding unknown) is provided by the absence/consent information from the beginning of the survey. These are potentially when the participant was present but chose not to complete the survey, their IDs are outline below. 
+`r if(do_missing_table){"Note that we define a blank record to be one where the first name field is blank and the other reasons (excluding unknown) is provided by the absence/consent information from the beginning of the survey. These are potentially when the participant was present but chose not to complete the survey, their IDs are outline below."}`
 
-DT
-The blank records do not represent actual participants therefore we will remove them from the exploration going forward. With these removed only **`r miss_true`% (`r length(complete_missing)-blanks`/`r no_participants-blanks`)** participants do not answer any of the questions.
+`r if(do_missing_table){paste0("The blank records do not represent actual participants therefore we will remove them from the exploration going forward. With these removed only **",length(complete_missing)-blanks,'/', no_participants-blanks, '** participants do not answer any of the questions.' )}`
 
-Therefore, the reason for empty records (with percentages) are outlined below.
+`r if(do_missing_table){"Therefore, the reason for empty records (with percentages) are outlined below."}`
 
-```{r, missing table 2}
+```{r, missing table 2, eval = do_missing_table}
 missing_table_true |>  DT::datatable(extensions = 'Buttons',
                   rownames = FALSE,
                   options = list(scrollX = TRUE,
@@ -283,7 +298,7 @@ fig <- plot_ly(missing_questions_df, x = ~question_number, y = ~participants, ty
 
 In this section we look at the proportion of missingness by participant.
 
-Note that in this section we remove responses where no questions were answered, and participants that do not consent (`r no_participate_but_answers` answered the survey but do not consent).
+Note that in this section we remove responses where no questions were answered, and participants that do not consent (`r length(no_participate_but_answers)` answered the survey but do not consent).
 
 Begin by grouping the participants by the number of questions they missed.
 

@@ -17,6 +17,7 @@ Imports:
     openxlsx,
     plotly,
     png,
+    scales,
     stringr
 Suggests: 
     DT,

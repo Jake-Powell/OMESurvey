@@ -22,7 +22,7 @@ create_missingness_report(
 
 \item{participant_ID}{column name of the column in \code{survey_data} corresponding to the participant ID.}
 
-\item{report_kind}{Either 'interactive'(.html) or 'static'(.docx) for the report type}
+\item{report_kind}{Either 'interactive'(.html) or 'static'(.docx)}
 
 \item{demographic_columns}{column names (or indices) of the columns in \code{survey_data} corresponding to demographic columns. These will be used to compare missingness across the demographics.}
 
@@ -30,11 +30,56 @@ create_missingness_report(
 
 \item{output_file}{the filename of the output. If \code{NULL} we use paste0(survey_name, '_missingness_report', "extension") as the filename.}
 
-\item{reference_docx}{Path to a .docx file whose style (design) the report copies.}
+\item{reference_docx}{Path to a .docx file whose style (design) the report copies}
 }
 \value{
 html/word report
 }
 \description{
 Create a report on the missingness of entries in a survey.
+}
+\details{
+Note that currently if report_kind = 'static', then the tables and plots are screenshots of the interactive plots (using the webshot package). Moreover, chromote version 0.4.0 is needed to avoid rendering issues.
+}
+\examples{
+\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+data = OMESurvey::survey_example
+
+# Run with no missingness.
+OMESurvey::create_missingness_report(survey_data = data,
+                                     survey_name = 'example data',
+                                     participant_ID = "Barcode_ID",
+                                     report_kind = "interactive",
+                                     demographic_columns = NULL,
+                                     output_dir = NULL,
+                                     output_file = NULL,
+                                     reference_docx = NULL)
+
+# Convert 'N-A' to NA, to imply missing
+for(i in 1:ncol(data)){
+  data[,i][data[,i] == 'N-A'] = NA
+}
+
+# Run with missingness.
+OMESurvey::create_missingness_report(survey_data = data,
+                                     survey_name = 'example data',
+                                     report_kind = "interactive")
+# Knit to word.
+OMESurvey::create_missingness_report(survey_data = data,
+                                     survey_name = 'example data',
+                                     report_kind = "static",
+                                     output_file = 'example_word.docx',
+                                     output_dir = '/Users/jakepowell/OME/')
+
+# Knit to word with styling. (using example template from within the OMESurvey package)
+OMESurvey::create_missingness_report(survey_data = data,
+                                     survey_name = 'example data',
+                                     participant_ID = "Barcode_ID",
+                                     report_kind = "static",
+                                     reference_docx = paste0(
+                                     system.file(package = "OMESurvey"), "/template.docx"
+                                     ),
+                                     output_file = 'example_word_styled.docx',
+                                     output_dir = '/Users/jakepowell/OME/')
+\dontshow{\}) # examplesIf}
 }
