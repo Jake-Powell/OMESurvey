@@ -9,7 +9,7 @@ get_OME_colours(n, type = "complementary")
 \arguments{
 \item{n}{the number of colours.}
 
-\item{type}{either "complementary" or "contrast".}
+\item{type}{either "complementary",  "contrast" or "distinct".}
 }
 \value{
 a vector of colours.

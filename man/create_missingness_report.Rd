@@ -68,8 +68,7 @@ OMESurvey::create_missingness_report(survey_data = data,
 OMESurvey::create_missingness_report(survey_data = data,
                                      survey_name = 'example data',
                                      report_kind = "static",
-                                     output_file = 'example_word.docx',
-                                     output_dir = '/Users/jakepowell/OME/')
+                                     output_file = 'example_word.docx')
 
 # Knit to word with styling. (using example template from within the OMESurvey package)
 OMESurvey::create_missingness_report(survey_data = data,
@@ -79,7 +78,6 @@ OMESurvey::create_missingness_report(survey_data = data,
                                      reference_docx = paste0(
                                      system.file(package = "OMESurvey"), "/template.docx"
                                      ),
-                                     output_file = 'example_word_styled.docx',
-                                     output_dir = '/Users/jakepowell/OME/')
+                                     output_file = 'example_word_styled.docx')
 \dontshow{\}) # examplesIf}
 }
