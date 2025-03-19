@@ -52,8 +52,9 @@ plot_theme <- function(data,
   ##########
   freq_tables = lapply(1:ncol(data), function(index){
     d = data[,index] |> table() |> data.frame()
-    d = data.frame(rep(questions[index], nrow(d)), d)
+    d = data.frame(a=rep(questions[index], nrow(d)), d)
     d$percent = d$Freq / sum(d$Freq) *100
+    names(d) = c(letters[1:4])
     d
   })
   data_format = do.call(rbind, freq_tables)
