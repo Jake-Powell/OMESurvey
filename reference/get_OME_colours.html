@@ -43,7 +43,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_OME_colours</span><span class="op">(</span><span class="va">n</span>, type <span class="op">=</span> <span class="st">"complementary"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_OME_colours</span><span class="op">(</span><span class="va">n</span>, type <span class="op">=</span> <span class="st">"contrast"</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -55,7 +55,7 @@
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>either "complementary",  "contrast" or "distinct".</p></dd>
+<dd><p>either "complementary",  "contrast" or "distinct" or "distinct".</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -64,9 +64,11 @@
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>OME complementary colours = c("#10263A","#009BC2", "#37B4B0").
-OME contrast colours = c("#009BC2", "#10263A", '#d7386b').</p>
-<p>If more than 3 colours are specified we interpolate the colours using <code><a href="https://rdrr.io/r/grDevices/colorRamp.html" class="external-link">grDevices::colorRampPalette()</a></code>.</p>
+    <p>Base colours for palettes:</p><ul><li><p>OME complementary colours = c("#10263A","#009BC2", "#37B4B0").</p></li>
+<li><p>OME contrast colours = c("#009BC2", "#10263A", '#d7386b').</p></li>
+<li><p>OME distinct colours = c("#009BC1",'#DEB406', '#D7336C', '#10263B')</p></li>
+</ul><p>If more than the designated colours are specified we interpolate the colours using <code><a href="https://rdrr.io/r/grDevices/colorRamp.html" class="external-link">grDevices::colorRampPalette()</a></code>.</p>
+<p>For "distinct2", when 4&lt; n &lt;=10 we force the distinct colours to appear in the provided colours. This is done by going to a palette with those colours (n=7 or 10) and working back by removing interpolated colours.</p>
     </div>
 
     <div class="section level2">
