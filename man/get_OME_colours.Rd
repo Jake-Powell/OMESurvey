@@ -4,12 +4,12 @@
 \alias{get_OME_colours}
 \title{get colours for the OME}
 \usage{
-get_OME_colours(n, type = "complementary")
+get_OME_colours(n, type = "contrast")
 }
 \arguments{
 \item{n}{the number of colours.}
 
-\item{type}{either "complementary",  "contrast" or "distinct".}
+\item{type}{either "complementary",  "contrast" or "distinct" or "distinct".}
 }
 \value{
 a vector of colours.
@@ -18,10 +18,16 @@ a vector of colours.
 get colours for the OME
 }
 \details{
-OME complementary colours = c("#10263A","#009BC2", "#37B4B0").
-OME contrast colours = c("#009BC2", "#10263A", '#d7386b').
+Base colours for palettes:
+\itemize{
+\item OME complementary colours = c("#10263A","#009BC2", "#37B4B0").
+\item OME contrast colours = c("#009BC2", "#10263A", '#d7386b').
+\item OME distinct colours = c("#009BC1",'#DEB406', '#D7336C', '#10263B')
+}
 
-If more than 3 colours are specified we interpolate the colours using \code{grDevices::colorRampPalette()}.
+If more than the designated colours are specified we interpolate the colours using \code{grDevices::colorRampPalette()}.
+
+For "distinct2", when 4< n <=10 we force the distinct colours to appear in the provided colours. This is done by going to a palette with those colours (n=7 or 10) and working back by removing interpolated colours.
 }
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
