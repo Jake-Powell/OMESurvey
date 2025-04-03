@@ -25,7 +25,7 @@ Base colours for palettes:
 \item OME distinct colours = "#009BC1"(Blue/Malaysia Sky Blue),'#DEB406' (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink) and '#10263B' (Dark Navy/Nottingham Blue).
 }
 
-If more than the designated colours are specified we interpolate the colours using \code{grDevices::colorRampPalette()}.
+For 'contrast' and 'distinct' specific colour orderings are chosen for n <= 9, whereas for 'complementary' specific colours selected for n <= 3. If n is larger than we interpolate the palette using grDevices::colorRampPalette().
 }
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}

@@ -51,6 +51,7 @@ get_OME_colours <- function(n, type = 'contrast'){
       colours= rbPal(n)
       return(colours)
     }
+  }
 
 
   if(type == 'distinct'){
