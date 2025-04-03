@@ -67,7 +67,7 @@
     <p>Base colours for palettes:</p><ul><li><p>OME complementary colours = "#10263B" (Dark Navy/Nottingham Blue), "#009BC1" (Blue/Malaysia Sky Blue) and "#37B4B0"(Turquoise/Trent Turquoise).</p></li>
 <li><p>OME contrast colours = "#009BC1" (Blue/Malaysia Sky Blue), "#10263B" (Dark Navy/Nottingham Blue) and '#D7336C' (Pink/Pioneering Pink).</p></li>
 <li><p>OME distinct colours = "#009BC1"(Blue/Malaysia Sky Blue),'#DEB406' (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink) and '#10263B' (Dark Navy/Nottingham Blue).</p></li>
-</ul><p>If more than the designated colours are specified we interpolate the colours using <code><a href="https://rdrr.io/r/grDevices/colorRamp.html" class="external-link">grDevices::colorRampPalette()</a></code>.</p>
+</ul><p>For 'contrast' and 'distinct' specific colour orderings are chosen for n &lt;= 9, whereas for 'complementary' specific colours selected for n &lt;= 3. If n is larger than we interpolate the palette using grDevices::colorRampPalette().</p>
     </div>
 
     <div class="section level2">
