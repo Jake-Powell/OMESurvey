@@ -9,10 +9,10 @@ get_OME_colours(n, type = "contrast")
 \arguments{
 \item{n}{the number of colours.}
 
-\item{type}{either "complementary",  "contrast" or "distinct" or "distinct".}
+\item{type}{either "contrast", "complementary" or "distinct".}
 }
 \value{
-a vector of colours.
+a vector of "n" colours.
 }
 \description{
 get colours for the OME
@@ -20,19 +20,17 @@ get colours for the OME
 \details{
 Base colours for palettes:
 \itemize{
-\item OME complementary colours = c("#10263A","#009BC2", "#37B4B0").
-\item OME contrast colours = c("#009BC2", "#10263A", '#d7386b').
-\item OME distinct colours = c("#009BC1",'#DEB406', '#D7336C', '#10263B')
+\item OME complementary colours = "#10263B" (Dark Navy/Nottingham Blue), "#009BC1" (Blue/Malaysia Sky Blue) and "#37B4B0"(Turquoise/Trent Turquoise).
+\item OME contrast colours = "#009BC1" (Blue/Malaysia Sky Blue), "#10263B" (Dark Navy/Nottingham Blue) and '#D7336C' (Pink/Pioneering Pink).
+\item OME distinct colours = "#009BC1"(Blue/Malaysia Sky Blue),'#DEB406' (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink) and '#10263B' (Dark Navy/Nottingham Blue).
 }
 
 If more than the designated colours are specified we interpolate the colours using \code{grDevices::colorRampPalette()}.
-
-For "distinct2", when 4< n <=10 we force the distinct colours to appear in the provided colours. This is done by going to a palette with those colours (n=7 or 10) and working back by removing interpolated colours.
 }
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 get_OME_colours(3) |> scales::show_col()
-get_OME_colours(3, type = 'contrast') |> scales::show_col()
-get_OME_colours(10, type = 'contrast') |> scales::show_col()
+get_OME_colours(3, type = 'complementary') |> scales::show_col()
+get_OME_colours(9, type = 'distinct') |> scales::show_col()
 \dontshow{\}) # examplesIf}
 }
