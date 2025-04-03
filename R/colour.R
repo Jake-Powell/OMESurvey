@@ -37,7 +37,7 @@ get_OME_colours <- function(n, type = 'contrast'){
   }
 
   if(type == 'contrast'){
-    if(n==1)return("#08607E")
+    if(n==1)return("#047D9F")
     if(n==2)return(c("#047D9F", "#A52F5F"))
     if(n==3)return(c("#047D9F", "#10263B", "#A52F5F"))
     if(n==4)return(c("#047D9F", "#0C435C", "#412947", "#A52F5F"))
@@ -51,7 +51,6 @@ get_OME_colours <- function(n, type = 'contrast'){
       colours= rbPal(n)
       return(colours)
     }
-  }
 
 
   if(type == 'distinct'){
