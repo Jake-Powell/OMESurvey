@@ -7,6 +7,8 @@
 #' @param kind what kind of object we want to be returned. Allowable values are "ggplot", "plotly" or "data.frame".
 #' @param rm99 Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.
 #' @param survey_values A list of survey answer types and their allowble values. Default is OMESurvey::survey_values.
+#' @param do_percent Flag (TRUE/FALSE) for whether we want to show the number of responses (F) or the percentage of responses (T).
+#'
 #'
 #' @return either a plotly object, ggplot object or a data frame depending on `kind`.
 #' @export
@@ -28,7 +30,8 @@ plot_theme <- function(data,
                        theme_columns = NA,
                        kind = 'ggplot',
                        rm99 = TRUE,
-                       survey_values = OMESurvey::survey_values){
+                       survey_values = OMESurvey::survey_values,
+                       do_percent = FALSE){
   if(!is.na(theme)){
     theme_columns = get_theme_columns(data, theme)
   }
@@ -87,7 +90,11 @@ plot_theme <- function(data,
   # 1) Create ggpplot
   ##########
   colo = get_OME_colours(n = length(expected_values), type = 'contrast')
-
+  xaxis_label = 'Number of responses'
+  if(do_percent){
+    data_format$count = data_format$percent
+    xaxis_label = 'Percentage of responses'
+    }
 
   if(kind == 'ggplot'){
     p <- ggplot2::ggplot(data = data_format,
@@ -97,7 +104,7 @@ plot_theme <- function(data,
       ggplot2::scale_fill_manual(values = colo) +
       ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 10)) +
       ggplot2::xlab('') +
-      ggplot2::ylab('Number of responses') +
+      ggplot2::ylab(xaxis_label) +
       ggplot2::coord_flip() +
       ggplot2::theme(legend.title=ggplot2::element_blank())
     return(p)
@@ -123,7 +130,7 @@ plot_theme <- function(data,
                   # showlegend = TRUE,
                   # marker = list(color = ~color)
     ) |>
-      plotly::layout(xaxis = list(title = "Number of responses"),
+      plotly::layout(xaxis = list(title = xaxis_label),
                      yaxis = list(title = ''), barmode = 'stack'
                      # hovermode = 'y unified'
       )

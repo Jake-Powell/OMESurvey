@@ -10,7 +10,8 @@ plot_theme(
   theme_columns = NA,
   kind = "ggplot",
   rm99 = TRUE,
-  survey_values = OMESurvey::survey_values
+  survey_values = OMESurvey::survey_values,
+  do_percent = FALSE
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ plot_theme(
 \item{rm99}{Flag (TRUE/FALSE) for whether we want to set '99' values to NA to suppress multiple values as an option. Default is TRUE.}
 
 \item{survey_values}{A list of survey answer types and their allowble values. Default is OMESurvey::survey_values.}
+
+\item{do_percent}{Flag (TRUE/FALSE) for whether we want to show the number of responses (F) or the percentage of responses (T).}
 }
 \value{
 either a plotly object, ggplot object or a data frame depending on \code{kind}.
