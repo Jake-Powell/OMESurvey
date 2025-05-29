@@ -180,3 +180,54 @@ check_IDs <- function(data,
 
 
 }
+
+
+#' Factor survey questions in data
+#'
+#' @param data survey data
+#' @param survey_values a list of allowed grouped survey values. Default is OMESurvey::survey_values.
+#' @param verbose Flag (TRUE/FALSE) for whether to print console messages.
+#'
+#' @return data with factored survey columns
+#' @export
+#'
+#' @examplesIf FALSE
+#' data = OMESurvey::survey_example
+# for(i in 1:ncol(data)){
+#   data[[i]][which(data[[i]] == 'N-A')] = NA
+# }
+# clean = data |> factor_survey_data()
+
+#'
+factor_survey_data <- function(data, survey_values = OMESurvey::survey_values, verbose = T){
+  data = data |> as.data.frame() # Tibbles can be annoying.
+  for(i in 1:ncol(data)){
+    values = data[[i]]
+    unique_values = values |> unique() ; unique_values = unique_values[!is.na(unique_values)]
+
+    best_index = lapply(survey_values, function(x){
+      return(sum(x %in% unique_values))
+    }) |> unlist() |> which.max()
+    expected_values = survey_values[[best_index[1]]]
+    non_expected = unique_values[!unique_values %in% expected_values]
+
+
+    if(length(non_expected) == 0){
+      if(verbose) cli::cli_alert_info(paste0('Variable: `',
+                                             names(data)[i],
+                                             '` is found within question group `',
+                                             names(survey_values)[best_index[1]],
+                                             '` Set to factor.'))
+      data[[i]] = factor(data[[i]], expected_values)
+      next
+    }
+
+    if(verbose) cli::cli_alert_info(paste0('Variable: `',
+                                           names(data)[i],
+                                           '` is not found entirely within a question group. '))
+
+
+  }
+  return(data)
+}
+

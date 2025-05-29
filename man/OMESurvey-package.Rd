@@ -6,6 +6,8 @@
 \alias{OMESurvey-package}
 \title{OMESurvey: Tools for analysing survey data for the Observatory of Mathematical Education}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Tools for analysing survey data.
 }
 \seealso{
