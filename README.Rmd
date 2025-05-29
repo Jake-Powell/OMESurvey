@@ -13,9 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# OMESurvey
-
-<!-- badges: start -->
+# OMESurvey <a href="https://jake-powell.github.io/OMESurvey/"><img src="man/figures/logo.png" align="right" height="139" alt="OMESurvey website" /></a><!-- badges: start -->
 <!-- badges: end -->
 
 📦 The `OMESurvey` package contains tools for analysing survey data for the OME, in particular (for now) converting raw survey data into publishable excel workbooks.

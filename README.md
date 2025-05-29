@@ -1,9 +1,8 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# OMESurvey
+# OMESurvey <a href="https://jake-powell.github.io/OMESurvey/"><img src="man/figures/logo.png" align="right" height="139" alt="OMESurvey website" /></a><!-- badges: start -->
 
-<!-- badges: start -->
 <!-- badges: end -->
 
 📦 The `OMESurvey` package contains tools for analysing survey data for
@@ -29,6 +28,10 @@ library(OMESurvey)
 data = OMESurvey::survey_example
 
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+#> Warning in OMESurvey::plot_theme(data, theme = "Theme_1", kind = "ggplot"): The
+#> expected answers are: "Agree a lot", "Agree a little", "Neither", "Disagree a
+#> little", "Disagree a lot" which does not include the following found in the
+#> data: "N-A"
 ```
 
 <img src="man/figures/README-example-1.png" width="100%" />

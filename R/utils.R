@@ -7,7 +7,7 @@
 get_theme_columns <- function(data, theme){
   theme_columns = NA
   if(!is.na(theme)){
-    theme_columns = grep(theme |> stringr::str_replace_all(' ','_'), names(data))
+    theme_columns = grep(paste0(theme,collapse = '|') |> stringr::str_replace_all(' ','_'), names(data))
   }
   if(is.na(theme_columns[1])){
     stop('Theme is not correctly specified.')
