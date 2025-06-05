@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" sizes="any" href="favicon.ico">
 <link rel="manifest" href="site.webmanifest">
-<script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<script src="lightswitch.js"></script><script src="deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
@@ -24,7 +24,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top " aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">OMESurvey</a>
 
@@ -51,6 +51,14 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-lightswitch" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" aria-label="Light switch"><span class="fa fa-sun"></span></button>
+  <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-lightswitch">
+<li><button class="dropdown-item" data-bs-theme-value="light"><span class="fa fa-sun"></span> Light</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="dark"><span class="fa fa-moon"></span> Dark</button></li>
+    <li><button class="dropdown-item" data-bs-theme-value="auto"><span class="fa fa-adjust"></span> Auto</button></li>
+  </ul>
+</li>
       </ul>
 </div>
 
@@ -65,7 +73,12 @@
 </h1>
 </div>
 <!-- badges: end -->
-<p>📦 The <code>OMESurvey</code> package contains tools for analysing survey data for the OME, in particular (for now) converting raw survey data into publishable excel workbooks.</p>
+<p>📦 The <code>OMESurvey</code> package contains tools for pre-processing and analysing survey data for the OME. in particular:</p>
+<ul>
+<li>converting raw survey data into publishable excel workbooks,</li>
+<li>pre-processing helpers,</li>
+<li>plotting functions.</li>
+</ul>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -77,7 +90,9 @@
 <div class="section level2">
 <h2 id="examples">Examples<a class="anchor" aria-label="anchor" href="#examples"></a>
 </h2>
-<p>Creating survey results for a given theme</p>
+<div class="section level3">
+<h3 id="plotting-survey-result">Plotting survey result<a class="anchor" aria-label="anchor" href="#plotting-survey-result"></a>
+</h3>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jake-powell.github.io/OMESurvey/">OMESurvey</a></span><span class="op">)</span></span>
 <span><span class="va">data</span> <span class="op">=</span> <span class="fu">OMESurvey</span><span class="fu">::</span><span class="va"><a href="reference/survey_example.html">survey_example</a></span></span>
@@ -88,6 +103,75 @@
 <span><span class="co">#&gt; little", "Disagree a lot" which does not include the following found in the</span></span>
 <span><span class="co">#&gt; data: "N-A"</span></span></code></pre></div>
 <p><img src="reference/figures/README-example-1.png" width="100%"></p>
+</div>
+<div class="section level3">
+<h3 id="checking-for-issues-in-a-survey">Checking for issues in a survey<a class="anchor" aria-label="anchor" href="#checking-for-issues-in-a-survey"></a>
+</h3>
+<p>Use <code><a href="reference/check_question_columns.html">check_survey()</a></code> to search for unexpected responses (for non free text), issues with the barcode and locations of questions with multiple answers (“99”)</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">check</span> <span class="op">=</span> <span class="fu">OMESurvey</span><span class="fu">::</span><span class="va"><a href="reference/survey_example.html">survey_example</a></span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu">convert_NA</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu"><a href="reference/check_question_columns.html">check_survey</a></span><span class="op">(</span><span class="op">)</span></span>
+<span><span class="va">check</span></span>
+<span><span class="co">#&gt; $barcode</span></span>
+<span><span class="co">#&gt; $barcode$isIssue</span></span>
+<span><span class="co">#&gt; [1] FALSE</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $barcode$issues</span></span>
+<span><span class="co">#&gt; NULL</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $question_text</span></span>
+<span><span class="co">#&gt; $question_text$isIssue</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $question_text$issues</span></span>
+<span><span class="co">#&gt;                question Unexpected.value Count  Indices</span></span>
+<span><span class="co">#&gt; 5  Theme_3__Question_21          Neither     2 187, 352</span></span>
+<span><span class="co">#&gt; 7  Theme_3__Question_22     Almost Never     1        3</span></span>
+<span><span class="co">#&gt; 11 Theme_5__Question_41   DIsagree a lot     1      252</span></span>
+<span><span class="co">#&gt;                                                                          expected</span></span>
+<span><span class="co">#&gt; 5  Almost always, Most of the time, Half the time, Some of the time, Almost never</span></span>
+<span><span class="co">#&gt; 7  Almost always, Most of the time, Half the time, Some of the time, Almost never</span></span>
+<span><span class="co">#&gt; 11        Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $multiple_answers</span></span>
+<span><span class="co">#&gt; $multiple_answers$isIssue</span></span>
+<span><span class="co">#&gt; [1] TRUE</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $multiple_answers$issues</span></span>
+<span><span class="co">#&gt;                question Unexpected.value Count       Indices</span></span>
+<span><span class="co">#&gt; 1   Theme_1__Question_3               99     1           344</span></span>
+<span><span class="co">#&gt; 2   Theme_1__Question_4               99     3 240, 251, 402</span></span>
+<span><span class="co">#&gt; 3   Theme_2__Question_9               99     2      241, 260</span></span>
+<span><span class="co">#&gt; 4  Theme_3__Question_20               99     1            56</span></span>
+<span><span class="co">#&gt; 6  Theme_3__Question_21               99     1           387</span></span>
+<span><span class="co">#&gt; 8  Theme_5__Question_32               99     2      272, 480</span></span>
+<span><span class="co">#&gt; 9  Theme_5__Question_35               99     2      154, 177</span></span>
+<span><span class="co">#&gt; 10 Theme_5__Question_37               99     1            21</span></span>
+<span><span class="co">#&gt; 12 Theme_6__Question_44               99     2      278, 317</span></span>
+<span><span class="co">#&gt; 13 Theme_7__Question_52               99     3  26, 128, 335</span></span>
+<span><span class="co">#&gt; 14 Theme_8__Question_56               99     1           369</span></span>
+<span><span class="co">#&gt;                                                                          expected</span></span>
+<span><span class="co">#&gt; 1         Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 2         Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 3         Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 4  Almost always, Most of the time, Half the time, Some of the time, Almost never</span></span>
+<span><span class="co">#&gt; 6  Almost always, Most of the time, Half the time, Some of the time, Almost never</span></span>
+<span><span class="co">#&gt; 8         Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 9         Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 10        Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 12        Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 13        Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; 14        Agree a lot, Agree a little, Neither, Disagree a little, Disagree a lot</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; $multiple_answers$barcodes</span></span>
+<span><span class="co">#&gt;  [1] 1200700304 1200700360 1200700413 1200700392 1200700402 1200700410</span></span>
+<span><span class="co">#&gt;  [7] 1200800516 1200700389 1200700423 1200900701 1200800572 1200800585</span></span>
+<span><span class="co">#&gt; [13] 1200800456 1201000757 1201000896 1200800469 1200800497 1201000908</span></span>
+<span><span class="co">#&gt; [19] 1200700320</span></span></code></pre></div>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">
