@@ -31,3 +31,4 @@ reference:
   - get_theme_and_questions
   - create_initial_analysis_report
   - get_OME_colours
+  - convert_NA
