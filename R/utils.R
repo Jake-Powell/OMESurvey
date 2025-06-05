@@ -41,3 +41,25 @@ get_theme_and_questions <- function(theme_and_questions){
     stringr::str_replace_all('_', ' ')
   return(list(theme = theme, questions = questions))
 }
+
+
+#' Convert "N-A" to NA across a data frame
+#'
+#' @param data a data frame
+#'
+#' @export
+#'
+#' @details
+#' Loops over all columns and changes "N-A" to NA.
+#'
+#'
+#' @examplesIf FALSE
+#' OMESurvey::survey_example |> convert_NA()
+#'
+#'
+convert_NA <- function(data){
+  for(i in 1:ncol(data)){
+    data[[i]][data[[i]] == 'N-A'] = NA
+  }
+  data
+}

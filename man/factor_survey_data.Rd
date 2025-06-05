@@ -22,5 +22,9 @@ Factor survey questions in data
 \examples{
 \dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
 data = OMESurvey::survey_example
+for(i in 1:ncol(data)){
+  data[[i]][which(data[[i]] == 'N-A')] = NA
+}
+clean = data |> factor_survey_data()
 \dontshow{\}) # examplesIf}
 }

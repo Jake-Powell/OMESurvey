@@ -16,7 +16,11 @@ knitr::opts_chunk$set(
 # OMESurvey <a href="https://jake-powell.github.io/OMESurvey/"><img src="man/figures/logo.png" align="right" height="139" alt="OMESurvey website" /></a><!-- badges: start -->
 <!-- badges: end -->
 
-📦 The `OMESurvey` package contains tools for analysing survey data for the OME, in particular (for now) converting raw survey data into publishable excel workbooks.
+📦 The `OMESurvey` package contains tools for pre-processing and analysing survey data for the OME.  in particular:
+
+- converting raw survey data into publishable excel workbooks,
+- pre-processing helpers,
+- plotting functions.
 
 ## Installation
 
@@ -29,11 +33,22 @@ devtools::install_github("Jake-Powell/OMESurvey")
 
 ## Examples
 
-Creating survey results for a given theme
+### Plotting survey result
 
 ```{r example}
 library(OMESurvey)
 data = OMESurvey::survey_example
 
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
+```
+
+### Checking for issues in a survey
+
+Use `check_survey()` to search for unexpected responses (for non free text), issues with the barcode and locations of questions with multiple answers ("99")
+
+```{r}
+check = OMESurvey::survey_example |>
+  OMESurvey::convert_NA() |>
+  OMESurvey::check_survey()
+check
 ```

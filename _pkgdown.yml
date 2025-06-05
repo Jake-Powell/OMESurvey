@@ -1,4 +1,33 @@
 url: https://jake-powell.github.io/OMESurvey/
 template:
   bootstrap: 5
+  light-switch: true
 
+reference:
+- title: Pre processing helpers
+  contents:
+  - factor_survey_data
+  - check_question_columns
+  - create_missingness_report
+
+- title: Formatted excel survey output
+  contents:
+  - add_TOC_sheet
+  - to_sheet_single_survey_question
+  - to_sheet_theme_summary
+
+- title: plotting functions
+  contents:
+  - plot_theme_by_demographic
+  - plot_theme
+  - plot_bar
+  - add_logo
+
+- title: Misc
+  contents:
+  - survey_values
+  - survey_example
+  - get_theme_columns
+  - get_theme_and_questions
+  - create_initial_analysis_report
+  - get_OME_colours

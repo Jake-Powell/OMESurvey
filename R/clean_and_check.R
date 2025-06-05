@@ -193,11 +193,10 @@ check_IDs <- function(data,
 #'
 #' @examplesIf FALSE
 #' data = OMESurvey::survey_example
-# for(i in 1:ncol(data)){
-#   data[[i]][which(data[[i]] == 'N-A')] = NA
-# }
-# clean = data |> factor_survey_data()
-
+#' for(i in 1:ncol(data)){
+#'   data[[i]][which(data[[i]] == 'N-A')] = NA
+#' }
+#' clean = data |> factor_survey_data()
 #'
 factor_survey_data <- function(data, survey_values = OMESurvey::survey_values, verbose = T){
   data = data |> as.data.frame() # Tibbles can be annoying.
