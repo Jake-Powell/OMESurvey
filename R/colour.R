@@ -47,7 +47,7 @@ get_OME_colours <- function(n, type = 'contrast'){
     if(n==8)return(c("#009BC1", "#047D9F", "#08607E", "#0C435C", "#412947", "#732C53", "#A52F5F", "#D7336C"))
     if(n==9)return(c("#009BC1", "#047D9F", "#08607E", "#0C435C", "#10263B", "#412947", "#732C53", "#A52F5F", "#D7336C"))
     if(n > 9){
-      rbPal = grDevices::colorRampPalette(contrast)
+      rbPal = grDevices::colorRampPalette(OME_contrast)
       colours= rbPal(n)
       return(colours)
     }
