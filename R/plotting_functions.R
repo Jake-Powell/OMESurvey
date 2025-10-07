@@ -476,3 +476,66 @@ plot_bar <- function(data,
   }
 
 }
+
+
+
+
+#' ROME ggplot2 theme
+#'
+#' A clean, minimal theme based on \code{ggplot2::theme_bw()} with
+#' custom title, subtitle, legend, strip, and axis styling.
+#'
+#' @param base_size Numeric. Base font size for the theme. Defaults to 16.
+#'
+#' @return A \code{ggplot2} theme object that can be added to a ggplot with \code{+}.
+#'
+#' @examplesIf FALSE
+#'
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   p <- ggplot2::ggplot(mtcars, ggplot2::aes(x = factor(cyl))) +
+#'     ggplot2::geom_bar() +
+#'     ggplot2::labs(title = "ROME theme demo")
+#'
+#'   # Add the theme to a single plot:
+#'   p + ROME_ggtheme()
+#'
+#'   # Set as the global default for this session:
+#'   ggplot2::theme_set(ROME_ggtheme())
+#' }
+#'
+#' @seealso [ggplot2::theme_bw()], [ggplot2::theme_set()], [ggplot2::theme_update()]
+#' @export
+#' @keywords theme ggplot2
+#' @importFrom ggplot2 %+replace%
+ROME_ggtheme <- function(base_size = 16) {
+  ggplot2::theme_bw(base_size = base_size) %+replace%
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(
+        size = ggplot2::rel(1), face = "bold",
+        margin = ggplot2::margin(0, 0, 5, 0), hjust = 0, color = "black"
+      ),
+      plot.subtitle = ggplot2::element_text(
+        size = ggplot2::rel(0.7), hjust = -0.12, face = "plain", color = "black"
+      ),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.border = ggplot2::element_blank(),
+      axis.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
+      axis.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      axis.line  = ggplot2::element_line(color = "gray"),
+      legend.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
+      legend.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      legend.key   = ggplot2::element_rect(fill = "transparent", colour = NA),
+      legend.key.size = grid::unit(1.5, "lines"),
+      legend.position  = "bottom",
+      legend.box       = "horizontal",
+      legend.direction = "horizontal",
+      legend.background = ggplot2::element_rect(fill = "transparent", colour = NA),
+      strip.background = ggplot2::element_rect(fill = "#17252D", color = "#17252D"),
+      strip.text = ggplot2::element_text(
+        size = ggplot2::rel(0.85), face = "plain", color = "white",
+        margin = ggplot2::margin(5, 0, 5, 0)
+      )
+    )
+}
+
