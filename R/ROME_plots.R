@@ -7,11 +7,17 @@
 #' function computes and attaches recommended figure dimensions (in inches) that
 #' you can pass to \code{\link[ggplot2:ggsave]{ggplot2::ggsave()}}.
 #'
+#' @section Important:
+#' The **top-to-bottom order of questions follows the order of `columns`** you
+#' pass in. Internally the function fixes factor levels (with \code{coord_flip()})
+#' so the visual order matches the supplied \code{columns}.
+#'
 #' @param data A data frame where each selected column is a survey question and
 #'   values are categorical responses (character or factor). \code{NA}s are treated
 #'   as non-responses and excluded from the per-question \code{N}.
 #' @param columns Character or integer vector selecting the question columns;
-#'   default \code{NA} uses all columns in \code{data}.
+#'   **order matters** (bars appear top→bottom in this order). Default \code{NA}
+#'   uses all columns in \code{data}.
 #' @param ordering Optional character vector giving the desired response order
 #'   from most-positive to most-negative. Controls bar stacking and legend order
 #'   (legend display is reversed so the first level appears on the left of the bar).
@@ -25,6 +31,8 @@
 #' @param per_question_in,base_height_in,legend_allowance_in,width_in Sizing
 #'   controls (in inches) used to compute recommended figure dimensions stored
 #'   in the returned object (see “Value”).
+#' @param y_label_wrap_width Integer; approximate wrap width (characters) for
+#'   question text on the y axis.
 #' @param legend_wrap_chars Rough character budget per legend row; used to choose
 #'   \code{guide_legend(nrow = ...)} so long legends wrap cleanly.
 #' @param right_margin_min_pt Minimum right plot margin (points) to reserve space
@@ -44,7 +52,8 @@
 #' 0/25/50/75/100. Axis ticks and axis lines are suppressed. The legend is placed
 #' at the bottom, left-aligned, and can wrap into multiple rows according to
 #' \code{legend_wrap_chars}. Per-question \code{N} (excluding \code{NA}) is printed
-#' at the right edge of each bar.
+#' at the right edge of each bar. Colours are drawn from \code{get_OME_colours()}
+#' for the number of observed response levels.
 #'
 #' Note: this function uses theme settings such as \code{legend.location = "plot"}
 #' (honored by \pkg{ggplot2} \code{>= 3.5.0}); on earlier versions that setting is
@@ -72,11 +81,15 @@
 #'     `Is Jake the person who most inspires you?` = make_col()
 #'   )
 #'
+#'   # The order of 'columns' controls the top->bottom order in the chart:
+#'   cols <- names(df)  # e.g., c("Is Jake lovely?", "Is Jake wonderful?", ...)
+#'
 #'   p <- plot_ROME_survey_questions(
 #'     df,
-#'     columns = names(df),
+#'     columns = cols,
 #'     ordering = lvls,
-#'     percentage_cutoff = 10
+#'     percentage_cutoff = 10,
+#'     y_label_wrap_width = 40
 #'   )
 #'   print(p)
 #'
@@ -102,6 +115,7 @@ plot_ROME_survey_questions <- function(data,
                                        base_height_in = 0.8,         # top/bottom allowance
                                        legend_allowance_in = 0.6,    # extra space for bottom legend
                                        width_in = 8,                  # suggested width
+                                       y_label_wrap_width = 40,
                                        # --- legend controls ---
                                        legend_wrap_chars = 80,        # ~chars per row before wrapping
                                        right_margin_min_pt = 24       # minimum right margin for N labels
@@ -122,6 +136,11 @@ plot_ROME_survey_questions <- function(data,
   })
   data_format <- do.call(rbind, freq_tables)
   names(data_format) <- c("question", "answer", "count", "percent")
+
+  # --- ORDERING FIX: lock top-to-bottom y-axis order to the 'columns' order ---
+  # coord_flip() draws factor levels from bottom->top, so use rev(questions)
+  # to make the visual order top->bottom match the given 'columns' order.
+  data_format$question <- factor(data_format$question, levels = rev(questions))
 
   if (!is.na(ordering[1])) {
     data_format$answer <- factor(as.character(data_format$answer),
@@ -144,6 +163,8 @@ plot_ROME_survey_questions <- function(data,
     n_label = paste0("(", scales::comma(N_per_question), ")"),
     stringsAsFactors = FALSE
   )
+  # Keep N labels on the same discrete scale/order as bars
+  n_df$question <- factor(n_df$question, levels = levels(data_format$question))
 
   # Axis: labels only at 0/25/50/75/100, gridlines every 5%
   quartiles <- c(0, 25, 50, 75, 100)
@@ -162,7 +183,7 @@ plot_ROME_survey_questions <- function(data,
 
   # --- Dynamic right margin (pts) based on longest "(12,345)" label ---
   max_n_chars <- max(nchar(n_df$n_label))
-  # ~4.5pt per char as a simple heuristic + a little padding
+  # ~5.5pt per char as a simple heuristic + a little padding
   right_margin_pt <- max(right_margin_min_pt, ceiling(5.5 * max_n_chars) + 6)
 
   p <- ggplot2::ggplot(
@@ -178,7 +199,7 @@ plot_ROME_survey_questions <- function(data,
     ) +
     ROME_ggtheme(18) +
     ggplot2::scale_fill_manual(values = colo, drop = FALSE) +
-    ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 40), drop = FALSE) +
+    ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = y_label_wrap_width), drop = FALSE) +
     ggplot2::scale_y_continuous(
       breaks = seq(0, 100, by = 5),     # gridlines every 5%
       labels = lbl_fun,                  # labels only at quartiles
@@ -228,3 +249,5 @@ plot_ROME_survey_questions <- function(data,
 
   return(p)
 }
+
+

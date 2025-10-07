@@ -15,6 +15,7 @@ plot_ROME_survey_questions(
   base_height_in = 0.8,
   legend_allowance_in = 0.6,
   width_in = 8,
+  y_label_wrap_width = 40,
   legend_wrap_chars = 80,
   right_margin_min_pt = 24
 )
@@ -25,7 +26,8 @@ values are categorical responses (character or factor). \code{NA}s are treated
 as non-responses and excluded from the per-question \code{N}.}
 
 \item{columns}{Character or integer vector selecting the question columns;
-default \code{NA} uses all columns in \code{data}.}
+\strong{order matters} (bars appear top→bottom in this order). Default \code{NA}
+uses all columns in \code{data}.}
 
 \item{ordering}{Optional character vector giving the desired response order
 from most-positive to most-negative. Controls bar stacking and legend order
@@ -44,6 +46,9 @@ values pull it inside the bar.}
 \item{per_question_in, base_height_in, legend_allowance_in, width_in}{Sizing
 controls (in inches) used to compute recommended figure dimensions stored
 in the returned object (see “Value”).}
+
+\item{y_label_wrap_width}{Integer; approximate wrap width (characters) for
+question text on the y axis.}
 
 \item{legend_wrap_chars}{Rough character budget per legend row; used to choose
 \code{guide_legend(nrow = ...)} so long legends wrap cleanly.}
@@ -74,12 +79,20 @@ The percent axis spans 0–100 with major gridlines every 5\\% and labels only a
 0/25/50/75/100. Axis ticks and axis lines are suppressed. The legend is placed
 at the bottom, left-aligned, and can wrap into multiple rows according to
 \code{legend_wrap_chars}. Per-question \code{N} (excluding \code{NA}) is printed
-at the right edge of each bar.
+at the right edge of each bar. Colours are drawn from \code{get_OME_colours()}
+for the number of observed response levels.
 
 Note: this function uses theme settings such as \code{legend.location = "plot"}
 (honored by \pkg{ggplot2} \code{>= 3.5.0}); on earlier versions that setting is
 ignored, but the plot will still render.
 }
+\section{Important}{
+
+The \strong{top-to-bottom order of questions follows the order of \code{columns}} you
+pass in. Internally the function fixes factor levels (with \code{coord_flip()})
+so the visual order matches the supplied \code{columns}.
+}
+
 \examples{
 # Minimal toy example (creates a small survey-like data frame)
 if (requireNamespace("ggplot2", quietly = TRUE)) {
@@ -97,11 +110,15 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
     `Is Jake the person who most inspires you?` = make_col()
   )
 
+  # The order of 'columns' controls the top->bottom order in the chart:
+  cols <- names(df)  # e.g., c("Is Jake lovely?", "Is Jake wonderful?", ...)
+
   p <- plot_ROME_survey_questions(
     df,
-    columns = names(df),
+    columns = cols,
     ordering = lvls,
-    percentage_cutoff = 10
+    percentage_cutoff = 10,
+    y_label_wrap_width = 40
   )
   print(p)
 
