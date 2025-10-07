@@ -9,7 +9,7 @@ plot_ROME_survey_questions(
   columns = NA,
   ordering = NA,
   percentage_cutoff = 10,
-  label_size = 3.5,
+  label_size = 4.5,
   n_label_pad_text = -0.1,
   per_question_in = 0.5,
   base_height_in = 0.8,

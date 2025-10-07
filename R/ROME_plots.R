@@ -95,7 +95,7 @@ plot_ROME_survey_questions <- function(data,
                                        columns = NA,
                                        ordering = NA,
                                        percentage_cutoff = 10,       # % points (0-100)
-                                       label_size = 3.5,             # % labels + N labels
+                                       label_size = 4.5,             # % labels + N labels
                                        n_label_pad_text = -0.1,      # negative nudges N right of 100%
                                        # --- sizing controls (inches) ---
                                        per_question_in = 0.5,        # height per question row
@@ -163,7 +163,7 @@ plot_ROME_survey_questions <- function(data,
   # --- Dynamic right margin (pts) based on longest "(12,345)" label ---
   max_n_chars <- max(nchar(n_df$n_label))
   # ~4.5pt per char as a simple heuristic + a little padding
-  right_margin_pt <- max(right_margin_min_pt, ceiling(4.5 * max_n_chars) + 6)
+  right_margin_pt <- max(right_margin_min_pt, ceiling(5.5 * max_n_chars) + 6)
 
   p <- ggplot2::ggplot(
     data = data_format,
@@ -176,9 +176,9 @@ plot_ROME_survey_questions <- function(data,
       color = "white",
       size = label_size
     ) +
-    ROME_ggtheme() +
+    ROME_ggtheme(18) +
     ggplot2::scale_fill_manual(values = colo, drop = FALSE) +
-    ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 10), drop = FALSE) +
+    ggplot2::scale_x_discrete(labels = function(x) stringr::str_wrap(x, width = 40), drop = FALSE) +
     ggplot2::scale_y_continuous(
       breaks = seq(0, 100, by = 5),     # gridlines every 5%
       labels = lbl_fun,                  # labels only at quartiles
