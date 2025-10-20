@@ -22,6 +22,8 @@ reference:
   - plot_theme
   - plot_bar
   - add_logo
+  - ROME_ggtheme
+  - plot_ROME_survey
 
 - title: Misc
   contents:
