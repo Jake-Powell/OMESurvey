@@ -4,13 +4,16 @@
 <url><loc>https://jake-powell.github.io/OMESurvey/articles/Create-OME-branded-excel-output.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/articles/Create-survey-figures.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/articles/Preparation-and-initial-survey-analysis.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/articles/help.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/articles/index.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/authors.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/index.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/OMESurvey-package.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/ROME_ggtheme.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/add_TOC_sheet.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/add_logo.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/check_question_columns.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/convert_NA.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/create_initial_analysis_report.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/create_missingness_report.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/factor_survey_data.html</loc></url>
@@ -18,6 +21,7 @@
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/get_theme_and_questions.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/get_theme_columns.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/index.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_ROME_survey.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_bar.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_theme.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_theme_by_demographic.html</loc></url>

@@ -43,6 +43,7 @@
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="articles/Create-OME-branded-excel-output.html">Create OME branded excel output</a></li>
     <li><a class="dropdown-item" href="articles/Create-survey-figures.html">Create survey figures</a></li>
+    <li><a class="dropdown-item" href="articles/help.html">help</a></li>
     <li><a class="dropdown-item" href="articles/Preparation-and-initial-survey-analysis.html">Preparation and initial survey analysis</a></li>
   </ul>
 </li>
@@ -110,7 +111,7 @@
 <p>Use <code><a href="reference/check_question_columns.html">check_survey()</a></code> to search for unexpected responses (for non free text), issues with the barcode and locations of questions with multiple answers (“99”)</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">check</span> <span class="op">=</span> <span class="fu">OMESurvey</span><span class="fu">::</span><span class="va"><a href="reference/survey_example.html">survey_example</a></span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu">convert_NA</span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu"><a href="reference/convert_NA.html">convert_NA</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu"><a href="reference/check_question_columns.html">check_survey</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="va">check</span></span>
 <span><span class="co">#&gt; $barcode</span></span>
