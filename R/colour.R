@@ -1,7 +1,7 @@
 #' get colours for the OME
 #'
 #' @param n the number of colours.
-#' @param type either "contrast", "complementary" or "distinct".
+#' @param type either "contrast/divergent", "complementary/sequential" or "distinct/qualitative".
 #'
 #' @return a vector of "n" colours.
 #' @export
@@ -25,7 +25,7 @@ get_OME_colours <- function(n, type = 'contrast'){
   OME_contrast = c("#009BC1", "#10263B", '#D7336C')
   OME_distinct = c("#009BC1",'#DEB406', '#D7336C',  '#10263B')
 
-  if(type %in% c('complementary')){
+  if(type %in% c('complementary','sequential')){
     if(n==1) return(OME_colours[2])
     if(n==2) return(OME_colours[1:2])
     if(n == 3) return(OME_colours)
@@ -36,7 +36,7 @@ get_OME_colours <- function(n, type = 'contrast'){
     }
   }
 
-  if(type == 'contrast'){
+  if(type %in% c('contrast','divergent')){
     if(n==1)return("#047D9F")
     if(n==2)return(c("#047D9F", "#A52F5F"))
     if(n==3)return(c("#047D9F", "#10263B", "#A52F5F"))
@@ -54,7 +54,7 @@ get_OME_colours <- function(n, type = 'contrast'){
   }
 
 
-  if(type == 'distinct'){
+  if(type %in% c('distinct','qualitative')){
     if(n==1)return("#009BC1")
     if(n==2)return(c("#009BC1", "#10263B"))
     if(n==3)return(c("#009BC1", "#D7336C", "#10263B"))

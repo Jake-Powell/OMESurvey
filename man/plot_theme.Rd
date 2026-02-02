@@ -39,7 +39,7 @@ plot survey theme result
 See \code{vignette("Create-survey-figures", package = "OMESurvey")} article for further examples.
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Load in some example survey data.
 data = OMESurvey::survey_example
 

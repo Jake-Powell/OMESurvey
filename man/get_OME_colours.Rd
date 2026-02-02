@@ -9,7 +9,7 @@ get_OME_colours(n, type = "contrast")
 \arguments{
 \item{n}{the number of colours.}
 
-\item{type}{either "contrast", "complementary" or "distinct".}
+\item{type}{either "contrast/divergent", "complementary/sequential" or "distinct/qualitative".}
 }
 \value{
 a vector of "n" colours.
@@ -28,7 +28,7 @@ Base colours for palettes:
 For 'contrast' and 'distinct' specific colour orderings are chosen for n <= 9, whereas for 'complementary' specific colours selected for n <= 3. If n is larger than we interpolate the palette using grDevices::colorRampPalette().
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 get_OME_colours(3) |> scales::show_col()
 get_OME_colours(3, type = 'complementary') |> scales::show_col()
 get_OME_colours(9, type = 'distinct') |> scales::show_col()

@@ -36,7 +36,7 @@ either a data.frame, ggplot object or plotly object.
 Plot OME bar plot
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Load in some example survey data and create a plot.
 data = OMESurvey::survey_example
 
