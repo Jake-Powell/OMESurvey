@@ -29,7 +29,7 @@ Note that you cannot use '+' to add this to the ggplot object, as the function r
 Play around with the logo sizing parameter until you find your desired logo size.
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Load in some example survey data and create a plot.
 data = OMESurvey::survey_example
 p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')

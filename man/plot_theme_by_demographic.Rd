@@ -39,7 +39,7 @@ Plot survey theme result by demographic
 See \verb{Create survey figures} article for examples.
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 # Load in some example survey data.
 data = OMESurvey::survey_example
 

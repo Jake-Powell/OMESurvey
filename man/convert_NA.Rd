@@ -16,7 +16,7 @@ Convert "N-A" to NA across a data frame
 Loops over all columns and changes "N-A" to NA.
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 OMESurvey::survey_example |> convert_NA()
 
 \dontshow{\}) # examplesIf}

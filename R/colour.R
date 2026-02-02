@@ -1,7 +1,7 @@
 #' get colours for the OME
 #'
 #' @param n the number of colours.
-#' @param type either "contrast", "complementary" or "distinct".
+#' @param type either "contrast/divergent", "complementary/sequential" or "distinct/qualitative".
 #'
 #' @return a vector of "n" colours.
 #' @export
@@ -14,9 +14,9 @@
 #' @details
 #' Base colours for palettes:
 #'
-#' - OME complementary colours = "#10263B" (Dark Navy/Nottingham Blue), "#009BC1" (Blue/Malaysia Sky Blue) and "#37B4B0"(Turquoise/Trent Turquoise).
-#' - OME contrast colours = "#009BC1" (Blue/Malaysia Sky Blue), "#10263B" (Dark Navy/Nottingham Blue) and '#D7336C' (Pink/Pioneering Pink).
-#' - OME distinct colours = "#009BC1"(Blue/Malaysia Sky Blue),'#DEB406' (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink) and '#10263B' (Dark Navy/Nottingham Blue).
+#' - OME complementary/sequential colours = "#10263B" (Dark Navy/Nottingham Blue), "#009BC1" (Blue/Malaysia Sky Blue) and "#37B4B0"(Turquoise/Trent Turquoise).
+#' - OME contrast/divergent colours = "#009BC1" (Blue/Malaysia Sky Blue), "#10263B" (Dark Navy/Nottingham Blue) and '#D7336C' (Pink/Pioneering Pink).
+#' - OME distinct/qualitative colours = "#009BC1"(Blue/Malaysia Sky Blue),'#DEB406' (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink) and '#10263B' (Dark Navy/Nottingham Blue).
 #'
 #' For 'contrast' and 'distinct' specific colour orderings are chosen for n <= 9, whereas for 'complementary' specific colours selected for n <= 3. If n is larger than we interpolate the palette using grDevices::colorRampPalette().
 get_OME_colours <- function(n, type = 'contrast'){
@@ -25,7 +25,7 @@ get_OME_colours <- function(n, type = 'contrast'){
   OME_contrast = c("#009BC1", "#10263B", '#D7336C')
   OME_distinct = c("#009BC1",'#DEB406', '#D7336C',  '#10263B')
 
-  if(type %in% c('complementary')){
+  if(type %in% c('complementary','sequential')){
     if(n==1) return(OME_colours[2])
     if(n==2) return(OME_colours[1:2])
     if(n == 3) return(OME_colours)
@@ -36,7 +36,7 @@ get_OME_colours <- function(n, type = 'contrast'){
     }
   }
 
-  if(type == 'contrast'){
+  if(type %in% c('contrast','divergent')){
     if(n==1)return("#047D9F")
     if(n==2)return(c("#047D9F", "#A52F5F"))
     if(n==3)return(c("#047D9F", "#10263B", "#A52F5F"))
@@ -54,7 +54,7 @@ get_OME_colours <- function(n, type = 'contrast'){
   }
 
 
-  if(type == 'distinct'){
+  if(type %in% c('distinct','qualitative')){
     if(n==1)return("#009BC1")
     if(n==2)return(c("#009BC1", "#10263B"))
     if(n==3)return(c("#009BC1", "#D7336C", "#10263B"))

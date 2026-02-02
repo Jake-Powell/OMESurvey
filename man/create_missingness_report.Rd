@@ -42,7 +42,7 @@ Create a report on the missingness of entries in a survey.
 Note that currently if report_kind = 'static', then the tables and plots are screenshots of the interactive plots (using the webshot package). Moreover, chromote version 0.4.0 is needed to avoid rendering issues.
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 data = OMESurvey::survey_example
 
 # Run with no missingness.

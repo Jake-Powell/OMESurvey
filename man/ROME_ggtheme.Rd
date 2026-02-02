@@ -17,7 +17,7 @@ A clean, minimal theme based on \code{ggplot2::theme_bw()} with
 custom title, subtitle, legend, strip, and axis styling.
 }
 \examples{
-\dontshow{if (FALSE) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (FALSE) withAutoprint(\{ # examplesIf}
 
 if (requireNamespace("ggplot2", quietly = TRUE)) {
   p <- ggplot2::ggplot(mtcars, ggplot2::aes(x = factor(cyl))) +
@@ -33,7 +33,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
 \dontshow{\}) # examplesIf}
 }
 \seealso{
-\code{\link[ggplot2:ggtheme]{ggplot2::theme_bw()}}, \code{\link[ggplot2:theme_get]{ggplot2::theme_set()}}, \code{\link[ggplot2:theme_get]{ggplot2::theme_update()}}
+\code{\link[ggplot2:ggtheme]{ggplot2::theme_bw()}}, \code{\link[ggplot2:get_theme]{ggplot2::theme_set()}}, \code{\link[ggplot2:get_theme]{ggplot2::theme_update()}}
 }
 \keyword{ggplot2}
 \keyword{theme}
