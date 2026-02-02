@@ -27,16 +27,17 @@ a vector of "n" colours.
 
 Base colours for palettes:
 
-- OME complementary colours = "#10263B" (Dark Navy/Nottingham Blue),
-  "#009BC1" (Blue/Malaysia Sky Blue) and "#37B4B0"(Turquoise/Trent
-  Turquoise).
+- OME complementary/sequential colours = "#10263B" (Dark Navy/Nottingham
+  Blue), "#009BC1" (Blue/Malaysia Sky Blue) and
+  "#37B4B0"(Turquoise/Trent Turquoise).
 
-- OME contrast colours = "#009BC1" (Blue/Malaysia Sky Blue), "#10263B"
-  (Dark Navy/Nottingham Blue) and '#D7336C' (Pink/Pioneering Pink).
+- OME contrast/divergent colours = "#009BC1" (Blue/Malaysia Sky Blue),
+  "#10263B" (Dark Navy/Nottingham Blue) and '#D7336C' (Pink/Pioneering
+  Pink).
 
-- OME distinct colours = "#009BC1"(Blue/Malaysia Sky Blue),'#DEB406'
-  (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink) and '#10263B'
-  (Dark Navy/Nottingham Blue).
+- OME distinct/qualitative colours = "#009BC1"(Blue/Malaysia Sky
+  Blue),'#DEB406' (Gold/Rebel's Gold), '#D7336C' (Pink/Pioneering Pink)
+  and '#10263B' (Dark Navy/Nottingham Blue).
 
 For 'contrast' and 'distinct' specific colour orderings are chosen for n
 \<= 9, whereas for 'complementary' specific colours selected for n \<=
