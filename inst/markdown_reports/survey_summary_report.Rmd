@@ -1,0 +1,1117 @@
+---
+title: "`r params$output_title`"
+author: "`r params$output_author`"
+date: "`r params$output_date`"
+output:
+  html_document:
+  toc: true
+toc_depth: 3
+number_sections: true
+toc_float: true
+code_folding: hide
+theme: cosmo
+params:
+  data_path: NULL
+dict_path: NULL
+dict_sheet: NULL
+est_chars_path: NULL
+est_chars_sheet: NULL
+est_char_vars: NULL
+est_char_types: NULL
+est_char_values: NULL
+est_char_statements: NULL
+output_title: NULL
+output_author: NULL
+output_date: NULL
+---
+
+  ```{r}
+params$output_title
+params$output_author
+params$output_date
+```
+# Setup
+
+## Preliminaries
+```{r setup, include=FALSE, echo=FALSE}
+#knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.height=4)
+knitr::opts_chunk$set(fig.height=2.5)
+
+# library(readxl)
+# library(ggplot2)
+# library(ggstats)
+# library(forcats)
+# library(dplyr)
+# library(tidyr)
+# library(stringr)
+# library(scales)
+# library(OMESurvey)
+# library(skimr)
+# library(stringdist)
+# library(janitor)
+# library(gt)
+# library(purrr)
+# library(patchwork)
+
+library(readr)
+library(stringr)
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(janitor)
+library(skimr)
+library(rmarkdown)
+library(rlang)
+library(knitr)
+library(ggplot2)
+library(ggstats)
+library(kableExtra)
+library(forcats)
+
+source("plotting_functions.R")
+
+
+kable_narrow <- function(x, ..., full_width = FALSE, position = "center") {
+  #k <-
+  kable(x, ...) |>
+    kable_styling(full_width = full_width, position = position)
+  #print(k); invisible(k)
+}
+
+```
+
+## Load data & dictionary; checking
+Load data and dictionary
+
+(The file paths and tab name of the data dictionary to use will be passed in as parameters when this gets turned into a function.)
+
+```{r}
+data <- read_excel(
+  params$data_path,
+  guess_max = 1e6)
+
+dict <- read_excel(params$dict_path,
+                   sheet = params$dict_sheet)
+
+
+#data <-   read_excel(
+#    "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
+#    guess_max = 1e6)
+#
+#dict  <- read_excel("data_dict_copy.xlsx",
+#                    sheet="pupil_survey_Y12")
+```
+
+Check variables present in one source and not the other. We probably expect some veriables here, but not too many. Here is the opportunity to check that the variable names the do appear here are ok.
+
+First, those in the dictionary but not in the data:
+  ```{r}
+setdiff(dict |> pull(`Variable name`),
+        data |> names())
+```
+
+And those in the data but not the dictionary:
+  ```{r}
+setdiff(data |> names(),
+        dict |> pull(`Variable name`))
+```
+
+Filter the dictionary to keep only variables which are assigned a section (i.e. that we want to include in the summary)
+```{r}
+dict <-
+  dict |>
+  filter(!is.na(report_sec))
+
+# print the dictionary
+dict |>
+  mutate(across(where(is.character), # in character columns change newline (many possibilities) to double-space
+                ~ str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
+  kable()
+```
+
+
+Now that the above warnings/lists are set up, check again for variables in the dictionary (now slimmed down to only the variables that have been assigned a report section) that aren't in the data file. If there are any then warn and remove from the dictionary. This is needed as the dictionary is the basis of all later processing/summarising and we won't be able to do that if the variable isn't in the data!)
+```{r results='asis'}
+vars_not_in_data <-
+  setdiff(dict |> pull(`Variable name`),
+          data |> names())
+
+if (length(vars_not_in_data) == 0) {
+  knitr::asis_output("Good news: All variables assigned a section in the data dictionary found in the data.")
+} else {
+  #remove from dictionary
+  dict <-
+    dict |>
+    filter(!(`Variable name` %in% vars_not_in_data))
+
+  # warn
+  cat('\n\n<span style="color: red;">**WARNING:**</span> The following variables are given a section in the dictionary but cannot be found in the data: \n\n')
+           #txt <- paste0(" - ", vars_not_in_data)
+  #knitr::asis_output(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
+  }
+```
+
+```{r}
+if (length(vars_not_in_data) != 0) vars_not_in_data
+```
+
+Now do similarly for the establishment grouping (demographic-type) variables. Load the file, check the variables, join, warn if anything goes wrong.
+
+(The file path and tab name and vectors of variables&info to use will be passed in as parameters when this gets turned into a function.)
+
+```{r}
+# est_chars <- read_excel(
+#     "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx",
+#     sheet = "partner_characteristics_sec")
+#
+# est_char_vars <-
+#   c("TrustCategory",
+#     "UrbanRural")
+# #est_char_vars <- character(0)
+#
+# est_char_types <-c(
+#   "factor-neg-pos",
+#   "factor-unordered"
+# )
+# est_char_values <- c(
+#   "No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",
+#   "Conurbation; City or town; Rural"
+# )
+# est_char_statements <- c(
+#   "Trust size",
+#   "Urban/Rural classification"
+# )
+```
+
+```{r results='asis'}
+if (is.null(params$est_chars_path)){
+  knitr::asis_output("No establishment characteristics.")
+}else{
+  # load establishment characteristics file
+  est_chars <-
+    read_excel(
+      params$est_chars_path,
+      sheet = params$est_chars_sheet)
+
+  est_char_vars <- params$est_char_vars
+  est_char_types <- params$est_char_types
+  est_char_values <- params$est_char_values
+  est_char_statements <- params$est_char_statements
+
+  # v simple check of other est_chars parameters
+  stopifnot(is.character(est_char_vars) && is.null(dim(est_char_vars)))
+  stopifnot(is.character(est_char_types) && is.null(dim(est_char_types)))
+  stopifnot(is.character(est_char_values) && is.null(dim(est_char_values)))
+  stopifnot(is.character(est_char_statements) && is.null(dim(est_char_statements)))
+  stopifnot(length(est_char_vars) == length(est_char_types) &&
+            length(est_char_vars) == length(est_char_values) &&
+            length(est_char_vars) == length(est_char_statements))
+
+
+  # find variables not in the data
+  char_vars_not_in_data <-
+    setdiff(est_char_vars,
+            est_chars |> names())
+
+  if (length(char_vars_not_in_data) == 0) {
+    knitr::asis_output("Good news: All establishment characteristics found in the establishment characteristics data.")
+  } else {
+    cat('\n\n<span style="color: red;">**WARNING:**</span> The following establishment characteristics are requested to be included as grouping variables but cannot be found in the establishment characteristics data: \n\n')
+    txt <- paste0(" - ", char_vars_not_in_data)
+    knitr::asis_output(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
+  }
+
+  # variables we will add to the dictionary
+  est_char_vars <- setdiff(est_char_vars, char_vars_not_in_data)
+
+  est_chars <-
+    est_chars |>
+    select(EstablishmentID, all_of(est_char_vars))
+
+  # if there are some variables to work with
+  if (length(est_char_vars) > 0){
+    # join them to the data
+    data <-
+      data |>
+      left_join(est_chars |> select(EstablishmentID, all_of(est_char_vars)),
+                by=join_by(EST_ID == EstablishmentID))
+
+    # add them to the data dictionary
+    for (i in seq_len(length(est_char_vars))){
+      dict <-
+        dict |>
+        add_row(`Variable name` = est_char_vars[i],
+                `Final data type` = est_char_types[i],
+                `Allowed values` = est_char_values[i],
+                `Item statement` = est_char_statements[i],
+                report_sec = "A: Grouping variables",
+                grouping_var = "T",
+                condition = NA)
+    }
+  }
+}
+
+est_chars |> remove()
+```
+
+**For development/practicing**
+
+1. reduce the variables we are working with to just one/two grouping (demographic type) variables and a just enough sections of actual questions to test that things are working.
+1. also add some invalid responses to check behaviour.
+1. print the dictionary, effectively in its as-imported state, for checking/validation
+
+```{r eval=FALSE}
+# get names of the variables to keep
+(vars_to_keep <-
+  data |>
+  select(GENDER, GCSE_MATH,
+         UrbanRural,
+         starts_with("SURVEY_"),
+         starts_with("WHY_AL"),
+         #matches("WHY_AL[2-4]+"),
+         #starts_with("INTERNET_"),
+         starts_with("PLAN_"),
+         starts_with("UNI_"),
+         starts_with("ADVICE"),
+         starts_with("INFLUENCE")
+         ) |>
+  names())
+
+# restrict data and dictionary accordingly
+data <-
+  data |>
+  select(all_of(vars_to_keep))
+
+dict <-
+  dict |>
+  filter(`Variable name` %in% vars_to_keep)
+
+# add an invalid response
+data[2,"WHY_AL2"] = "WRONG!!"
+data[3,"WHY_AL2"] = "WRONG again!!"
+data[2,"SURVEY_DURATION"] = "90+"
+data[3,"SURVEY_DURATION"] = "fifteen"
+
+# print the dictionary
+dict |>
+  mutate(across(where(is.character), # in character columns change newline (many possibilities) to double-space
+                ~ str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
+kable()
+```
+
+
+## Readying the dictionary
+
+
+Compute ordering within each section
+```{r}
+dict <-
+  dict |>
+  mutate(report_sec = ifelse(is.na(report_sec) | str_trim(report_sec) == "",
+                             NA_integer_,
+                             report_sec)
+         ) |>
+  mutate(report_sec_ord = if_else(is.na(report_sec),
+                                  NA_integer_,
+                                  row_number()
+                                  ),
+         .by = report_sec)
+```
+
+Normalize grouping_var to logical
+```{r}
+if (!is.logical(dict$grouping_var)){
+  dict <- dict |>
+    mutate(grouping_var = case_when(
+      tolower(as.character(grouping_var)) %in% c("true","t","yes","y","1") ~ TRUE,
+      tolower(as.character(grouping_var)) %in% c("false","f","no","n","0") ~ FALSE,
+      .default = FALSE
+    ))
+}
+```
+
+
+
+## Helper functions for data processing
+
+A function to parse allowed values (assuming a cell of allowed values which is semicolon-delimited)
+```{r}
+parse_allowed <- function(x){
+  if(is.na(x) || str_trim(x) == "") return(NULL)
+  vals <- unlist(strsplit(as.character(x), ";", fixed = TRUE))
+  vals <- str_trim(vals)
+  vals <- vals[vals != ""]
+  if(length(vals) == 0) return(NULL)
+  vals
+}
+
+parse_allowed_range <- function(x) {
+  if (is.na(x) || !nzchar(x)) return(NULL)
+  s <- trimws(as.character(x))
+
+  # 1) bracketed form: [0,100], (0,100], etc.
+  m1 <- regexec("^\\s*([\\[\\(])\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*,\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*([\\]\\)])\\s*$", s)
+  mm1 <- regmatches(s, m1)[[1]]
+  if (length(mm1) > 0) {
+    lower <- as.numeric(mm1[3])
+    upper <- as.numeric(mm1[4])
+    lower_incl <- mm1[2] == "["
+    upper_incl <- mm1[5] == "]"
+    return(list(lower = lower, upper = upper, lower_incl = lower_incl, upper_incl = upper_incl))
+  }
+
+  # 2) dash form: 0-100  (treat as inclusive [0,100])
+  m2 <- regexec("^\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*-\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*$", s)
+  mm2 <- regmatches(s, m2)[[1]]
+  if (length(mm2) > 0) {
+    lower <- as.numeric(mm2[2])
+    upper <- as.numeric(mm2[3])
+    return(list(lower = lower, upper = upper, lower_incl = TRUE, upper_incl = TRUE))
+  }
+
+  # not a recognised single-range spec
+  NULL
+}
+```
+
+
+
+Helper to coerce a column (vector) to a given type
+```{r}
+
+suppress_specific_warning <- function(expr, pattern) {
+  suppressed <- character()
+  value <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      if (grepl(pattern, msg, perl = TRUE)) {
+        suppressed <<- c(suppressed, msg)
+        invokeRestart("muffleWarning")   # stop this warning from printing
+      }
+      # otherwise let the warning proceed (not muffled)
+    }
+  )
+  list(value = value, suppressed = suppressed)
+}
+
+
+
+coerce_col <- function(x, type, levels = NULL) {
+  if (grepl("integer", type, ignore.case = TRUE)) {
+    as.integer(x)
+  } else if (grepl("numeric|double", type, ignore.case = TRUE)) {
+    res <- suppress_specific_warning(as.numeric(x), "NAs introduced by coercion")
+    res$value      # numeric result with NA
+    #res$suppressed # character vector of suppressed messages (if any)
+  } else if (grepl("binary|logical", type, ignore.case = TRUE)) {
+    as.factor(as.logical(x))
+  } else if (grepl("date", type, ignore.case = TRUE)) {
+    as.Date(x)
+  } else if (grepl("factor-", type, ignore.case = TRUE)) {
+    if (!is.null(levels)) {
+      factor(x, levels = levels)
+    } else {
+      factor(x)
+    }
+  } else if (grepl("char|str|text", type, ignore.case = TRUE)) {
+    as.character(x)
+  } else {
+    x
+  }
+}
+
+```
+
+
+
+
+
+
+
+## Coerce variables and log results
+
+Now a loop doing the coercion and validating of all the variables to be summarised.
+```{r}
+# helper to build a single validation row (keeps code DRY)
+make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA), allowed_specified, allowed,
+                                data_vec, raw_vec = NULL, invalid_mask = logical(0),
+                                report_sec, report_sec_ord, item_label,
+                                condition = NA_character_, n_fail_cond = NA_integer_,
+                                n_meet_cond = NA_integer_,
+                                n_meet_cond_missing = NA_integer_) {
+  # ensure invalid_mask is logical and same length as raw_vec (if provided)
+  if (length(invalid_mask) == 0) {
+    n_invalid <- NA_integer_
+    invalid_examples <- NA
+  } else {
+    n_invalid <- sum(invalid_mask, na.rm = TRUE)
+    if (!is.null(raw_vec)) {
+      invalid_values <- unique(na.omit(as.character(raw_vec[invalid_mask])))
+    } else {
+      invalid_values <- unique(na.omit(as.character(data_vec[invalid_mask])))
+    }
+    invalid_examples <- if (length(invalid_values)) list(head(invalid_values, 10)) else list(NA_character_)
+  }
+
+  list(
+    variable = var,
+    type = type,
+    colo = colo,
+    order_values = order_values,
+    allowed_specified = allowed_specified,
+    allowed = if (allowed_specified) paste(allowed, collapse = ";") else NA_character_,
+    n_missing = sum(is.na(data_vec)),
+    n_invalid = n_invalid,
+    invalid_examples = invalid_examples,
+    condition = condition,
+    n_fail_cond = n_fail_cond,
+    n_meet_cond = n_meet_cond,
+    n_meet_cond_missing = n_meet_cond_missing,
+    report_sec = report_sec,
+    report_sec_ord = report_sec_ord,
+    item_statement = item_label
+  )
+}
+
+validation_log <- vector("list", nrow(dict))
+names(validation_log) <- dict$`Variable name`
+
+for (i in seq_len(nrow(dict))) {
+  var <- dict$`Variable name`[i]
+  dtype <- tolower(dict$`Final data type`[i])
+  allowed_raw <- dict$`Allowed values`[i]
+  allowed <- parse_allowed(allowed_raw)           # returns NULL or character vector
+  # only consider allowed values meaningful for factor-like types
+  is_allowed_type <- grepl("factor|numerical", dtype, ignore.case = TRUE)
+  allowed_specified <- is_allowed_type && !is.null(allowed)
+  if (!is_allowed_type) allowed <- NULL  # drop allowed for non-factors to avoid confusion
+  report_sec <- dict$report_sec[i]
+  report_sec_ord <- dict$report_sec_ord[i]
+  item_label <- dict$`Item statement`[i]  # remove line breaks here ?!?
+
+  raw <- data[[var]]
+  raw_chr <- as.character(raw)
+  data[[paste0("raw_", var)]] <- raw_chr
+
+  # coerce using the new coerce_col signature (type, levels)
+  data[[var]] <- coerce_col(raw, dtype, levels = allowed)
+
+    ## parse and evaluate condition (if present) so we can record it and count failures
+  cond_str <- if ("condition" %in% names(dict)) dict$condition[i] else NA_character_
+  cond_expr <- NULL
+  n_fail_cond <- NA_integer_
+  n_meet_cond <- NA_integer_
+  n_meet_cond_missing <- NA_integer_
+
+  if (!is.na(cond_str) && nzchar(cond_str)) {
+    cond_expr <- tryCatch(
+      rlang::parse_expr(cond_str),
+      error = function(e) {
+        cat("\n**Error parsing condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+        NULL
+      }
+    )
+
+    if (!is.null(cond_expr)) {
+      # evaluate condition in the context of the data frame; protect against errors
+      cond_mask <- tryCatch(
+        rlang::eval_tidy(cond_expr, data = data),
+        error = function(e) {
+          cat("\n**Error evaluating condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+          NULL
+        }
+      )
+
+      # if evaluation produced a logical vector of the right length, count condition failures/meetings and missing-under-condition
+      if (!is.null(cond_mask) && is.logical(cond_mask) && length(cond_mask) == nrow(data)) {
+        # count rows that explicitly fail/meet the condition (FALSE), ignoring NA condition results
+        n_fail_cond <- sum(!cond_mask & !is.na(cond_mask))
+        n_meet_cond <- sum(cond_mask & !is.na(cond_mask))
+        # count rows that pass the condition (TRUE) but have NA for the variable
+        # use na.rm in sum to ignore NA produced by the logical &; cond_mask TRUE & is.na(data[[var]]) yields NA where cond_mask is NA
+        n_meet_cond_missing <- sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+      } else {
+        if (!is.null(cond_mask)) {
+          cat("\n**Condition for variable", var, "did not evaluate to a logical vector of length", nrow(data), ". n_fail_cond, n_meet_cond & n_meet_cond_missing set to NA.**\n\n", sep = " ")
+        }
+        n_fail_cond <- NA_integer_
+        n_meet_cond <- NA_integer_
+        n_meet_cond_missing <- NA_integer_
+      }
+    }
+  }
+
+
+
+#  factors use allowed; compute invalid_mask from raw_chr
+  if (grepl("factor-", dtype, ignore.case = TRUE)) {
+    if (allowed_specified) {
+      invalid_mask <- !is.na(raw_chr) & !(raw_chr %in% allowed)
+    } else {
+      invalid_mask <- rep(FALSE, length(raw_chr))
+    }
+
+    # they also need to have colour scheme determined
+    # and, for neg-pos ones, levels noted to use for ordering questions in section level overall plots
+    switch(str_remove(dtype, "^factor-"),
+           `neg-pos`={
+             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="contrast"))
+             order_values <- list(allowed[seq(from=ceiling(length(allowed)/2)+1, to=length(allowed))])
+           },
+           `lo-hi`={
+             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="complementary"))
+             order_values <- list(NA)
+           },
+           unordered={
+             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="distinct"))
+             order_values <- list(NA)
+           }
+    )
+
+    #allowed |> print()
+    #colo |> print()
+    #order_values |> print()
+
+
+    validation_log[[var]] <- make_validation_row(
+      var = var,
+      type = "factor",
+      colo = colo,
+      order_values = order_values,
+      allowed_specified = allowed_specified,
+      allowed = allowed,
+      data_vec = data[[var]],
+      raw_vec = raw_chr,
+      invalid_mask = invalid_mask,
+      report_sec = report_sec,
+      report_sec_ord = report_sec_ord,
+      item_label = item_label,
+      condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+      n_fail_cond = n_fail_cond,
+      n_meet_cond = n_meet_cond,
+      n_meet_cond_missing = n_meet_cond_missing
+    )
+
+    # numeric use allowed too
+} else if (grepl("^numeric$|double", dtype, ignore.case = TRUE)) {
+  # detect a range spec like [0,100] or (0,100] or 0-100
+  range_spec <- parse_allowed_range(allowed_raw)
+
+  # data[[var]] is the coerced numeric; raw_chr is the original character representation
+  coerced <- data[[var]]
+  # invalid if original non-missing but coercion produced NA (bad numeric text)
+  invalid_coercion <- !is.na(raw_chr) & is.na(coerced)
+
+  if (!is.null(range_spec)) {
+    # compute out-of-range mask for non-NA coerced values
+    out_low <- if (range_spec$lower_incl) coerced < range_spec$lower else coerced <= range_spec$lower
+    out_high <- if (range_spec$upper_incl) coerced > range_spec$upper else coerced >= range_spec$upper
+    out_of_range <- (!is.na(coerced)) & (out_low | out_high)
+
+    invalid_mask <- invalid_coercion | out_of_range
+    allowed_specified_num <- TRUE
+    allowed_for_report <- paste0(
+      if (range_spec$lower_incl) "[" else "(",
+      range_spec$lower, ",", range_spec$upper,
+      if (range_spec$upper_incl) "]" else ")"
+    )
+
+    #invalid_mask[1:5] |> print()
+    #invalid_coercion[1:5] |> print()
+    #out_of_range[1:5] |> print()
+
+  } else {
+    # no numeric range specified: only mark coercion failures as invalid (optional)
+    invalid_mask <- invalid_coercion
+    allowed_specified_num <- FALSE
+    allowed_for_report <- NULL
+  }
+
+  validation_log[[var]] <- make_validation_row(
+    var = var,
+    type = "numeric",
+    allowed_specified = allowed_specified_num,
+    allowed = if (allowed_specified_num) allowed_for_report else NULL,
+    data_vec = data[[var]],
+    raw_vec = raw_chr,
+    invalid_mask = invalid_mask,
+    report_sec = report_sec,
+    report_sec_ord = report_sec_ord,
+    item_label = item_label,
+    condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+    n_fail_cond = n_fail_cond,
+    n_meet_cond = n_meet_cond,
+    n_meet_cond_missing = n_meet_cond_missing
+  )
+
+
+  } else if (grepl("integer", dtype, ignore.case = TRUE)) {
+    validation_log[[var]] <- make_validation_row(
+      var = var,
+      type = "integer",
+      allowed_specified = FALSE,
+      allowed = NULL,
+      data_vec = data[[var]],
+      invalid_mask = logical(0),
+      report_sec = report_sec,
+      report_sec_ord = report_sec_ord,
+      item_label = item_label,
+      condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+      n_fail_cond = n_fail_cond,
+      n_meet_cond = n_meet_cond,
+      n_meet_cond_missing = n_meet_cond_missing
+    )
+
+  } else if (grepl("date", dtype, ignore.case = TRUE)) {
+    validation_log[[var]] <- make_validation_row(
+      var = var,
+      type = "date",
+      allowed_specified = FALSE,
+      allowed = NULL,
+      data_vec = data[[var]],
+      invalid_mask = logical(0),
+      report_sec = report_sec,
+      report_sec_ord = report_sec_ord,
+      item_label = item_label,
+      condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+      n_fail_cond = n_fail_cond,
+      n_meet_cond = n_meet_cond,
+      n_meet_cond_missing = n_meet_cond_missing
+    )
+
+  } else {
+    # character / fallback
+    validation_log[[var]] <- make_validation_row(
+      var = var,
+      type = "character",
+      allowed_specified = FALSE,
+      allowed = NULL,
+      data_vec = data[[var]],
+      invalid_mask = logical(0),
+      report_sec = report_sec,
+      report_sec_ord = report_sec_ord,
+      item_label = item_label,
+      condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+      n_fail_cond = n_fail_cond,
+      n_meet_cond = n_meet_cond,
+      n_meet_cond_missing = n_meet_cond_missing
+    )
+  }
+}
+
+validation_df <- bind_rows(validation_log)
+```
+
+And print the validation report.
+
+```{r}
+validation_df |>
+  mutate(across(where(is.character), # in character columns change newline (many possibilities) to double-space
+                ~ str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |> #select(item_statement) |>
+  reactable::reactable(wrap=TRUE,
+                       #columns = col_width,
+                       showPageSizeOptions = TRUE,
+                       pageSizeOptions = c(10,25,50,100),
+                       defaultPageSize = 10,
+                       fullWidth = FALSE,
+                       striped=TRUE,
+                       compact=TRUE,
+                       filterable=TRUE,
+                       resizable = TRUE)
+#kable(format = "html")
+```
+
+
+## Structure of the data
+
+Just in case anything looks fishy, the actual `str()` of the `data`.
+
+```{r}
+data |> str(strict.width="cut")
+```
+
+
+## Substantive reporting starts here
+
+Subsequent sectioning & content is as coded in the data dictionary document.
+
+```{r}
+percCutHoriz <- 2
+percCutVert <- 2
+```
+
+Note that, for categorical variables, percentages on plots are suppressed if they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
+
+
+```{r results='asis', echo=FALSE, fig.width=10, fig.height=6}
+
+# order sections and ensure variables are ordered within each section
+sections <-
+  validation_df |>
+  pull(report_sec) |>
+  as.character() |>
+  na.omit() |>
+  unique() |>
+  sort()
+
+
+for(sec in sections){
+  cat("\n\n# ", sec, "\n\n", sep = "")
+
+  vars_in_sec <-
+    validation_df |>
+    filter(report_sec == sec) |>
+    arrange(report_sec_ord)
+
+  vars <- vars_in_sec$variable
+  if(length(vars) == 0) next
+
+  #if relevant, do the plot:
+  if ((vars_in_sec |> select(type, allowed_specified, allowed) |> distinct() |> nrow()) != 1 ||
+      length(vars) == 1) { # could use inferred factor values here (for establishment characteristics, for example)?
+    cat("\n\n No section summary plot \n\n", sep = "")
+  } else {
+
+    # THIS ASSUMES FACTOR - might need for numerical variables too?
+
+    # prepare df and labels for plotting
+    df_plot <- data |> select(any_of(vars))
+    labels_vec <- setNames(as.character(vars_in_sec$item_statement), vars_in_sec$variable)
+
+    remove_common_prefix <- function(x) {
+      # find longest common prefix length
+      pref_len <- 0L
+      for (len in seq_len(min(nchar(x)))) {
+        if (all(substr(x, 1, len) == substr(x[1], 1, len))) {
+          pref_len <- len
+        } else break
+      }
+      # build results
+      if (pref_len == 0L) {
+        list(prefix = "", remainder = x)
+      } else {
+        prefix <- substr(x[1], 1, pref_len)
+        remainder <- substring(x, pref_len + 1)
+        list(prefix = prefix, remainder = remainder)
+      }
+    }
+
+    # get common prefix out of labels_vec to use as title
+    res <- remove_common_prefix(labels_vec)
+    title_text <- res$prefix
+    labels_vec <- res$remainder
+
+    # We know the variables have the same specification, so just get the first one to use
+    #colo_vals <- vars_in_sec |> pull(colo) |> unique()
+    #colo <- if (length(colo_vals) == 1) colo_vals[[1]] else NA
+    colo <- (vars_in_sec |> pull(colo) |> head(n=1))[[1]]
+
+    #colo |> print()
+
+    # if they need ordering then get that too
+    order_values <- (vars_in_sec |> pull(order_values) |> head(n=1))[[1]]
+
+
+
+    # compute dynamic height: 2 inches + 0.5 inch per variable
+    fig_h <- (2 + 0.5 * length(vars))
+
+    tryCatch({
+      # plot_many_questions should draw or return a ggplot
+      res <- plot_many_questions(df_plot,
+                                 labels_vec,
+                                 percCut=percCutHoriz,
+                                 colo=colo,
+                                 order_values=order_values,
+                                 title_text) #add more here in due course
+      if (inherits(res, "ggplot")) {
+        # ensure fig path exists
+        fig_dir <- knitr::opts_chunk$get("fig.path")
+        if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
+        if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
+
+        # create a unique, stable filename (using section name)
+        # (could be trouble if section names get long/complicated?)
+        fname <- file.path(fig_dir, sprintf("sec_%s_plot_%s.png", str_extract(sec, "^[^:]+"), "overall"))
+        fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
+
+        # save the plot at the computed size
+        ggsave(fname, plot = res, width = 8, height = fig_h, units = "in", dpi = 300)
+
+        # emit markdown image tag (works inside results='asis')
+        cat(sprintf("![](%s){width=100%%}\n\n", fname))
+      }
+
+      invisible(res)
+    }, error = function(e){
+      cat("\n**Error drawing section plot:** ", e$message, "\n\n", sep = "")
+      invisible(NULL)
+    })
+  }
+
+
+  # now emit per-variable summaries for this section
+  for(i in seq_len(nrow(vars_in_sec))){
+    v <- vars_in_sec[i, ] # the current row of vars_in_sec, in turn from validation_df. So has
+    var <- v$variable
+    label <- ifelse(is.na(v$item_statement) || v$item_statement == "", var, v$item_statement)
+
+
+
+
+    # select grouping (demographic) variables for this report; excluding the variable itself if appropriate
+    grouping_vars <-
+      dict |>
+      filter(grouping_var == TRUE) |>
+      pull(`Variable name`) |>
+      setdiff(var)   # ensure the target var is not duplicated
+
+    #grouping_vars |> print()
+    #names(data) |> print()
+
+    # ensure grouping_vars exist in data (safe select)
+    grouping_vars <- grouping_vars[grouping_vars %in% names(data)]
+
+
+    # extract condition for this variable
+    cond <-
+      dict |>
+      filter(`Variable name` == vars[i]) |>
+      pull(condition)
+
+    # parse condition safely with tryCatch and friendly error message
+    cond_expr <- NULL
+    if (!is.na(cond) && nzchar(cond)) {
+      cond_expr <- tryCatch(
+        parse_expr(cond),
+        error = function(e) {
+          cat("\n**Error parsing filter condition:** ", e$message, "\n\n", sep = "")
+          NULL
+        }
+      )
+    }
+
+
+    # build df for initial_bar: first column = variable of interest, then grouping vars
+    if (length(grouping_vars) == 0) {
+      if (!is.null(cond_expr)) {
+        df_for_bar <- data %>% filter(!!cond_expr) %>% select(all_of(var))
+      } else {
+        df_for_bar <- data %>% select(all_of(var))
+      }
+    } else {
+      if (!is.null(cond_expr)) {
+        df_for_bar <- data %>% filter(!!cond_expr) %>% select(all_of(c(var, grouping_vars)))
+      } else {
+        df_for_bar <- data %>% select(all_of(c(var, grouping_vars)))
+      }
+    }
+
+
+
+    cat("\n\n## ",
+        str_replace_all(label, "[\r\n]+", " ") |> str_squish(),
+        "\n\n",
+        sep = "")
+
+    #cat("\n\n names of `df_for_bar`")
+    #names(df_for_bar) |> print()
+
+
+    # validation summary and descriptive stats
+    v |>
+      select(variable, type, colo, allowed_specified, n_invalid,
+             n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
+      kable_narrow() |>
+      print()
+
+    if(v$type == "factor" && !v$allowed_specified){
+      cat("\n**Warning**: no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n")
+    }
+
+
+    # check if there are invalid examples, and if so then print
+    ex <- v$invalid_examples
+    # if it's a list-column element, extract the inner vector
+if (is.list(ex) && length(ex) == 1) ex <- ex[[1]]
+ex <- as.character(ex)
+ex <- trimws(ex)
+ex <- ex[!is.na(ex) & nzchar(ex)]
+
+if (length(ex) > 0) {
+  data.frame(example = ex) |>
+    kable_narrow(col.names = "Example invalid values") |>
+    print()
+}
+
+# a table of values for factors, otherwise a skim() of the data
+if (is.factor(data[[var]])) {
+  janitor::tabyl(data[[var]]) |>
+    adorn_totals() |>
+    adorn_pct_formatting(digits=1) |>
+    as.data.frame() |>
+    (\(x) kable_narrow(x,
+                       col.names = c("\u00A0", names(x)[-1]),
+                       caption = "Distribution of responses"))() |>
+    print()
+} else {
+  skimr::skim(data[[var]]) |>
+    kable_narrow() |>
+    print()
+}
+
+
+
+# if a character variable, just list some and be done with it (i.e. no plots etc)
+if (dict$`Final data type`[dict$`Variable name` == var] == "chr"){
+
+  cat("Here are the responses and the corresponding grouping variables. Note that there are ",
+      dim(df_for_bar)[1],
+      " responses. \n\n")
+
+  # print 10 random responses
+  # df_for_bar |> slice_sample(n=10) |> kable_narrow() |> print()
+
+  # set up and print an interactive table of responses
+  col_width <- setNames(list(reactable::colDef(width = 400)), names(df_for_bar)[1])
+
+  child <- paste0(
+    "```{r echo=FALSE, progress=FALSE}\n",
+    "reactable::reactable(df_for_bar, wrap=TRUE, columns = col_width, showPageSizeOptions = TRUE, pageSizeOptions = c(10,25,50,100), defaultPageSize = 10, fullWidth = FALSE, striped=TRUE, compact=TRUE, filterable=TRUE, resizable = TRUE)\n",
+    "```\n"
+  )
+  out <- knitr::knit_child(text = child, envir = environment(), quiet=TRUE)
+  cat(out, sep = "\n")
+
+  next
+}
+
+# if a numerical variable, do some boxplotting (or density plotting??)
+if (dict$`Final data type`[dict$`Variable name` == var] == "numeric"){
+  num_var <- names(df_for_bar)[1]
+  group_vars <- names(df_for_bar)[-1]
+
+  #first the overall plot
+  p_overall <- ggplot(df_for_bar, aes(x=factor(1), y = .data[[num_var]])) +
+    #geom_boxplot(width = 0.3, outlier.shape = 21, fill = "lightblue") +
+    geom_boxplot() +
+    #lvplot::geom_lv() +
+    labs(#title = paste("Distribution of", num_var),
+      y = NULL, x = NULL) +
+    theme_minimal() +
+    coord_flip()
+  # p_overall <- ggplot(df_for_bar, aes(x = .data[[num_var]])) +
+  #   geom_density() +
+  #   labs(#title = paste("Distribution of", num_var),
+  #        y = NULL, x = NULL) +
+  #   theme_minimal()
+
+  # ensure fig path exists
+  fig_dir <- knitr::opts_chunk$get("fig.path")
+  if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
+  if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
+
+  # create a unique, stable filename (using section/variable/plot indices)
+  fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png", str_extract(sec, "^[^:]+"), i, 0))
+  fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
+
+  # save the plot at the computed size
+  ggsave(fname, plot = p_overall, width = 8, height = 3, units = "in", dpi = 300)
+
+  # emit markdown image tag (works inside results='asis')
+  cat(sprintf("![](%s){width=100%%}\n\n", fname))
+
+  # now for grouping variables
+  for (j in seq_along(group_vars)) {
+    g <- group_vars[j]
+    # j is the numeric index, g is the name
+    p <- ggplot(df_for_bar, aes(x = .data[[g]], y = .data[[num_var]])) +
+      geom_boxplot() +
+      #lvplot::geom_lv() +
+      labs(#title = paste0(num_var, " by ", g),
+        x=g, y=NULL) +
+      theme_minimal() +
+      coord_flip()
+
+    # p <- ggplot(df_for_bar, aes(x = .data[[num_var]])) +
+    #   geom_density() +
+    #   facet_grid(rows=vars(.data[[g]])) +
+    #   labs(#title = paste0(num_var, " by ", g),
+    #        x=NULL, y=g) +
+    #   theme_minimal()
+    #print(p)
+
+    # create a unique, stable filename (using section/variable/plot indices)
+    fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png", str_extract(sec, "^[^:]+"), i, j))
+    fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
+
+    # save the plot at the computed size
+    ggsave(fname, plot = p, width = 8, height = 1 + 0.3*nlevels(df_for_bar[[g]]),
+           units = "in", dpi = 300)
+
+    # emit markdown image tag (works inside results='asis')
+    cat(sprintf("![](%s){width=100%%}\n\n", fname))
+
+  }
+
+  next
+}
+
+
+# could add functionality to initial_bar() [which might actually be initial_bar_explore()] to take arguments (I) string which is name for the variable - actually just use text - and/or (ii) named vector for the grouping variables, grouping_var_names maybe
+
+# get colo string from the dict row (adjust column name if different)
+#raw_colo <- if ("colo" %in% names(v)) v$colo else dict$colo[dict$`Variable name` == var]
+#colo_arg <- if (is.na(raw_colo) || !nzchar(trimws(as.character(raw_colo)))) NULL else raw_colo
+
+#raw_colo |> print()
+#colo_arg |> print()
+
+colo_arg <- v$colo[[1]]
+
+# wrapper function for initial_bar() that just forwards all arguments; but wraps in a try/catch (with nice error-printing)
+initial_bar_tryCatch <- function(...) {
+  tryCatch({
+    res <- initial_bar(...)
+    if (inherits(res, "ggplot")) {
+      # ensure fig path exists
+      fig_dir <- knitr::opts_chunk$get("fig.path")
+      if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
+      if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
+
+      # create a unique, stable filename (using section/variable/plot indices)
+      fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png", str_extract(sec, "^[^:]+"), i, j))
+      fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
+
+      # save the plot at the computed size
+      ggsave(fname, plot = res, width = 8, height = 3, units = "in", dpi = 300)
+
+      # emit markdown image tag (works inside results='asis')
+      cat(sprintf("![](%s){width=100%%}\n\n", fname))
+    }
+    invisible(res)
+  }, error = function(e) {
+    cat("\n**Error drawing variable plot:** ", e$message, "\n\n", sep = "")
+    invisible(NULL)
+  })
+}
+
+# use this wrapper function with data and grouping vars as appropriate
+nvars <- ncol(df_for_bar)
+
+if (is.null(nvars) || nvars == 0) {
+  # nothing to do
+} else {
+  for (j in seq.int(1, nvars)) {
+    sub_df <- df_for_bar[, unique(c(1, j)), drop=FALSE]
+    #drop=FALSE to ensure j=1 doesn't become a vector
+    initial_bar_tryCatch(sub_df, percCut=percCutVert, colo = colo_arg, fillLabText=NULL, yLabText=NULL)
+  }
+}
+
+
+
+} # end per-variable loop
+} # end section loop
+```
