@@ -423,6 +423,8 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #'
 #' @returns INCOMPLETE
 #'
+#' @export
+#'
 #' @examples
 #' # NEED A SHORT EXAMPLE HERE
 #'
