@@ -34,3 +34,10 @@ reference:
   - create_initial_analysis_report
   - get_OME_colours
   - convert_NA
+
+- title: Dave survey summary functions
+  contents:
+  - render_survey_summary
+  - initial_bar
+  - plot_many_questions
+  - convert_colo
