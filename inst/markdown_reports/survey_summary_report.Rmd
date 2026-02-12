@@ -498,15 +498,15 @@ for (i in seq_len(nrow(dict))) {
     # and, for neg-pos ones, levels noted to use for ordering questions in section-level overall plots
     switch(stringr::str_remove(dtype, "^factor-"),
            `neg-pos`={
-             colo <- list(get_OME_colours(length(allowed), type="contrast"))
+             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="contrast"))
              order_values <- list(allowed[seq(from=ceiling(length(allowed)/2)+1, to=length(allowed))])
            },
            `lo-hi`={
-             colo <- list(get_OME_colours(length(allowed), type="complementary"))
+             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="complementary"))
              order_values <- list(NA)
            },
            unordered={
-             colo <- list(get_OME_colours(length(allowed), type="distinct"))
+             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="distinct"))
              order_values <- list(NA)
            }
     )
@@ -759,12 +759,12 @@ for(sec in sections){
 
     tryCatch({
       # plot_many_questions should draw or return a ggplot
-      res <- plot_many_questions(df_plot,
-                                 labels_vec,
-                                 percCut=percCutHoriz,
-                                 colo=colo,
-                                 order_values=order_values,
-                                 titleText = title_text) #add more here in due course
+      res <- OMESurvey::plot_many_questions(df_plot,
+                                            labels_vec,
+                                            percCut=percCutHoriz,
+                                            colo=colo,
+                                            order_values=order_values,
+                                            titleText = title_text) #add more here in due course
       if (inherits(res, "ggplot")) {
         # ensure fig path exists
         fig_dir <- knitr::opts_chunk$get("fig.path")
@@ -994,7 +994,7 @@ for(sec in sections){
     # wrapper function for initial_bar() that just forwards all arguments; but wraps in a try/catch (with nice error-printing)
     initial_bar_tryCatch <- function(...) {
       tryCatch({
-        res <- initial_bar(...)
+        res <- OMESurvey::initial_bar(...)
         if (inherits(res, "ggplot")) {
           # ensure fig path exists
           fig_dir <- knitr::opts_chunk$get("fig.path")
