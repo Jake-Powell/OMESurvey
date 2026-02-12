@@ -156,6 +156,9 @@ render_survey_summary <- function(data_path,
   message("FILE EXISTS: ", file.exists(rmd))
 
 
+  old <- setwd(dirname(rmd))
+  on.exit(setwd(old), add = TRUE)
+
   out_path <- rmarkdown::render(
     input = rmd,
     output_file = output_file,
