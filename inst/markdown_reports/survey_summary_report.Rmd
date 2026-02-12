@@ -4,12 +4,12 @@ author: "`r params$output_author`"
 date: "`r params$output_date`"
 output:
   html_document:
-  toc: true
-toc_depth: 3
-number_sections: true
-toc_float: true
-code_folding: hide
-theme: cosmo
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    toc_float: true
+    code_folding: hide
+    theme: cosmo
 params:
   data_path: NULL
   dict_path: NULL
@@ -24,6 +24,7 @@ params:
   output_author: NULL
   output_date: NULL
 ---
+
 
 ```{r}
 params$output_title
