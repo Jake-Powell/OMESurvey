@@ -57,6 +57,10 @@ render_survey_summary <- function(data_path,
     if (!file.exists(rmd)) stop("rmd not found")
   }
 
+  message("After system.file(), rmd = ", rmd)
+  message("file.exists(rmd) = ", file.exists(rmd))
+
+
   # check that data_path is a real file
   if (!file.exists(data_path)) {
     stop("File not found: ", data_path)
@@ -142,6 +146,10 @@ render_survey_summary <- function(data_path,
     on.exit(options(viewer = old_viewer), add = TRUE)
     options(viewer = function(url) invisible())
   }
+
+  message("Before render(), rmd = ", rmd)
+  message("file.exists(rmd) = ", file.exists(rmd))
+
 
   out_path <- rmarkdown::render(
     input = rmd,
