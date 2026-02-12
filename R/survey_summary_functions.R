@@ -369,7 +369,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
                        "",
                        scales::percent(ggplot2::after_stat(prop), accuracy = 1))
       ),
-      stat = "prop",
+      stat = ggstats::stat_prop(),
       position = ggplot2::position_fill(vjust = 0.5),
       colour = "white",
       size = 3 * text_scale
