@@ -32,3 +32,7 @@ INCOMPLETE
 \description{
 Longer version - INCOMPLETE
 }
+\examples{
+# NEED A SHORT EXAMPLE HERE
+
+}

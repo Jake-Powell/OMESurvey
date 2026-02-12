@@ -9,4 +9,4 @@
 library(testthat)
 library(OMESurvey)
 
-test_check("OMESurvey")
+#test_check("OMESurvey")

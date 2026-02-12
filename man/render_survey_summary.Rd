@@ -46,7 +46,7 @@ render_survey_summary(
 
 \item{est_chars_sheet}{name of sheet in est't chars to use.}
 
-\item{est_char_vars, est_char_types, est_char_values, est_char_statements}{specification of establishment characteristics to use, see Details.}
+\item{est_char_vars, est_char_types, est_char_values, est_char_statements}{specification of establishment characteristics to use, see Details (write).}
 
 \item{quiet}{(optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.}
 
@@ -68,5 +68,6 @@ est_char_vars,est_char_types,est_char_values,est_char_statements.
 And possibly quiet, show, rmd too.
 }
 \examples{
-No examples yet - probably difficult and low priority, given the need to have data and a dictionary and that we produce a file.
+#No examples yet - probably difficult and low priority,
+# given the need to have data and a dictionary and that we produce a file.
 }

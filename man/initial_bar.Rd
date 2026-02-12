@@ -76,3 +76,6 @@ The function returns a \code{ggplot} object ready for further customization or d
 Percentages are displayed in segments that comprise at least \code{percCut} of their bar;
 the percentage displayed is this rounded to a whole number.
 }
+\examples{
+# NEED A SHORT EXAMPLE
+}

@@ -18,7 +18,7 @@
 #' @param overwrite (optional) whether to overwrite `output_file` if it already exists. Defaults to FALSE for safety but in use probably TRUE will be more typical.
 #' @param est_chars_path path to establishment characteristics data (xls/xlsx).
 #' @param est_chars_sheet name of sheet in est't chars to use.
-#' @param est_char_vars,est_char_types,est_char_values,est_char_statements specification of establishment characteristics to use, see Details.
+#' @param est_char_vars,est_char_types,est_char_values,est_char_statements specification of establishment characteristics to use, see Details (write).
 #' @param quiet (optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.
 #' @param show (optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.
 #' @param rmd (optional) path to .Rmd document to use for report-making. Using anything other than the default should be rare.
@@ -26,7 +26,8 @@
 #' @returns a string giving the path of the saved .html document
 #' @export
 #'
-#' @examples No examples yet - probably difficult and low priority, given the need to have data and a dictionary and that we produce a file.
+#' @examples #No examples yet - probably difficult and low priority,
+#' # given the need to have data and a dictionary and that we produce a file.
 render_survey_summary <- function(data_path,
                                   dict_path,
                                   dict_sheet,
@@ -48,7 +49,10 @@ render_survey_summary <- function(data_path,
 
   # check that the rmd being pointed to exists, or if not supplied point to the default
   if (is.null(rmd)) {
-    rmd <- system.file("survey_summary_report.Rmd", package="OMESurvey")
+    rmd <- system.file("markdown_reports/survey_summary_report.Rmd", package="OMESurvey")
+    if (!nzchar(rmd)) {
+      stop("Template Rmd not found in installed package. Did you put it in inst/markdown_reports/ and reinstall the package?")
+    }
   } else {
     if (!file.exists(rmd)) stop("rmd not found")
   }
@@ -106,7 +110,7 @@ render_survey_summary <- function(data_path,
   output_author <- if (!is.null(output_author) && nzchar(output_author)) {
     output_author
   } else {
-    NULL   # keep NULL if you want no author element
+    NULL   # NULL to default to no author element
   }
 
   output_date <- if (!is.null(output_date) && nzchar(output_date)) {
@@ -207,7 +211,7 @@ render_survey_summary <- function(data_path,
 #'
 #' @export
 #'
-#' @examples
+#' @examples # NEED A SHORT EXAMPLE
 initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
                        horiz=FALSE, text_scale=1,
                        fillLabText=NULL, xLabText=NULL,
@@ -235,74 +239,80 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
   has_facet <- any(dat$var_facet != "")
 
-  # convert percCut to proportion
+  # convert percCut to proportion (with defualt 5%)
   percCut <- ifelse(is.null(percCut), 0.05, percCut / 100)
 
   # in normal usage this should not be needed, but keeping it because I'm scared it's used somewhere
   colo <- convert_colo(colo)
 
+  # if removing NAs filter them out and sort out a colour pallete if needed
   if(na.rm){
-    dat <- dat |> filter(!is.na(var_name))
+    dat <- dat |> dplyr::filter(!is.na(var_name))
     if (is.null(colo)){
-      colo <- dat |> pull(var_name) |> nlevels() |> OMESurvey::get_OME_colours(type='distinct')
+      colo <- dat |> dplyr::pull(var_name) |> nlevels() |> get_OME_colours(type='distinct')
     }
   }
-  else{
+  else{ # if not removing NAs convert them to a proper level, sort out a colour pallete if needed,
+    # then prepend grey to the pallete for the NAs
     dat <- dat |>
-      mutate(across(1, ~ .x |>
-                      forcats::fct_expand("No response") |>
-                      forcats::fct_na_value_to_level(level = "No response") |>
-                      forcats::fct_relevel("No response", after=0)))
+      dplyr::mutate(dplyr::across(1, ~ .x |>
+                                    forcats::fct_expand("No response") |>
+                                    forcats::fct_na_value_to_level(level = "No response") |>
+                                    forcats::fct_relevel("No response", after=0)))
     if (is.null(colo)){
-      colo <- (dat |> pull(var_name) |> nlevels() - 1) |> OMESurvey::get_OME_colours(type='distinct')
+      colo <- (dat |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
     }
     colo = c("grey",colo)
   }
 
 
   thePlot <-
-    ggplot(dat, aes(x=var_subdivide, by=var_subdivide, fill=var_name)) +
-    geom_bar(position = "fill") +
-    theme_bw() +
-    theme(
-      axis.ticks = element_blank(),
-      panel.border = element_blank(),
+    ggplot2::ggplot(dat, ggplot2::aes(x=var_subdivide, by=var_subdivide, fill=var_name)) +
+    ggplot2::geom_bar(position = "fill") +
+    ggplot2::theme_bw() +
+    ggplot2::theme(
+      axis.ticks = ggplot2::element_blank(),
+      panel.border = ggplot2::element_blank(),
       plot.title.position = "plot")
 
   if (horiz) {
     thePlot <- thePlot +
-      theme(legend.position="bottom",
-            panel.grid.major.x = element_line(linewidth=0.2, colour="grey30"),
-            panel.grid.major.y = element_blank(),
-            panel.grid.minor = element_blank()
+      ggplot2::theme(
+        legend.position="bottom",
+        panel.grid.major.x = ggplot2::element_line(linewidth=0.2, colour="grey30"),
+        panel.grid.major.y = ggplot2::element_blank(),
+        panel.grid.minor = ggplot2::element_blank()
       )
-    fill_guide <- guide_legend(nrow=1, reverse=TRUE)
+    fill_guide <- ggplot2::guide_legend(nrow=1, reverse=TRUE)
   } else {
     thePlot <- thePlot +
-      theme(legend.position="right",
-            panel.grid.major.x = element_blank(),
-            panel.grid.major.y = element_line(linewidth=0.2, colour="grey30"),
-            panel.grid.minor = element_blank()
+      ggplot2::theme(
+        legend.position="right",
+        panel.grid.major.x = ggplot2::element_blank(),
+        panel.grid.major.y = ggplot2::element_line(linewidth=0.2, colour="grey30"),
+        panel.grid.minor = ggplot2::element_blank()
       )
-    fill_guide <- guide_legend()
+    fill_guide <- ggplot2::guide_legend()
   }
 
-  fill_labels <- function(x) str_wrap(x,width=20)
+  fill_labels <- function(x) stringr::str_wrap(x,width=20)
 
   if (is.null(colo)){
     thePlot <- thePlot +
-      scale_fill_discrete(labels=fill_labels, guide=fill_guide)
-  }else{
+      ggplot2::scale_fill_discrete(labels=fill_labels, guide=fill_guide)
+  } else {
     thePlot <- thePlot +
-      scale_fill_manual(values=colo, labels=fill_labels, drop=FALSE, guide=fill_guide)
+      ggplot2::scale_fill_manual(values=colo, labels=fill_labels, drop=FALSE, guide=fill_guide)
   }
 
 
   dat_sum <-
     dat |>
-    summarise(num_resp = n(),
-              .by = c(var_facet,var_subdivide)) |>
-    mutate(num_resp = num_resp %>% (scales::label_comma(prefix="(", suffix=")")) )
+    dplyr::summarise(
+      num_resp = dplyr::n(),
+      .by = c(var_facet,var_subdivide)
+      ) |>
+    dplyr::mutate(num_resp = num_resp |> scales::label_comma(prefix="(", suffix=")") )
 
   # alternative approach is to put this as the data argument of the geom_text below and delete calculation of dat_sum above
   #  data = ~ summarise(.x, num_resp = n(), .by=question) %>% mutate(num_resp = num_resp %>% (scales::label_comma(prefix="(", suffix=")")) ),
@@ -312,33 +322,44 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
   # add text for the "(N)" labels
   thePlot = thePlot +
-    geom_text(aes(x = var_subdivide,
-                  y = 1.02,
-                  by = NULL,
-                  fill=NULL,
-                  label = num_resp),
-              dat_sum,
-              colour = "black",
-              vjust=vjust_val,
-              hjust=hjust_val,
-              size = 3*text_scale)
+    ggplot2::geom_text(
+      ggplot2::aes(
+        x = var_subdivide,
+        y = 1.02,
+        by = NULL,
+        fill = NULL,
+        label = num_resp
+      ),
+      dat_sum,
+      colour = "black",
+      vjust = vjust_val,
+      hjust = hjust_val,
+      size = 3*text_scale
+      )
 
   # add axis labels, fill/legend label, title
   # and set breaks/labels on the proportion axis
   thePlot = thePlot +
-    labs(x=xLabText, fill=fillLabText, y=yLabText, title=titleText) +
-    scale_y_continuous(breaks=seq(0,1,0.25),
-                       labels=scales::percent_format(accuracy=1),
-                       minor_breaks=seq(0,1,0.05))
+    ggplot2::labs(x=xLabText, y=yLabText,
+                  fill=fillLabText, title=titleText) +
+    ggplot2::scale_y_continuous(breaks=seq(0,1,0.25),
+                                labels=scales::percent_format(accuracy=1),
+                                minor_breaks=seq(0,1,0.05))
 
   # add percentage labels on bar segments
   thePlot <- thePlot +
-    geom_text(aes(x = var_subdivide,
-                  label = ifelse(after_stat(prop) < percCut, "", scales::percent(after_stat(prop), accuracy = 1))),
-              stat = "prop",
-              position = position_fill(vjust = 0.5),
-              colour = "white",
-              size = 3 * text_scale)
+    ggplot2::geom_text(
+      ggplot2::aes(
+        x = var_subdivide,
+        label = ifelse(ggplot2::after_stat(prop) < percCut,
+                       "",
+                       scales::percent(ggplot2::after_stat(prop), accuracy = 1))
+      ),
+      stat = "prop",
+      position = ggplot2::position_fill(vjust = 0.5),
+      colour = "white",
+      size = 3 * text_scale
+    )
 
   # Add faceting if needed
   if (has_facet) {
@@ -346,7 +367,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
     # Apply custom labels if provided
     if (!is.null(facet_labels)) {
-      facet_args$labeller <- labeller(var_facet = facet_labels)
+      facet_args$labeller <- ggplot2::labeller(var_facet = facet_labels)
     }
 
     # Apply layout control if requested
@@ -354,15 +375,15 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
       facet_args$nrow <- 1
     }
 
-    thePlot <- thePlot + do.call(facet_wrap, facet_args)
+    thePlot <- thePlot + do.call(ggplot2::facet_wrap, facet_args)
   }
 
 
 
   if (horiz) {
-    thePlot <- thePlot + coord_flip(ylim = c(NA, 1.1))
+    thePlot <- thePlot + ggplot2::coord_flip(ylim = c(NA, 1.1))
   } else {
-    thePlot <- thePlot + coord_cartesian(ylim = c(NA, 1.1))
+    thePlot <- thePlot + ggplot2::coord_cartesian(ylim = c(NA, 1.1))
   }
 
 
@@ -384,24 +405,32 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #' @param titleText INCOMPLETE
 #'
 #' @returns INCOMPLETE
+#'
+#' @examples
+#' # NEED A SHORT EXAMPLE HERE
+#'
 plot_many_questions <- function(dat, labels_vec, percCut=2,
-                                colo=NULL, order_values = NULL, titleText=NULL){
+                                colo=NULL, order_values = NULL,
+                                titleText=NULL){
 
+  # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
 
+  # pivot the many questions/variables to long question&response form,
+  # reorder questions according to proportion of responses that are in order_values
   dat <-
     dat |>
-    pivot_longer(everything(),
-                 names_to = "question",
-                 values_to = "Response") |>
-    mutate(question = as.factor(question),
-           order_flag = as.character(Response) %in% order_values,
-           question = fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
+    tidyr::pivot_longer(dplyr::everything(),
+                        names_to = "question",
+                        values_to = "Response") |>
+    dplyr::mutate(question = as.factor(question),
+                  order_flag = as.character(Response) %in% order_values,
+                  question = forcats::fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
 
-
+  # get plotting
   thePlot <-
     dat |>
-    select(Response, question) |>
+    dplyr::select(Response, question) |>
     initial_bar(horiz=TRUE,
                 percCut=percCut,
                 fillLabText=NULL,
@@ -409,22 +438,62 @@ plot_many_questions <- function(dat, labels_vec, percCut=2,
                 xLabText=NULL,
                 colo=colo,
                 titleText=titleText) +
-    scale_x_discrete(labels = stringr::str_wrap(labels_vec, width=30))
+    ggplot2::scale_x_discrete(labels = stringr::str_wrap(labels_vec, width=30))
 
-  legend <- cowplot::get_legend(thePlot)
+  # now use cowplot to centre the legend horizontally underneath the whole figure,
+  # not just under the plotting area
 
+  if (requireNamespace("cowplot", quietly=TRUE)){
+    legend <- cowplot::get_legend(thePlot)
+    thePlot_clean <- thePlot + ggplot2::theme(legend.position = "none")
+    thePlot <- cowplot::plot_grid(thePlot_clean, legend,
+                                  ncol=1, rel_heights=c(1,0.15))
+  } else {
+    # no warning/similar at this point that cowplot is required to centre legends under plots
+  }
 
-  thePlot_clean <- thePlot + theme(legend.position = "none")
-
-  combined <-
-    cowplot::plot_grid(thePlot_clean, legend,
-                       ncol=1, rel_heights=c(1,0.15))
-
-  return(combined)
+  return(thePlot)
 }
 
 
 
+#' Convert shorthand colour name to a colour vector
+#'
+#' `convert_colo` accepts `NULL`, a character vector of colour hex codes, or a
+#' single keyword and returns a character vector of hex colours (or `NULL`).
+#' This helper is intended for normalising user-supplied colour arguments into
+#' a vector usable by `ggplot2::scale_fill_manual()` and similar functions.
+#' Tidies a situation where a variable (usually called `colo`) is passed around
+#' as either a string of hex code colours or a shortcut name/keyword.
+#' Mainly kept for backwards-compatibility - in most contexts this function
+#' SHOULD NOT BE USED, as `OMESurvey::get_OME_colours()` is more direct &
+#'  transparent and less hard-coded.
+#'
+#' @param colo `NULL`, a character vector of colour hex codes, or a single
+#'   character keyword. If it is a character of length 1 it is expanded into a
+#'   character vector of colours (see Details). Otherwise it is returned
+#'   unchanged.
+#'
+#' @returns A character vector of hex colour codes, or `NULL` if `colo` is
+#'   `NULL`.
+#'
+#' @details The following single-string keywords are recognised and expanded:
+#' \describe{
+#'   \item{`"likert5"`}{5-colour palette: `c("#009BC1","#08607E","#10263B","#732C53","#D7336C")`}
+#'   \item{`"scale4"`}{4-colour palette: `c("#009BC1","#08607E","#732C53","#D7336C")`}
+#'   \item{`"ynsn3"`}{3-colour palette: `c("#009BC1","#10263B","#D7336C")`}
+#'   \item{`"scale2"`}{2-colour palette: `c("#009BC1","#D7336C")`}
+#' }
+#' Any other single string is returned as-is, i.e. it DOESN'T throw an error/warning!
+#'
+#' @examples
+#' convert_colo(NULL)            # NULL -> NULL
+#' convert_colo(c("#000000","#FFFFFF"))  # vector -> returned unchanged
+#' convert_colo("likert5")       # returns the 5-colour likert palette
+#' convert_colo("an_odd_name")       # Unintended use: unknown and so returned unchanged
+#' convert_colo(c("thing","amijig"))  # Unintended use: vector -> returned unchanged
+#'
+#' @export
 
 convert_colo <- function(colo){
   if (is.null(colo)) return(NULL)

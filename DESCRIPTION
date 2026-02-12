@@ -12,16 +12,21 @@ RoxygenNote: 7.3.3
 Imports: 
     cli,
     colorspace,
+    dplyr,
     forcats,
     ggplot2,
+    ggstats,
     grDevices,
     gridExtra,
     openxlsx,
     plotly,
     png,
+    readxl,
     scales,
-    stringr
+    stringr,
+    tidyr
 Suggests: 
+    cowplot,
     DT,
     knitr,
     rmarkdown,
