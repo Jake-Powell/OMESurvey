@@ -362,18 +362,19 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
   # add percentage labels on bar segments
   thePlot <- thePlot +
-    ggplot2::geom_text(
+    ggstats::stat_prop(
       ggplot2::aes(
         x = var_subdivide,
         label = ifelse(ggplot2::after_stat(prop) < percCut,
                        "",
                        scales::percent(ggplot2::after_stat(prop), accuracy = 1))
       ),
-      stat = ggstats::stat_prop(),
+      geom = "text",
       position = ggplot2::position_fill(vjust = 0.5),
       colour = "white",
       size = 3 * text_scale
     )
+
 
   # Add faceting if needed
   if (has_facet) {
