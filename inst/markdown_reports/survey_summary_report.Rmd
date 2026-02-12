@@ -30,6 +30,12 @@ params$output_title
 params$output_author
 params$output_date
 ```
+
+```{r debug, echo=FALSE}
+message("knit_root_dir: ", knitr::opts_knit$get("root.dir"))
+message("working dir: ", getwd())
+```
+
 # Setup
 
 ## Preliminaries

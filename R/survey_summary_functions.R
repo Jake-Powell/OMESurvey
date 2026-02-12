@@ -150,6 +150,11 @@ render_survey_summary <- function(data_path,
   message("Before render(), rmd = ", rmd)
   message("file.exists(rmd) = ", file.exists(rmd))
 
+  message("RMD: ", rmd)
+  message("DIR: ", dirname(rmd))
+  message("WORKING DIR: ", getwd())
+  message("FILE EXISTS: ", file.exists(rmd))
+
 
   out_path <- rmarkdown::render(
     input = rmd,
@@ -157,6 +162,7 @@ render_survey_summary <- function(data_path,
     output_dir = output_dir,
     params = params,
     envir = new.env(parent = globalenv()), # isolate execution
+    knit_root_dir = dirname(rmd),
     quiet = quiet
   )
 
