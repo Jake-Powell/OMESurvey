@@ -323,21 +323,18 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
   }
 
 
+  # calculate and annotate with the (n) labels
   dat_sum <-
     dat |>
     dplyr::summarise(
       num_resp = dplyr::n(),
       .by = c(var_facet,var_subdivide)
       ) |>
-    dplyr::mutate(num_resp = num_resp |> scales::label_comma(prefix="(", suffix=")") )
-
-  # alternative approach is to put this as the data argument of the geom_text below and delete calculation of dat_sum above
-  #  data = ~ summarise(.x, num_resp = n(), .by=question) %>% mutate(num_resp = num_resp %>% (scales::label_comma(prefix="(", suffix=")")) ),
+    dplyr::mutate(num_resp = scales::label_comma(prefix="(", suffix=")")(num_resp) )
 
   vjust_val <- if (horiz) 0.5 else 0
   hjust_val <- if (horiz) 0 else 0.5
 
-  # add text for the "(N)" labels
   thePlot = thePlot +
     ggplot2::geom_text(
       ggplot2::aes(
