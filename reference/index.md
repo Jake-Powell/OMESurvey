@@ -52,3 +52,15 @@
   : get colours for the OME
 - [`convert_NA()`](https://jake-powell.github.io/OMESurvey/reference/convert_NA.md)
   : Convert "N-A" to NA across a data frame
+
+## Dave survey summary functions
+
+- [`render_survey_summary()`](https://jake-powell.github.io/OMESurvey/reference/render_survey_summary.md)
+  : Produce html document summarising a single survey
+- [`initial_bar()`](https://jake-powell.github.io/OMESurvey/reference/initial_bar.md)
+  : Make stacked bar chart (possibly split into separate bars and
+  facetted) in the OME style. (Dave's version.)
+- [`plot_many_questions()`](https://jake-powell.github.io/OMESurvey/reference/plot_many_questions.md)
+  : Make a stacked bar chart summarising many survey questions
+- [`convert_colo()`](https://jake-powell.github.io/OMESurvey/reference/convert_colo.md)
+  : Convert shorthand colour name to a colour vector

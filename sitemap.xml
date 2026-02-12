@@ -14,6 +14,7 @@
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/add_logo.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/check_question_columns.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/convert_NA.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/convert_colo.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/create_initial_analysis_report.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/create_missingness_report.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/factor_survey_data.html</loc></url>
@@ -21,10 +22,13 @@
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/get_theme_and_questions.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/get_theme_columns.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/index.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/initial_bar.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_ROME_survey.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_bar.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_many_questions.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_theme.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_theme_by_demographic.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/render_survey_summary.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/survey_example.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/survey_values.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/to_sheet_single_survey_question.html</loc></url>
