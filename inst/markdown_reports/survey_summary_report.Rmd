@@ -686,7 +686,7 @@ percCutVert <- 2
 Note that, for categorical variables, percentages on plots are suppressed if they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
 
 
-```{r results='asis', echo=FALSE, fig.width=10, fig.height=6}
+```{r results='asis', echo=FALSE, message=TRUE, fig.width=10, fig.height=6}
 
 # order sections and ensure variables are ordered within each section
 sections <-
@@ -862,12 +862,13 @@ for(sec in sections){
 
 
     # validation summary and descriptive stats
-    v |>
-      dplyr::select(variable, type, colo, allowed_specified, n_invalid,
-                    n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
-      kable_narrow() |>
-      print()
-    
+      v |>
+        dplyr::select(variable, type, colo, allowed_specified, n_invalid,
+                      n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
+        kable_narrow() |>
+        as.character() |>
+        cat()
+
     if(v$type == "factor" && !v$allowed_specified){
       cat("\n**Warning**: no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n")
     }
@@ -883,7 +884,8 @@ for(sec in sections){
     if (length(ex) > 0) {
       data.frame(example = ex) |>
         kable_narrow(col.names = "Example invalid values") |>
-        print()
+        as.character() |>
+        cat()
     }
     
     # a table of values for factors, otherwise a skim() of the data
@@ -895,13 +897,14 @@ for(sec in sections){
         (\(x) kable_narrow(x,
                            col.names = c("\u00A0", names(x)[-1]),
                            caption = "Distribution of responses"))() |>
-        print()
+        as.character() |>
+        cat()
     } else {
       skimr::skim(data[[var]]) |>
         kable_narrow() |>
-        print()
+        as.character() |>
+        cat()
     }
-    
     
     
     # if a character variable, just list some and be done with it (i.e. no plots etc)
