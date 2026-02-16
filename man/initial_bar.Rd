@@ -20,10 +20,13 @@ initial_bar(
 )
 }
 \arguments{
-\item{dat}{data frame of 1, 2 or 3 variables. Bar charts show relative frequencies of the first variable,
-split into separate bars according to the second variable (if present),
-and facetted by the third variable (if present).
-All variables should be factors (but characters might work?).}
+\item{dat}{A data frame with 1–3 variables:
+\itemize{
+\item \strong{1 variable} → a single proportional bar.
+\item \strong{2 variables} → separate bars for each level of the second variable.
+\item \strong{3 variables} → facetted bars by the third variable.
+All variables should be factors (characters may work but are not guaranteed).
+}}
 
 \item{percCut}{numeric scalar (0-100). Cutoff below which percentages are not shown in bar segments. Default \code{5}.}
 
@@ -62,20 +65,39 @@ arranged in a single row; otherwise default facet layout is used.
 (\code{"1col"} option planned but not yet supported.)}
 }
 \value{
-ggplot object - a stacked proportional bar chart.
+A \code{ggplot} object (or a \code{cowplot} object if \code{cowplot} is installed)
 }
 \description{
-\code{initial_bar} builds a proportional (stacked, filled) bar chart from a
+\code{initial_bar} builds a (stacked, filled) proportional bar chart from a
 tidy data frame of survey responses. The first column is treated as the
 response factor (fill), the optional second column as the grouping/subdivision,
 and the optional third column is used for faceting.
-Percentages of bars are overlaid on the plot and number of observations/responses are shown at the end of each bar.
-The function returns a \code{ggplot} object ready for further customization or direct printing.
 }
 \details{
+The plot displays:
+\itemize{
+\item relative frequencies of the first variable,
+\item optional subdivision into separate bars,
+\item optional faceting,
+\item percentage labels inside bar segments (above a cutoff),
+\item \code{(n)} labels showing the number of responses per bar.
+}
+
+The function returns a \code{ggplot} (or \code{cowplot} if it is installed) object ready for further customization or direct printing.
+
 Percentages are displayed in segments that comprise at least \code{percCut} of their bar;
 the percentage displayed is this rounded to a whole number.
 }
 \examples{
-# NEED A SHORT EXAMPLE
+# Minimal example with two questions and three response levels
+dat <- tibble::tibble(
+  Response = factor(c("Yes", "No", "Yes", "Maybe")),
+  Group    = factor(c("A", "A", "B", "B"))
+)
+
+initial_bar(dat)
+
+# Horizontal version with a title
+initial_bar(dat, horiz = TRUE, titleText = "Example bar chart")
+
 }

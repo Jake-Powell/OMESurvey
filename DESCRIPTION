@@ -18,6 +18,7 @@ Imports:
     ggstats,
     grDevices,
     gridExtra,
+    kableExtra,
     knitr,
     openxlsx,
     plotly,

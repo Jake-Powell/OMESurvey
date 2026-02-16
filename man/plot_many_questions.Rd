@@ -7,32 +7,64 @@
 plot_many_questions(
   dat,
   labels_vec,
-  percCut = 2,
+  percCut = 5,
   colo = NULL,
   order_values = NULL,
   titleText = NULL
 )
 }
 \arguments{
-\item{dat}{INCOMPLETE}
+\item{dat}{a tibble/data.frame, each variable corresponding to a question. All variables should be factors and all with the same possible values.}
 
-\item{labels_vec}{INCOMPLETE}
+\item{labels_vec}{a named vector of labels to use for the questions on the plot. Names are variable names and values are corresponding labels.}
 
-\item{percCut}{INCOMPLETE}
+\item{percCut}{numeric scalar (0-100). Cutoff below which percentages are not shown in bar segments. Default \code{5}.}
 
-\item{colo}{INCOMPLETE}
+\item{colo}{(optional but recommended) vector of colours to use for the fill scale (character vector of colours,
+length the same as the number of levels of the factor that is the first variable of \code{dat}.)
+If \code{NULL} (default) the pallete from \code{OMESurvey::get_OME_colours(type='distinct')} is used.
+When \code{na.rm = FALSE} a grey colour is prepended for the "No response" level.
+Note that percentage labels are in white, so the pallete needs to work with that.
+(... or this function needs upgrading!)}
 
-\item{order_values}{INCOMPLETE}
+\item{order_values}{optional vector of question responses that determine the ordering of questions in the plot.}
 
-\item{titleText}{INCOMPLETE}
+\item{titleText}{text to use as plot title.}
 }
 \value{
-INCOMPLETE
+A \code{ggplot} object (or a \code{cowplot} object if \code{cowplot} is installed) representing
+a horizontal stacked bar chart summarising the survey questions.#'
 }
 \description{
-Longer version - INCOMPLETE
+Make a horizontal stacked bar chart to summarise several survey questions,
+with questions ordered according to the proportion of responses that fit a
+particular pattern.
 }
+\details{
+\code{order_values} specifies the responses which count for ordering the questions in the plot. e.g. \code{c("Strongly agree", "Agree")} will result in the questions being ordered according to the proportion of respondents who agree.
+}
+\note{
+All variables in \code{dat} should have identical factor levels.
+The names of \code{labels_vec} must match the column names of \code{dat}.
+Values in \code{order_values} must be valid levels of the response factor.
+}
+\section{Legend placement}{
+
+If the \code{cowplot} package is installed, the legend is extracted and placed
+beneath the plot, centred horizontally. If \code{cowplot} is not available,
+the legend remains in the default ggplot position.
+}
+
 \examples{
-# NEED A SHORT EXAMPLE HERE
+# Minimal example with three questions and three response levels
+dat <- tibble::tibble(
+  Q1 = factor(c("Yes", "No", "Yes", "Maybe")),
+  Q2 = factor(c("No", "No", "Yes", "Maybe")),
+  Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"))
+)
+
+labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
+
+plot_many_questions(dat, labels_vec = labels)
 
 }

@@ -8,7 +8,7 @@
 #' est_char_vars,est_char_types,est_char_values,est_char_statements.
 #' And possibly quiet, show, rmd too.
 #'
-#' @param data_path path to the survey data (assumed to be xls/xlsx).
+#' @param data_path path to the survey data (assumed to be xls/xlsx/csv).
 #' @param dict_path,dict_sheet path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.
 #' @param output_file name of output html file (needs to end with ".html", defaults to "<name of data file>_summary.html")
 #' @param output_dir (optional) directory to save the output file to. Defaults to current working directory. Ignored if `output_file` is not specified.
@@ -16,19 +16,63 @@
 #' @param output_author (optional) text string to use as author for html report output
 #' @param output_date (optional) text string to use as date for html report output
 #' @param overwrite (optional) whether to overwrite `output_file` if it already exists. Defaults to FALSE for safety but in use probably TRUE will be more typical.
-#' @param est_chars_path path to establishment characteristics data (xls/xlsx).
-#' @param est_chars_sheet name of sheet in est't chars to use.
-#' @param est_char_vars,est_char_types,est_char_values,est_char_statements specification of establishment characteristics to use, see Details (write).
+#' @param est_chars_path (optional) path to establishment characteristics data (xls/xlsx).
+#' @param est_chars_sheet (optional, needed if `est_chars_path` is used) name of sheet in est't chars to use.
+#' @param est_char_vars,est_char_types,est_char_values,est_char_statements (optional, needed if `est_chars_path` is used) specification of establishment characteristics to use, see Details.
 #' @param quiet (optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.
 #' @param verbose (optional) whether to include extra/verbose detail in the report. Defaults to FALSE; TRUE useful for testing.
 #' @param show (optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.
 #' @param rmd (optional) path to .Rmd document to use for report-making. Using anything other than the default should be rare.
 #'
 #' @returns a string giving the path of the saved .html document
+#'
+#' @details
+#' Additional grouping variables using Establishment Characteristics can be added
+#' using `est_chars_path` and `est_chars_sheet` to point to the Establishment
+#' Characteristics spreadsheet and the relevant sheet thereof.
+#' If used then `est_char_vars`, `est_char_types`, `est_char_values` and `est_char_statements`
+#' must also be used, to specify the establishment characteristics variables
+#' to be used and their details as in the data dictionary. See example below.
+#'
+#'
 #' @export
 #'
-#' @examples #No examples yet - probably difficult and low priority,
-#' # given the need to have data and a dictionary and that we produce a file.
+#' @examples
+#' # Simplest usage
+#' render_survey_summary(
+#'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
+#'   dict_path = "data_dict_copy.xlsx",
+#'   dict_sheet = "pupil_survey_Y12",
+#'   output_file = "y12_summary.html",
+#'   output_title = "Y12 student survey summary",
+#'   output_author = "D Sirl",
+#' )
+#'
+#' # Using establishment characteristics too
+#' render_survey_summary(
+#'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
+#'   dict_path = "data_dict_copy.xlsx",
+#'   dict_sheet = "pupil_survey_Y12",
+#'   output_file = "y12_summary.html",
+#'   output_title = "Y12 student survey summary",
+#'   output_author = "D Sirl",
+#'   est_chars_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx",
+#'   est_chars_sheet = "partner_characteristics_sec",
+#'   est_char_vars =
+#'     c("TrustCategory",
+#'       "UrbanRural"),
+#'   est_char_types =
+#'     c("factor-neg-pos",
+#'       "factor-unordered"),
+#'   est_char_values =
+#'     c("No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",
+#'       "Conurbation; City or town; Rural"),
+#'   est_char_statements =
+#'     c("Trust size",
+#'       "Urban/Rural classification")
+#' )
+
+
 render_survey_summary <- function(data_path,
                                   dict_path,
                                   dict_sheet,
@@ -203,53 +247,66 @@ render_survey_summary <- function(data_path,
 
 
 
-#function - given data (dat) of 1 or 2 or 3 columns,
-# make stacked bar charts showing relative frequencies of values in the first variable,
-# splitting into separate bars by the second variable if present
-# and facetting by third variable if present
-
-
 
 #' Make stacked bar chart (possibly split into separate bars and facetted) in the OME style. (Dave's version.)
 #'
-#' `initial_bar` builds a proportional (stacked, filled) bar chart from a
+#' `initial_bar` builds a (stacked, filled) proportional bar chart from a
 #' tidy data frame of survey responses. The first column is treated as the
 #' response factor (fill), the optional second column as the grouping/subdivision,
 #' and the optional third column is used for faceting.
-#' Percentages of bars are overlaid on the plot and number of observations/responses are shown at the end of each bar.
-#' The function returns a `ggplot` object ready for further customization or direct printing.
 #'
-#' @param dat data frame of 1, 2 or 3 variables. Bar charts show relative frequencies of the first variable,
-#' split into separate bars according to the second variable (if present),
-#' and facetted by the third variable (if present).
-#' All variables should be factors (but characters might work?).
+#' The plot displays:
+#' * relative frequencies of the first variable,
+#' * optional subdivision into separate bars,
+#' * optional faceting,
+#' * percentage labels inside bar segments (above a cutoff),
+#' * `(n)` labels showing the number of responses per bar.
+#'
+#' The function returns a `ggplot` (or `cowplot` if it is installed) object ready for further customization or direct printing.
+#'
+#' @param dat A data frame with 1–3 variables:
+#'   * **1 variable** → a single proportional bar.
+#'   * **2 variables** → separate bars for each level of the second variable.
+#'   * **3 variables** → facetted bars by the third variable.
+#'   All variables should be factors (characters may work but are not guaranteed).
+#'
 #' @param percCut numeric scalar (0-100). Cutoff below which percentages are not shown in bar segments. Default `5`.
+#'
 #' @param colo (optional but recommended) vector of colours to use for the fill scale (character vector of colours,
 #' length the same as the number of levels of the factor that is the first variable of `dat`.)
 #' If `NULL` (default) the pallete from `OMESurvey::get_OME_colours(type='distinct')` is used.
 #' When `na.rm = FALSE` a grey colour is prepended for the "No response" level.
 #' Note that percentage labels are in white, so the pallete needs to work with that.
 #'  (... or this function needs upgrading!)
+#'
 #' @param na.rm logical. If `TRUE` then remove `NA` responses from the data;
 #' if `FALSE` (default) then they are converted to "(No response)" and treated as an additional allowed response.
+#'
 #' @param horiz logical (default FALSE) determining whether to coord_flip() so that bars are horizontal and place legend below the plot.
+#'
 #' @param text_scale positive number (default 1) for scaling the size of the percentage and #response labels.
+#'
 #' @param fillLabText Optional character. Label for the fill/legend.
 #'   If `NULL` (the default) the legend title is removed (no label).
 #'   If `""` the name of the first variable in `dat` is used.
+#'
 #' @param xLabText optional text for labelling the second-variable-in-`dat` axis.
 #'   If `NULL` (the default) the label is removed (no label).
 #'   If `""` the name of the first variable in `dat` is used.
+#'
 #' @param yLabText optional text for labelling the 'proportion' axis. Default `"Proportion of responses"`.
+#'
 #' @param titleText optional text for plot title. With default `NULL` the title is removed.
+#'
 #' @param facet_labels Optional named character vector used as a labeller for
 #'   facets (names are original facet values, values are labels to display).
 #'   Default `NULL` uses the values of that variable.
+#'
 #' @param facet_layout Optional character. If `"1row"` the facets are
 #'   arranged in a single row; otherwise default facet layout is used.
 #'   (`"1col"` option planned but not yet supported.)
 #'
-#' @returns ggplot object - a stacked proportional bar chart.
+#' @returns A `ggplot` object (or a `cowplot` object if `cowplot` is installed)
 #'
 #' @details
 #' Percentages are displayed in segments that comprise at least `percCut` of their bar;
@@ -257,7 +314,19 @@ render_survey_summary <- function(data_path,
 #'
 #' @export
 #'
-#' @examples # NEED A SHORT EXAMPLE
+#' @examples
+#' # Minimal example with two questions and three response levels
+#' dat <- tibble::tibble(
+#'   Response = factor(c("Yes", "No", "Yes", "Maybe")),
+#'   Group    = factor(c("A", "A", "B", "B"))
+#' )
+#'
+#' initial_bar(dat)
+#'
+#' # Horizontal version with a title
+#' initial_bar(dat, horiz = TRUE, titleText = "Example bar chart")
+#'
+
 initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
                        horiz=FALSE, text_scale=1,
                        fillLabText=NULL, xLabText=NULL,
@@ -448,23 +517,55 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
 #' Make a stacked bar chart summarising many survey questions
 #'
-#' Longer version - INCOMPLETE
+#' Make a horizontal stacked bar chart to summarise several survey questions,
+#' with questions ordered according to the proportion of responses that fit a
+#' particular pattern.
 #'
-#' @param dat INCOMPLETE
-#' @param labels_vec INCOMPLETE
-#' @param percCut INCOMPLETE
-#' @param colo INCOMPLETE
-#' @param order_values INCOMPLETE
-#' @param titleText INCOMPLETE
+#' @param dat a tibble/data.frame, each variable corresponding to a question. All variables should be factors and all with the same possible values.
+#' @param labels_vec a named vector of labels to use for the questions on the plot. Names are variable names and values are corresponding labels.
+#' @param percCut numeric scalar (0-100). Cutoff below which percentages are not shown in bar segments. Default `5`.
+#' @param colo (optional but recommended) vector of colours to use for the fill scale (character vector of colours,
+#' length the same as the number of levels of the factor that is the first variable of `dat`.)
+#' If `NULL` (default) the pallete from `OMESurvey::get_OME_colours(type='distinct')` is used.
+#' When `na.rm = FALSE` a grey colour is prepended for the "No response" level.
+#' Note that percentage labels are in white, so the pallete needs to work with that.
+#'  (... or this function needs upgrading!)
+#' @param order_values optional vector of question responses that determine the ordering of questions in the plot.
+#' @param titleText text to use as plot title.
 #'
-#' @returns INCOMPLETE
+#' @returns
+#' A `ggplot` object (or a `cowplot` object if `cowplot` is installed) representing
+#' a horizontal stacked bar chart summarising the survey questions.#'
+#'
+#' @note
+#' All variables in `dat` should have identical factor levels.
+#' The names of `labels_vec` must match the column names of `dat`.
+#' Values in `order_values` must be valid levels of the response factor.
+#'
+#' @details
+#' `order_values` specifies the responses which count for ordering the questions in the plot. e.g. `c("Strongly agree", "Agree")` will result in the questions being ordered according to the proportion of respondents who agree.
+#'
+#' @section Legend placement:
+#' If the `cowplot` package is installed, the legend is extracted and placed
+#' beneath the plot, centred horizontally. If `cowplot` is not available,
+#' the legend remains in the default ggplot position.
+#'
 #'
 #' @export
 #'
 #' @examples
-#' # NEED A SHORT EXAMPLE HERE
+#' # Minimal example with three questions and three response levels
+#' dat <- tibble::tibble(
+#'   Q1 = factor(c("Yes", "No", "Yes", "Maybe")),
+#'   Q2 = factor(c("No", "No", "Yes", "Maybe")),
+#'   Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"))
+#' )
 #'
-plot_many_questions <- function(dat, labels_vec, percCut=2,
+#' labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
+#'
+#' plot_many_questions(dat, labels_vec = labels)
+#'
+plot_many_questions <- function(dat, labels_vec, percCut=5,
                                 colo=NULL, order_values = NULL,
                                 titleText=NULL){
 
@@ -568,6 +669,36 @@ convert_colo <- function(colo){
 }
 
 
+#' Suppress warnings matching a specific pattern
+#'
+#' Evaluates an expression while suppressing only those warnings whose
+#' message matches a given regular expression. All other warnings are
+#' allowed to propagate normally.
+#'
+#' @param expr Expression to evaluate.
+#' @param pattern Regular expression used to identify warnings that
+#'   should be suppressed.
+#'
+#' @return A list with two elements:
+#'   * `value` — the result of evaluating `expr`
+#'   * `suppressed` — a character vector of suppressed warning messages
+#'
+#' @examples
+#' suppress_specific_warning({
+#'   warning("Ignore this one")
+#'   123
+#' }, pattern = "Ignore")
+#'
+#' Suppress the usual "NAs introduced by coercion" warning
+#' and use $value to store the result and ignore the $suppressed component
+#' numeric_version <-
+#'   suppress_specific_warning(
+#'     as.numeric(c("2", "3", "z")),
+#'     pattern = "NAs introduced"
+#'   )$value
+
+#'
+#' @export
 suppress_specific_warning <- function(expr, pattern) {
   suppressed <- character()
   value <- withCallingHandlers(

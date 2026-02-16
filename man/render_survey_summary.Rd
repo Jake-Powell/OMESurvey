@@ -27,7 +27,7 @@ render_survey_summary(
 )
 }
 \arguments{
-\item{data_path}{path to the survey data (assumed to be xls/xlsx).}
+\item{data_path}{path to the survey data (assumed to be xls/xlsx/csv).}
 
 \item{dict_path, dict_sheet}{path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.}
 
