@@ -20,5 +20,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Jake Powell \email{Jake.Powell2@nottingham.ac.uk} (\href{https://orcid.org/YOUR-ORCID-ID}{ORCID})
 
+Other contributors:
+\itemize{
+  \item Dave Sirl \email{david.sirl@nottingham.ac.uk} (\href{https://orcid.org/0000-0002-2639-1666}{ORCID}) [contributor]
+}
+
 }
 \keyword{internal}
