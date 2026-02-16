@@ -68,6 +68,30 @@ data <- readxl::read_excel(
 
 dict <- readxl::read_excel(params$dict_path,
                    sheet = params$dict_sheet)
+
+# check that dictionary has required columns
+required_vars <- c("Variable name", "Final data type", "Allowed values",
+                   "Item statement", "report_sec")
+                   #"grouping_var", "condition")
+missing <- setdiff(required_vars, names(df))
+
+if (length(missing) > 0) {
+  stop("The following required variables are missing from the data dictionary: ",
+       paste(missing, collapse = ", "))
+}
+
+if (!("grouping_var" %in% names(dict))){
+  dict <-
+    dict |>
+    dplyr::mutate(grouping_var = NA)
+}
+
+if (!("condition" %in% names(dict))){
+  dict <-
+    dict |>
+    dplyr::mutate(condition = NA)
+}
+
 ```
 
 Check variables present in one source and not the other. We probably expect some variables to appear here, but not too many. Here is the opportunity to check that the variable names the do appear here are ok.
