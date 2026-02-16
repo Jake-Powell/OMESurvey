@@ -24,6 +24,7 @@ render_survey_summary(
   est_char_values = NULL,
   est_char_statements = NULL,
   quiet = TRUE,
+  verbose = FALSE,
   show = FALSE,
   rmd = NULL
 )
@@ -85,6 +86,11 @@ render_survey_summary(
 
   (optional) whether to quieten the Rmd rendering information. Defaults
   to TRUE; FALSE useful for testing.
+
+- verbose:
+
+  (optional) whether to include extra/verbose detail in the report.
+  Defaults to FALSE; TRUE useful for testing.
 
 - show:
 
