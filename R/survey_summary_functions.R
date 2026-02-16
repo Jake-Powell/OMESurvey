@@ -476,7 +476,8 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
           geom = "text",
           position = ggplot2::position_fill(vjust = 0.5),
           colour = "white",
-          size = 3 * text_scale
+          size = 3 * text_scale,
+          show.legend = FALSE
         )
     },
     pattern = "Ignoring unknown parameters: `orientation`"
