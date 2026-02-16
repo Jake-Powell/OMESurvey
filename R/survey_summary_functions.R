@@ -69,6 +69,10 @@ render_survey_summary <- function(data_path,
     stop("File not found: ", dict_path)
   }
 
+  # check data file type (if changing see "data_ext <-" in the .Rmd)
+  if (!(tolower(tools::file_ext(data_path)) %in% c("csv", "xls", "xlsx"))){
+    stop("Unsupported data file type: ", ext)
+  }
 
   is_file_openable <- function(path) {
     con <- try(file(path, open = "rb"), silent = TRUE)

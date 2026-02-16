@@ -62,9 +62,15 @@ Load data and dictionary
 (The file paths and tab name of the data dictionary to use will be passed in as parameters when this gets turned into a function.)
 
 ```{r}
-data <- readxl::read_excel(
-  params$data_path,
-  guess_max = 1e6)
+data_ext <- tolower(tools::file_ext(params$data_path))
+
+data <- switch(data_ext,
+  "csv"  = readr::read_csv(params$data_path, show_col_types = FALSE),
+  "xlsx" = readxl::read_excel(params$data_path, guess_max = 1e6),
+  "xls"  = readxl::read_excel(params$data_path, guess_max = 1e6),
+  stop("Unsupported file type: ", ext)
+) # if changing see also file type checking in render_survey_summary()
+
 
 dict <- readxl::read_excel(params$dict_path,
                    sheet = params$dict_sheet)

@@ -23,6 +23,7 @@ Imports:
     plotly,
     png,
     reactable,
+    readr,
     readxl,
     rmarkdown,
     scales,
