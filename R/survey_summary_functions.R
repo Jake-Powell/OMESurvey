@@ -360,20 +360,29 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
                                 labels=scales::percent_format(accuracy=1),
                                 minor_breaks=seq(0,1,0.05))
 
-  # add percentage labels on bar segments
-  thePlot <- thePlot +
-    ggstats::stat_prop(
-      ggplot2::aes(
-        x = var_subdivide,
-        label = ifelse(ggplot2::after_stat(prop) < percCut,
-                       "",
-                       scales::percent(ggplot2::after_stat(prop), accuracy = 1))
-      ),
-      geom = "text",
-      position = ggplot2::position_fill(vjust = 0.5),
-      colour = "white",
-      size = 3 * text_scale
-    )
+  # add percentage labels on bar segments; suppressing warning that arises by doing
+  # stat_prop(geom=text) rather than stat_geom() with after_stat(prop)
+
+  #Ignoring unknown parameters: `orientation`
+
+  thePlot <- suppress_specific_warning(
+    {
+      thePlot +
+        ggstats::stat_prop(
+          ggplot2::aes(
+            x = var_subdivide,
+            label = ifelse(ggplot2::after_stat(prop) < percCut,
+                           "",
+                           scales::percent(ggplot2::after_stat(prop), accuracy = 1))
+          ),
+          geom = "text",
+          position = ggplot2::position_fill(vjust = 0.5),
+          colour = "white",
+          size = 3 * text_scale
+        )
+    },
+    pattern = "Ignoring unknown parameters: `orientation`"
+  )$value
 
 
   # Add faceting if needed
@@ -527,4 +536,21 @@ convert_colo <- function(colo){
     )
   }
   return(colo)
+}
+
+
+suppress_specific_warning <- function(expr, pattern) {
+  suppressed <- character()
+  value <- withCallingHandlers(
+    expr,
+    warning = function(w) {
+      msg <- conditionMessage(w)
+      if (grepl(pattern, msg, perl = TRUE)) {
+        suppressed <<- c(suppressed, msg)
+        invokeRestart("muffleWarning")   # stop this warning from printing
+      }
+      # otherwise let the warning proceed (not muffled)
+    }
+  )
+  list(value = value, suppressed = suppressed)
 }
