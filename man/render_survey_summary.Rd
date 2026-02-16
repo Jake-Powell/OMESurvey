@@ -21,6 +21,7 @@ render_survey_summary(
   est_char_values = NULL,
   est_char_statements = NULL,
   quiet = TRUE,
+  verbose = FALSE,
   show = FALSE,
   rmd = NULL
 )
@@ -49,6 +50,8 @@ render_survey_summary(
 \item{est_char_vars, est_char_types, est_char_values, est_char_statements}{specification of establishment characteristics to use, see Details (write).}
 
 \item{quiet}{(optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.}
+
+\item{verbose}{(optional) whether to include extra/verbose detail in the report. Defaults to FALSE; TRUE useful for testing.}
 
 \item{show}{(optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.}
 

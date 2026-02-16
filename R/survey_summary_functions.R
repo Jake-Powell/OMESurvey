@@ -20,6 +20,7 @@
 #' @param est_chars_sheet name of sheet in est't chars to use.
 #' @param est_char_vars,est_char_types,est_char_values,est_char_statements specification of establishment characteristics to use, see Details (write).
 #' @param quiet (optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.
+#' @param verbose (optional) whether to include extra/verbose detail in the report. Defaults to FALSE; TRUE useful for testing.
 #' @param show (optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.
 #' @param rmd (optional) path to .Rmd document to use for report-making. Using anything other than the default should be rare.
 #'
@@ -44,6 +45,7 @@ render_survey_summary <- function(data_path,
                                   est_char_values=NULL,
                                   est_char_statements=NULL,
                                   quiet = TRUE,
+                                  verbose = FALSE,
                                   show = FALSE,
                                   rmd = NULL) {
 
@@ -57,11 +59,8 @@ render_survey_summary <- function(data_path,
     if (!file.exists(rmd)) stop("rmd not found")
   }
 
-  message("After system.file(), rmd = ", rmd)
-  message("file.exists(rmd) = ", file.exists(rmd))
 
-
-  # check that data_path is a real file
+  # check that data & dict are real files
   if (!file.exists(data_path)) {
     stop("File not found: ", data_path)
   }
@@ -69,6 +68,38 @@ render_survey_summary <- function(data_path,
   if (!file.exists(dict_path)) {
     stop("File not found: ", dict_path)
   }
+
+
+  is_file_openable <- function(path) {
+    con <- try(file(path, open = "rb"), silent = TRUE)
+    if (inherits(con, "try-error")) {
+      return(FALSE)
+    }
+    close(con)
+    TRUE
+  }
+
+
+  if (!is_file_openable(data_path)) {
+    stop("Data file is locked or cannot be opened")
+  }
+  if (!is_file_openable(dict_path)) {
+    stop("Data dictionary file is locked or cannot be opened")
+  }
+
+
+  # same for est_chars_path
+  if (!is.null(est_chars_path)) {
+    if (!file.exists(est_chars_path)) {
+      stop("File not found: ", est_chars_path)
+    }
+
+    if(!is_file_openable(est_chars_path)){
+      stop("Establishment characteristics file is locked or cannot be opened")
+    }
+  }
+
+
 
 
   # default output filename if not provided
@@ -87,8 +118,9 @@ render_survey_summary <- function(data_path,
   if (file.exists(out_full)) {
     if (!overwrite) {
       if (interactive()) {
+        cat("Output file ", out_full)
         ans <- tolower(trimws(readline(
-          paste0("Output file ", out_full, "\nalready exists. Overwrite? [y/N]: ")
+          paste0("File already exists. Overwrite? [y/N]: ")
         )))
         if (nzchar(ans) && substr(ans, 1, 1) == "y") {
           # proceed and overwrite
@@ -137,25 +169,18 @@ render_survey_summary <- function(data_path,
     est_char_statements = est_char_statements,
     output_title = output_title,
     output_author = output_author,
-    output_date = output_date
+    output_date = output_date,
+    verbose = verbose
   )
 
-  # optionally suppress RStudio Viewer during render
+  # (optionally) suppress RStudio Viewer during render
   if (!isTRUE(show)) {
     old_viewer <- getOption("viewer")
     on.exit(options(viewer = old_viewer), add = TRUE)
     options(viewer = function(url) invisible())
   }
 
-  message("Before render(), rmd = ", rmd)
-  message("file.exists(rmd) = ", file.exists(rmd))
-
-  message("RMD: ", rmd)
-  message("DIR: ", dirname(rmd))
-  message("WORKING DIR: ", getwd())
-  message("FILE EXISTS: ", file.exists(rmd))
-
-
+  # managing working directory for the .Rmd rendering
   old <- setwd(dirname(rmd))
   on.exit(setwd(old), add = TRUE)
 

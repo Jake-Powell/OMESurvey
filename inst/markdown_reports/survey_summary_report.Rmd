@@ -23,18 +23,19 @@ params:
   output_title: NULL
   output_author: NULL
   output_date: NULL
+  verbose: NULL
 ---
 
 
-```{r}
-params$output_title
-params$output_author
-params$output_date
-```
-
-```{r debug, echo=FALSE}
-message("knit_root_dir: ", knitr::opts_knit$get("root.dir"))
-message("working dir: ", getwd())
+```{r debug}
+if (params$verbose){
+  params$output_title
+  params$output_author
+  params$output_date
+  
+  message("knit_root_dir: ", knitr::opts_knit$get("root.dir"))
+  message("working dir: ", getwd())
+}
 ```
 
 # Setup
@@ -88,12 +89,18 @@ Filter the dictionary to keep only variables which are assigned a section (i.e. 
 dict <-
   dict |>
   dplyr::filter(!is.na(report_sec))
+```
 
-# print the dictionary
-dict |>
-  dplyr::mutate(dplyr::across(dplyr::where(is.character), # in character columns change newline (many possibilities) to double-space
-                ~ stringr::str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
-  knitr::kable()
+Print the dictionary (if verbose)
+```{r}
+if (params$verbose) {
+  dict |>
+    # in character columns change newline (many possibilities) to double-space
+    dplyr::mutate(dplyr::across(dplyr::where(is.character),
+                  ~ stringr::str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
+    
+    knitr::kable()
+}
 ```
 
 
@@ -129,7 +136,7 @@ Now do similarly for the establishment grouping (demographic-type) variables. Lo
 
 ```{r results='asis'}
 if (is.null(params$est_chars_path)){
-  knitr::asis_output("No establishment characteristics.")
+  knitr::asis_output("**No establishment characteristics.**")
 }else{
   # load establishment characteristics file
   est_chars <-
@@ -193,55 +200,11 @@ if (is.null(params$est_chars_path)){
                         condition = NA)
     }
   }
+
+  est_chars |> remove()
 }
-
-est_chars |> remove()
 ```
 
-**For development/practicing**
-
-1. reduce the variables we are working with to just one/two grouping (demographic type) variables and a just enough sections of actual questions to test that things are working.
-1. also add some invalid responses to check behaviour.
-1. print the dictionary, effectively in its as-imported state, for checking/validation
-
-```{r eval=FALSE}
-# get names of the variables to keep
-(vars_to_keep <-
-  data |>
-   dplyr::select(GENDER, GCSE_MATH,
-                 UrbanRural,
-                 starts_with("SURVEY_"),
-                 starts_with("WHY_AL"),
-                 #matches("WHY_AL[2-4]+"),
-                 #starts_with("INTERNET_"),
-                 starts_with("PLAN_"),
-                 starts_with("UNI_"),
-                 starts_with("ADVICE"),
-                 starts_with("INFLUENCE")
-   ) |>
-   base::names())
-
-# restrict data and dictionary accordingly
-data <-
-  data |>
-  dplyr::select(all_of(vars_to_keep))
-
-dict <-
-  dict |>
-  dplyr::filter(`Variable name` %in% vars_to_keep)
-
-# add an invalid response
-data[2,"WHY_AL2"] = "WRONG!!"
-data[3,"WHY_AL2"] = "WRONG again!!"
-data[2,"SURVEY_DURATION"] = "90+"
-data[3,"SURVEY_DURATION"] = "fifteen"
-
-# print the dictionary
-dict |>
-  dplyr::mutate(dplyr::across(dplyr::where(is.character), # in character columns change newline (many possibilities) to double-space
-                ~ stringr::str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
-kable()
-```
 
 
 ## Readying the dictionary
@@ -646,32 +609,30 @@ for (i in seq_len(nrow(dict))) {
 validation_df <- dplyr::bind_rows(validation_log)
 ```
 
-And print the validation report.
+
+Print the validation report and the `str()` of the `data` if in verbose mode.
 
 ```{r}
-validation_df |>
-  dplyr::mutate(dplyr::across(dplyr::where(is.character), # in character columns change newline (many possibilities) to double-space
-                ~ stringr::str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
-  reactable::reactable(wrap=TRUE,
-                       #columns = col_width,
-                       showPageSizeOptions = TRUE,
-                       pageSizeOptions = c(10,25,50,100),
-                       defaultPageSize = 10,
-                       fullWidth = FALSE,
-                       striped=TRUE,
-                       compact=TRUE,
-                       filterable=TRUE,
-                       resizable = TRUE)
+if (params$verbose){
+  validation_df |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.character), # in character columns change newline (many possibilities) to double-space
+                                ~ stringr::str_replace_all(., "\\\\r\\\\n|\\r\\n|\\n|\\r", "  "))) |>
+    reactable::reactable(wrap=TRUE,
+                         #columns = col_width,
+                         showPageSizeOptions = TRUE,
+                         pageSizeOptions = c(10,25,50,100),
+                         defaultPageSize = 10,
+                         fullWidth = FALSE,
+                         striped=TRUE,
+                         compact=TRUE,
+                         filterable=TRUE,
+                         resizable = TRUE)
+  
+  data |> str(strict.width="cut")
+}
 ```
 
 
-## Structure of the data
-
-Just in case anything looks fishy, the actual `str()` of the `data`.
-
-```{r}
-data |> str(strict.width="cut")
-```
 
 
 ## Substantive reporting starts here
@@ -683,7 +644,10 @@ percCutHoriz <- 2
 percCutVert <- 2
 ```
 
-Note that, for categorical variables, percentages on plots are suppressed if they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
+Note that, for categorical variables, percentages on plots are suppressed if
+
+- they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and
+- if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
 
 
 ```{r results='asis', echo=FALSE, message=TRUE, fig.width=10, fig.height=6}
