@@ -18,18 +18,19 @@ Imports:
     ggstats,
     grDevices,
     gridExtra,
+    knitr,
     openxlsx,
     plotly,
     png,
+    reactable,
     readxl,
+    rmarkdown,
     scales,
     stringr,
     tidyr
 Suggests: 
     cowplot,
     DT,
-    knitr,
-    rmarkdown,
     testthat (>= 3.0.0),
     tibble
 VignetteBuilder: knitr
