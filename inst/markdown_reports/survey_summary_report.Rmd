@@ -79,7 +79,7 @@ dict <- readxl::read_excel(params$dict_path,
 required_vars <- c("Variable name", "Final data type", "Allowed values",
                    "Item statement", "report_sec")
                    #"grouping_var", "condition")
-missing <- setdiff(required_vars, names(df))
+missing <- setdiff(required_vars, names(dict))
 
 if (length(missing) > 0) {
   stop("The following required variables are missing from the data dictionary: ",
