@@ -34,6 +34,7 @@ reference:
   - create_initial_analysis_report
   - get_OME_colours
   - convert_NA
+  - suppress_specific_warning
 
 - title: Dave survey summary functions
   contents:
