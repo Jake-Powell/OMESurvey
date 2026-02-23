@@ -141,7 +141,7 @@ vars_not_in_data <-
                 data |> base::names())
 
 if (length(vars_not_in_data) == 0) {
-  knitr::asis_output("Good news: All variables assigned a section in the data dictionary found in the data.")
+  knitr::asis_output("**Good news**. All variables assigned a section in the data dictionary found in the data.")
 } else {
   #remove from dictionary
   dict <-
@@ -159,9 +159,7 @@ if (length(vars_not_in_data) == 0) {
 if (length(vars_not_in_data) != 0) vars_not_in_data
 ```
 
-Now do similarly for the establishment grouping (demographic-type) variables. Load the file, check the variables, join, warn if anything goes wrong.
-
-(The file path and tab name and vectors of variables&info to use will be passed in as parameters when this gets turned into a function.)
+Now deal with any grouping variables from the establishment characteristics. Load the file, check the variables, join relevant variables to the data, warn if anything goes wrong.
 
 
 ```{r results='asis'}
@@ -864,7 +862,7 @@ for(sec in sections){
         cat()
 
     if(v$type == "factor" && !v$allowed_specified){
-      cat("\n**Warning**: no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n")
+      cat('\n<span style="color: red;">**WARNING:**</span> no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n')
     }
     
     
