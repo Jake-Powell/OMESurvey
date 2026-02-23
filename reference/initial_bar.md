@@ -1,13 +1,10 @@
 # Make stacked bar chart (possibly split into separate bars and facetted) in the OME style. (Dave's version.)
 
-`initial_bar` builds a proportional (stacked, filled) bar chart from a
+`initial_bar` builds a (stacked, filled) proportional bar chart from a
 tidy data frame of survey responses. The first column is treated as the
 response factor (fill), the optional second column as the
 grouping/subdivision, and the optional third column is used for
-faceting. Percentages of bars are overlaid on the plot and number of
-observations/responses are shown at the end of each bar. The function
-returns a `ggplot` object ready for further customization or direct
-printing.
+faceting.
 
 ## Usage
 
@@ -32,11 +29,15 @@ initial_bar(
 
 - dat:
 
-  data frame of 1, 2 or 3 variables. Bar charts show relative
-  frequencies of the first variable, split into separate bars according
-  to the second variable (if present), and facetted by the third
-  variable (if present). All variables should be factors (but characters
-  might work?).
+  A data frame with 1–3 variables:
+
+  - **1 variable** → a single proportional bar.
+
+  - **2 variables** → separate bars for each level of the second
+    variable.
+
+  - **3 variables** → facetted bars by the third variable. All variables
+    should be factors (characters may work but are not guaranteed).
 
 - percCut:
 
@@ -106,9 +107,24 @@ initial_bar(
 
 ## Value
 
-ggplot object - a stacked proportional bar chart.
+A `ggplot` object (or a `cowplot` object if `cowplot` is installed)
 
 ## Details
+
+The plot displays:
+
+- relative frequencies of the first variable,
+
+- optional subdivision into separate bars,
+
+- optional faceting,
+
+- percentage labels inside bar segments (above a cutoff),
+
+- `(n)` labels showing the number of responses per bar.
+
+The function returns a `ggplot` (or `cowplot` if it is installed) object
+ready for further customization or direct printing.
 
 Percentages are displayed in segments that comprise at least `percCut`
 of their bar; the percentage displayed is this rounded to a whole
@@ -117,5 +133,16 @@ number.
 ## Examples
 
 ``` r
-# NEED A SHORT EXAMPLE
+# Minimal example with two questions and three response levels
+dat <- tibble::tibble(
+  Response = factor(c("Yes", "No", "Yes", "Maybe")),
+  Group    = factor(c("A", "A", "B", "B"))
+)
+
+initial_bar(dat)
+
+
+# Horizontal version with a title
+initial_bar(dat, horiz = TRUE, titleText = "Example bar chart")
+
 ```

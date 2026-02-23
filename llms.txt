@@ -160,6 +160,8 @@ check
   : get colours for the OME
 - [`convert_NA()`](https://jake-powell.github.io/OMESurvey/reference/convert_NA.md)
   : Convert "N-A" to NA across a data frame
+- [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
+  : Suppress warnings matching a specific pattern
 
 ## Dave survey summary functions
 

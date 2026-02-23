@@ -5,6 +5,8 @@
 - **Jake Powell**. Author, maintainer.
   [](https://orcid.org/YOUR-ORCID-ID)
 
+- **Dave Sirl**. Contributor. [](https://orcid.org/0000-0002-2639-1666)
+
 ## Citation
 
 Powell J (2026). *OMESurvey: Tools for analysing survey data for the

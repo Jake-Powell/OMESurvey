@@ -83,7 +83,7 @@ Structure of the summary document is encoded in specified columns of the data di
 
 
 <dl><dt id="arg-data-path">data_path<a class="anchor" aria-label="anchor" href="#arg-data-path"></a></dt>
-<dd><p>path to the survey data (assumed to be xls/xlsx).</p></dd>
+<dd><p>path to the survey data (assumed to be xls/xlsx/csv).</p></dd>
 
 
 <dt id="arg-dict-path-dict-sheet">dict_path, dict_sheet<a class="anchor" aria-label="anchor" href="#arg-dict-path-dict-sheet"></a></dt>
@@ -115,15 +115,15 @@ Structure of the summary document is encoded in specified columns of the data di
 
 
 <dt id="arg-est-chars-path">est_chars_path<a class="anchor" aria-label="anchor" href="#arg-est-chars-path"></a></dt>
-<dd><p>path to establishment characteristics data (xls/xlsx).</p></dd>
+<dd><p>(optional) path to establishment characteristics data (xls/xlsx).</p></dd>
 
 
 <dt id="arg-est-chars-sheet">est_chars_sheet<a class="anchor" aria-label="anchor" href="#arg-est-chars-sheet"></a></dt>
-<dd><p>name of sheet in est't chars to use.</p></dd>
+<dd><p>(optional, needed if <code>est_chars_path</code> is used) name of sheet in est't chars to use.</p></dd>
 
 
 <dt id="arg-est-char-vars-est-char-types-est-char-values-est-char-statements">est_char_vars, est_char_types, est_char_values, est_char_statements<a class="anchor" aria-label="anchor" href="#arg-est-char-vars-est-char-types-est-char-values-est-char-statements"></a></dt>
-<dd><p>specification of establishment characteristics to use, see Details (write).</p></dd>
+<dd><p>(optional, needed if <code>est_chars_path</code> is used) specification of establishment characteristics to use, see Details.</p></dd>
 
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
@@ -151,12 +151,51 @@ Structure of the summary document is encoded in specified columns of the data di
     <p>Here is some text for the details. Needs to say something about the arguments
 est_char_vars,est_char_types,est_char_values,est_char_statements.
 And possibly quiet, show, rmd too.</p>
+<p>Additional grouping variables using Establishment Characteristics can be added
+using <code>est_chars_path</code> and <code>est_chars_sheet</code> to point to the Establishment
+Characteristics spreadsheet and the relevant sheet thereof.
+If used then <code>est_char_vars</code>, <code>est_char_types</code>, <code>est_char_values</code> and <code>est_char_statements</code>
+must also be used, to specify the establishment characteristics variables
+to be used and their details as in the data dictionary. See example below.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co">#No examples yet - probably difficult and low priority,</span></span></span>
-<span class="r-in"><span><span class="co"># given the need to have data and a dictionary and that we produce a file.</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Simplest usage</span></span></span>
+<span class="r-in"><span><span class="fu">render_survey_summary</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data_path <span class="op">=</span> <span class="st">"C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 &amp; 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx"</span>,</span></span>
+<span class="r-in"><span>  dict_path <span class="op">=</span> <span class="st">"data_dict_copy.xlsx"</span>,</span></span>
+<span class="r-in"><span>  dict_sheet <span class="op">=</span> <span class="st">"pupil_survey_Y12"</span>,</span></span>
+<span class="r-in"><span>  output_file <span class="op">=</span> <span class="st">"y12_summary.html"</span>,</span></span>
+<span class="r-in"><span>  output_title <span class="op">=</span> <span class="st">"Y12 student survey summary"</span>,</span></span>
+<span class="r-in"><span>  output_author <span class="op">=</span> <span class="st">"D Sirl"</span>,</span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in render_survey_summary(data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 &amp; 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",     dict_path = "data_dict_copy.xlsx", dict_sheet = "pupil_survey_Y12",     output_file = "y12_summary.html", output_title = "Y12 student survey summary",     output_author = "D Sirl", ):</span> File not found: C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 &amp; 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Using establishment characteristics too</span></span></span>
+<span class="r-in"><span><span class="fu">render_survey_summary</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data_path <span class="op">=</span> <span class="st">"C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 &amp; 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx"</span>,</span></span>
+<span class="r-in"><span>  dict_path <span class="op">=</span> <span class="st">"data_dict_copy.xlsx"</span>,</span></span>
+<span class="r-in"><span>  dict_sheet <span class="op">=</span> <span class="st">"pupil_survey_Y12"</span>,</span></span>
+<span class="r-in"><span>  output_file <span class="op">=</span> <span class="st">"y12_summary.html"</span>,</span></span>
+<span class="r-in"><span>  output_title <span class="op">=</span> <span class="st">"Y12 student survey summary"</span>,</span></span>
+<span class="r-in"><span>  output_author <span class="op">=</span> <span class="st">"D Sirl"</span>,</span></span>
+<span class="r-in"><span>  est_chars_path <span class="op">=</span> <span class="st">"C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx"</span>,</span></span>
+<span class="r-in"><span>  est_chars_sheet <span class="op">=</span> <span class="st">"partner_characteristics_sec"</span>,</span></span>
+<span class="r-in"><span>  est_char_vars <span class="op">=</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"TrustCategory"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"UrbanRural"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  est_char_types <span class="op">=</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"factor-neg-pos"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"factor-unordered"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  est_char_values <span class="op">=</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"No trust; Trust of 1-9; Trust of 10-19; Trust of 20+"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"Conurbation; City or town; Rural"</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  est_char_statements <span class="op">=</span></span></span>
+<span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Trust size"</span>,</span></span>
+<span class="r-in"><span>      <span class="st">"Urban/Rural classification"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in render_survey_summary(data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 &amp; 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",     dict_path = "data_dict_copy.xlsx", dict_sheet = "pupil_survey_Y12",     output_file = "y12_summary.html", output_title = "Y12 student survey summary",     output_author = "D Sirl", est_chars_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx",     est_chars_sheet = "partner_characteristics_sec", est_char_vars = c("TrustCategory",         "UrbanRural"), est_char_types = c("factor-neg-pos", "factor-unordered"),     est_char_values = c("No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",         "Conurbation; City or town; Rural"), est_char_statements = c("Trust size",         "Urban/Rural classification")):</span> File not found: C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 &amp; 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
