@@ -494,7 +494,7 @@ for (i in seq_len(nrow(dict))) {
            },
            `lo-hi`={
              colo <- list(OMESurvey::get_OME_colours(length(allowed), type="complementary"))
-             order_values <- list(NA)
+             order_values <- list("mean(as.numeric())")
            },
            unordered={
              colo <- list(OMESurvey::get_OME_colours(length(allowed), type="distinct"))
@@ -714,7 +714,8 @@ for(sec in sections){
 
     # prepare df and labels for plotting
     df_plot <- data |> dplyr::select(any_of(vars))
-    labels_vec <- setNames(as.character(vars_in_sec$item_statement), vars_in_sec$variable)
+    labels_vec <- setNames(as.character(vars_in_sec$item_statement),
+                           vars_in_sec$variable)
 
     remove_common_prefix <- function(x) {
       # find longest common prefix length
@@ -931,7 +932,7 @@ for(sec in sections){
         ggplot2::ggplot(df_for_bar, ggplot2::aes(x=factor(1), y = .data[[num_var]])) +
         #ggplot2::geom_boxplot(width = 0.3, outlier.shape = 21, fill = "lightblue") +
         ggplot2::geom_boxplot() +
-        ggplot2::labs(y = NULL, x = NULL) +
+        ggplot2::labs(y=NULL, x=NULL, title=label) +
         ggplot2::theme_minimal() +
         ggplot2::coord_flip()
       
@@ -959,7 +960,7 @@ for(sec in sections){
         # j is the numeric index, g is the name
         p <- ggplot2::ggplot(df_for_bar, ggplot2::aes(x = .data[[g]], y = .data[[num_var]])) +
           ggplot2::geom_boxplot() +
-          ggplot2::labs(x=g, y=NULL) +
+          ggplot2::labs(x=NULL, y=NULL, title=paste0(label," by ", g)) +
           ggplot2::theme_minimal() +
           ggplot2::coord_flip()
         
@@ -1024,9 +1025,14 @@ for(sec in sections){
     } else {
       for (j in seq.int(1, nvars)) {
         sub_df <- df_for_bar[, unique(c(1, j)), drop=FALSE]
+        plot_title <- paste0(
+          label,
+          if (j>1){paste0(" by ", names(sub_df)[2])}
+        )
         #drop=FALSE to ensure j=1 stays a dataframe (doesn't become a vector)
         initial_bar_tryCatch(sub_df, percCut=percCutVert,
-                             colo = colo_arg, fillLabText=NULL, yLabText=NULL)
+                             colo = colo_arg, fillLabText=NULL, yLabText=NULL,
+                             titleText=plot_title)
       }
     }
     

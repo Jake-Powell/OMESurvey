@@ -581,8 +581,13 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
                         names_to = "question",
                         values_to = "Response") |>
     dplyr::mutate(question = as.factor(question),
-                  order_flag = as.character(Response) %in% order_values,
+                  order_flag = if (length(order_values)==1 && order_values=="mean(as.numeric())") {
+                                  as.numeric(Response)
+                                } else {
+                                  as.character(Response) %in% order_values
+                                },
                   question = forcats::fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
+
 
   # get plotting
   thePlot <-
