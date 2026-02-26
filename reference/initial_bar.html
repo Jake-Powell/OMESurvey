@@ -94,14 +94,14 @@ All variables should be factors (characters may work but are not guaranteed).</p
 <dd><p>(optional but recommended) vector of colours to use for the fill scale (character vector of colours,
 length the same as the number of levels of the factor that is the first variable of <code>dat</code>.)
 If <code>NULL</code> (default) the pallete from <code>OMESurvey::get_OME_colours(type='distinct')</code> is used.
-When <code>na.rm = FALSE</code> a grey colour is prepended for the "No response" level.
+When <code>na.rm = FALSE</code> a grey colour is prepended for the "Missing" level.
 Note that percentage labels are in white, so the pallete needs to work with that.
 (... or this function needs upgrading!)</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
 <dd><p>logical. If <code>TRUE</code> then remove <code>NA</code> responses from the data;
-if <code>FALSE</code> (default) then they are converted to "(No response)" and treated as an additional allowed response.</p></dd>
+if <code>FALSE</code> (default) then they are converted to "Missing" and treated as an additional allowed response.</p></dd>
 
 
 <dt id="arg-horiz">horiz<a class="anchor" aria-label="anchor" href="#arg-horiz"></a></dt>

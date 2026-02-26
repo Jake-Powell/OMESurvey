@@ -30,3 +30,24 @@ A list with two elements:
 - `suppressed` — a character vector of suppressed warning messages
 
 ## Examples
+
+``` r
+suppress_specific_warning({
+  warning("Ignore this one")
+  123
+}, pattern = "Ignore")
+#> $value
+#> [1] 123
+#> 
+#> $suppressed
+#> [1] "Ignore this one"
+#> 
+
+# Suppress the usual "NAs introduced by coercion" warning
+# and use $value to store the result and ignore the $suppressed component
+numeric_version <-
+  suppress_specific_warning(
+    as.numeric(c("2", "3", "z")),
+    pattern = "NAs introduced"
+  )$value
+```

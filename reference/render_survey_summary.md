@@ -125,22 +125,24 @@ details as in the data dictionary. See example below.
 ## Examples
 
 ``` r
+if (FALSE) { # \dontrun{
 # Simplest usage
 render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
   dict_path = "data_dict_copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
+  output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
   output_file = "y12_summary.html",
   output_title = "Y12 student survey summary",
   output_author = "D Sirl",
 )
-#> Error in render_survey_summary(data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",     dict_path = "data_dict_copy.xlsx", dict_sheet = "pupil_survey_Y12",     output_file = "y12_summary.html", output_title = "Y12 student survey summary",     output_author = "D Sirl", ): File not found: C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx
 
 # Using establishment characteristics too
 render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
   dict_path = "data_dict_copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
+  output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
   output_file = "y12_summary.html",
   output_title = "Y12 student survey summary",
   output_author = "D Sirl",
@@ -148,16 +150,20 @@ render_survey_summary(
   est_chars_sheet = "partner_characteristics_sec",
   est_char_vars =
     c("TrustCategory",
-      "UrbanRural"),
+      "UrbanRural",
+      "PercentageFSM"),
   est_char_types =
     c("factor-neg-pos",
-      "factor-unordered"),
+      "factor-unordered",
+      "numeric-quintiles"),
   est_char_values =
     c("No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",
-      "Conurbation; City or town; Rural"),
+      "Conurbation; City or town; Rural",
+      NA),
   est_char_statements =
-    c("Trust size",
-      "Urban/Rural classification")
+    c("Total trust size",
+      "Urban/Rural classification",
+      "FSM quintile")
 )
-#> Error in render_survey_summary(data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",     dict_path = "data_dict_copy.xlsx", dict_sheet = "pupil_survey_Y12",     output_file = "y12_summary.html", output_title = "Y12 student survey summary",     output_author = "D Sirl", est_chars_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx",     est_chars_sheet = "partner_characteristics_sec", est_char_vars = c("TrustCategory",         "UrbanRural"), est_char_types = c("factor-neg-pos", "factor-unordered"),     est_char_values = c("No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",         "Conurbation; City or town; Rural"), est_char_statements = c("Trust size",         "Urban/Rural classification")): File not found: C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx
+} # }
 ```

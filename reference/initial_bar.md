@@ -51,15 +51,15 @@ initial_bar(
   of the factor that is the first variable of `dat`.) If `NULL`
   (default) the pallete from
   `OMESurvey::get_OME_colours(type='distinct')` is used. When
-  `na.rm = FALSE` a grey colour is prepended for the "No response"
-  level. Note that percentage labels are in white, so the pallete needs
-  to work with that. (... or this function needs upgrading!)
+  `na.rm = FALSE` a grey colour is prepended for the "Missing" level.
+  Note that percentage labels are in white, so the pallete needs to work
+  with that. (... or this function needs upgrading!)
 
 - na.rm:
 
   logical. If `TRUE` then remove `NA` responses from the data; if
-  `FALSE` (default) then they are converted to "(No response)" and
-  treated as an additional allowed response.
+  `FALSE` (default) then they are converted to "Missing" and treated as
+  an additional allowed response.
 
 - horiz:
 
