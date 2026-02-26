@@ -141,7 +141,7 @@ vars_not_in_data <-
                 data |> base::names())
 
 if (length(vars_not_in_data) == 0) {
-  knitr::asis_output("**Good news**. All variables assigned a section in the data dictionary found in the data.")
+  cat("**Good news**. All variables assigned a section in the data dictionary found in the data.")
 } else {
   #remove from dictionary
   dict <-
@@ -151,7 +151,7 @@ if (length(vars_not_in_data) == 0) {
   # warn
   cat('\n\n<span style="color: red;">**WARNING:**</span> The following variables are given a section in the dictionary but cannot be found in the data: \n\n')
            #txt <- paste0(" - ", vars_not_in_data)
-  #knitr::asis_output(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
+  #cat(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
   }
 ```
 
@@ -159,12 +159,14 @@ if (length(vars_not_in_data) == 0) {
 if (length(vars_not_in_data) != 0) vars_not_in_data
 ```
 
+
+
 Now deal with any grouping variables from the establishment characteristics. Load the file, check the variables, join relevant variables to the data, warn if anything goes wrong.
 
 
 ```{r results='asis'}
 if (is.null(params$est_chars_path)){
-  knitr::asis_output("**No establishment characteristics.**")
+  cat("**No establishment characteristics.**")
 }else{
   # load establishment characteristics file
   est_chars <-
@@ -193,11 +195,11 @@ if (is.null(params$est_chars_path)){
                   est_chars |> base::names())
 
   if (length(char_vars_not_in_data) == 0) {
-    knitr::asis_output("Good news: All establishment characteristics found in the establishment characteristics data.")
+    cat("Good news: All establishment characteristics found in the establishment characteristics data.")
   } else {
     cat('\n\n<span style="color: red;">**WARNING:**</span> The following establishment characteristics are requested to be included as grouping variables but cannot be found in the establishment characteristics data: \n\n')
     txt <- paste0(" - ", char_vars_not_in_data)
-    knitr::asis_output(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
+    cat(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
   }
 
   # variables we will add to the dictionary
@@ -215,8 +217,9 @@ if (is.null(params$est_chars_path)){
       dplyr::left_join(est_chars |> dplyr::select(EstablishmentID, dplyr::all_of(est_char_vars)),
                        by=dplyr::join_by(EST_ID == EstablishmentID))
 
-    # add them to the data dictionary
+    # add them to the data dictionary and, if numeric, calculate the appropriate x-iles
     for (i in seq_len(length(est_char_vars))){
+      if (grepl("^factor-",est_char_types[i])){
       dict <-
         dict |>
         tibble::add_row(`Variable name` = est_char_vars[i],
@@ -226,6 +229,59 @@ if (is.null(params$est_chars_path)){
                         report_sec = "A: Grouping variables",
                         grouping_var = "T",
                         condition = NA)
+      } else if (grepl("^numeric-",est_char_types[i])) {
+      # first look up x-iles from the establishment characteristics spreadsheet
+      est_stats <-
+        readxl::read_excel(
+          params$est_chars_path,
+          sheet = "stats_sec")
+      
+      if (endsWith(est_char_types[i], "-quintiles")){
+        est_xiles <-
+          est_stats |>
+          dplyr::filter(variable==est_char_vars[i], grepl("/5$",statistic)) |>
+          dplyr::arrange(statistic) |>
+          dplyr::pull(value)
+        label_prefix <- "Quintile "
+        label_max_num <- 5
+      } else if (endsWith(est_char_types[i], "-tertiles")){
+        est_xiles <-
+          est_stats |>
+          dplyr::filter(variable==est_char_vars[i], grepl("/3$",statistic)) |>
+          dplyr::arrange(statistic) |>
+          dplyr::pull(value)
+        label_prefix <- "Tertile "
+        label_max_num <- 3
+      } else if (endsWith(est_char_types[i], "-quartiles")){
+        stop("Can't do quartiles yet (as a numeric-xxx est_char_types entry)")
+      } else {
+        stop("Unknown suffix in a est_char_types entry of the form numeric-xxx")
+      }
+      
+      # Construct the factor labels
+      final_labels <- paste0(label_prefix, seq_len(label_max_num))
+      
+      # Add dictionary row with correct allowed values (semicolon-delimited)
+      dict <- dict |>
+        tibble::add_row(
+          `Variable name` = est_char_vars[i],
+          `Final data type` = "factor-lo-hi",
+          `Allowed values` = paste(final_labels, collapse = ";"),
+          `Item statement` = est_char_statements[i],
+          report_sec = "A: Grouping variables",
+          grouping_var = "T",
+          condition = NA
+        )
+
+      # Apply the cut() using the same labels
+      data <- data |>
+        dplyr::mutate("{est_char_vars[i]}_raw" := .data[[est_char_vars[i]]]) |>
+        dplyr::mutate("{est_char_vars[i]}" :=
+                        cut(.data[[paste0(est_char_vars[i], "_raw")]],
+                            breaks = c(-Inf, est_xiles, Inf),
+                            labels = final_labels))
+      
+      }
     }
   }
 
@@ -233,7 +289,24 @@ if (is.null(params$est_chars_path)){
 }
 ```
 
-
+If verbose spit out the dictionary
+```{r}
+if (params$verbose){
+  dict |>
+    dplyr::mutate(dplyr::across(dplyr::where(is.character), # in character columns change newline (many possibilities) to double-space
+                                ~ stringr::str_replace_all(., "\\r?\\n", "  "))) |>
+    reactable::reactable(wrap=TRUE,
+                         #columns = col_width,
+                         showPageSizeOptions = TRUE,
+                         pageSizeOptions = c(10,25,50,100),
+                         defaultPageSize = 10,
+                         fullWidth = FALSE,
+                         striped=TRUE,
+                         compact=TRUE,
+                         filterable=TRUE,
+                         resizable = TRUE)
+  }
+```
 
 ## Readying the dictionary
 
@@ -478,7 +551,7 @@ for (i in seq_len(nrow(dict))) {
   
   
   #  factors use allowed; compute invalid_mask from raw_chr
-  if (grepl("factor-", dtype, ignore.case = TRUE)) {
+  if (grepl("^factor-", stringr::str_squish(dtype), ignore.case = TRUE)) {
     if (allowed_specified) {
       invalid_mask <- !is.na(raw_chr) & !(raw_chr %in% allowed)
     } else {
@@ -499,7 +572,8 @@ for (i in seq_len(nrow(dict))) {
            unordered={
              colo <- list(OMESurvey::get_OME_colours(length(allowed), type="distinct"))
              order_values <- list(NA)
-           }
+           },
+           stop("Unknown factor type (in colour scheme determination)")
     )
     
     validation_log[[var]] <- make_validation_row(

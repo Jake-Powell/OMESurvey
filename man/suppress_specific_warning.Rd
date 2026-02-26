@@ -30,8 +30,8 @@ suppress_specific_warning({
   123
 }, pattern = "Ignore")
 
-Suppress the usual "NAs introduced by coercion" warning
-and use $value to store the result and ignore the $suppressed component
+# Suppress the usual "NAs introduced by coercion" warning
+# and use $value to store the result and ignore the $suppressed component
 numeric_version <-
   suppress_specific_warning(
     as.numeric(c("2", "3", "z")),

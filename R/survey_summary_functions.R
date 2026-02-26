@@ -38,11 +38,13 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Simplest usage
 #' render_survey_summary(
 #'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
 #'   dict_path = "data_dict_copy.xlsx",
 #'   dict_sheet = "pupil_survey_Y12",
+#'   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
 #'   output_file = "y12_summary.html",
 #'   output_title = "Y12 student survey summary",
 #'   output_author = "D Sirl",
@@ -53,6 +55,7 @@
 #'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
 #'   dict_path = "data_dict_copy.xlsx",
 #'   dict_sheet = "pupil_survey_Y12",
+#'   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
 #'   output_file = "y12_summary.html",
 #'   output_title = "Y12 student survey summary",
 #'   output_author = "D Sirl",
@@ -60,17 +63,22 @@
 #'   est_chars_sheet = "partner_characteristics_sec",
 #'   est_char_vars =
 #'     c("TrustCategory",
-#'       "UrbanRural"),
+#'       "UrbanRural",
+#'       "PercentageFSM"),
 #'   est_char_types =
 #'     c("factor-neg-pos",
-#'       "factor-unordered"),
+#'       "factor-unordered",
+#'       "numeric-quintiles"),
 #'   est_char_values =
 #'     c("No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",
-#'       "Conurbation; City or town; Rural"),
+#'       "Conurbation; City or town; Rural",
+#'       NA),
 #'   est_char_statements =
-#'     c("Trust size",
-#'       "Urban/Rural classification")
+#'     c("Total trust size",
+#'       "Urban/Rural classification",
+#'       "FSM quintile")
 #' )
+#' }
 
 
 render_survey_summary <- function(data_path,
@@ -275,12 +283,12 @@ render_survey_summary <- function(data_path,
 #' @param colo (optional but recommended) vector of colours to use for the fill scale (character vector of colours,
 #' length the same as the number of levels of the factor that is the first variable of `dat`.)
 #' If `NULL` (default) the pallete from `OMESurvey::get_OME_colours(type='distinct')` is used.
-#' When `na.rm = FALSE` a grey colour is prepended for the "No response" level.
+#' When `na.rm = FALSE` a grey colour is prepended for the "Missing" level.
 #' Note that percentage labels are in white, so the pallete needs to work with that.
 #'  (... or this function needs upgrading!)
 #'
 #' @param na.rm logical. If `TRUE` then remove `NA` responses from the data;
-#' if `FALSE` (default) then they are converted to "(No response)" and treated as an additional allowed response.
+#' if `FALSE` (default) then they are converted to "Missing" and treated as an additional allowed response.
 #'
 #' @param horiz logical (default FALSE) determining whether to coord_flip() so that bars are horizontal and place legend below the plot.
 #'
@@ -371,9 +379,9 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
     # then prepend grey to the pallete for the NAs
     dat <- dat |>
       dplyr::mutate(dplyr::across(1, ~ .x |>
-                                    forcats::fct_expand("No response") |>
-                                    forcats::fct_na_value_to_level(level = "No response") |>
-                                    forcats::fct_relevel("No response", after=0)))
+                                    forcats::fct_expand("Missing") |>
+                                    forcats::fct_na_value_to_level(level = "Missing") |>
+                                    forcats::fct_relevel("Missing", after=0)))
     if (is.null(colo)){
       colo <- (dat |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
     }
@@ -695,8 +703,8 @@ convert_colo <- function(colo){
 #'   123
 #' }, pattern = "Ignore")
 #'
-#' Suppress the usual "NAs introduced by coercion" warning
-#' and use $value to store the result and ignore the $suppressed component
+#' # Suppress the usual "NAs introduced by coercion" warning
+#' # and use $value to store the result and ignore the $suppressed component
 #' numeric_version <-
 #'   suppress_specific_warning(
 #'     as.numeric(c("2", "3", "z")),

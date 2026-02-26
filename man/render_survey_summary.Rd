@@ -78,11 +78,13 @@ must also be used, to specify the establishment characteristics variables
 to be used and their details as in the data dictionary. See example below.
 }
 \examples{
+\dontrun{
 # Simplest usage
 render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
   dict_path = "data_dict_copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
+  output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
   output_file = "y12_summary.html",
   output_title = "Y12 student survey summary",
   output_author = "D Sirl",
@@ -93,6 +95,7 @@ render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
   dict_path = "data_dict_copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
+  output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
   output_file = "y12_summary.html",
   output_title = "Y12 student survey summary",
   output_author = "D Sirl",
@@ -100,15 +103,20 @@ render_survey_summary(
   est_chars_sheet = "partner_characteristics_sec",
   est_char_vars =
     c("TrustCategory",
-      "UrbanRural"),
+      "UrbanRural",
+      "PercentageFSM"),
   est_char_types =
     c("factor-neg-pos",
-      "factor-unordered"),
+      "factor-unordered",
+      "numeric-quintiles"),
   est_char_values =
     c("No trust; Trust of 1-9; Trust of 10-19; Trust of 20+",
-      "Conurbation; City or town; Rural"),
+      "Conurbation; City or town; Rural",
+      NA),
   est_char_statements =
-    c("Trust size",
-      "Urban/Rural classification")
+    c("Total trust size",
+      "Urban/Rural classification",
+      "FSM quintile")
 )
+}
 }

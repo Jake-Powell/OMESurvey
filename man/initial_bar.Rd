@@ -33,12 +33,12 @@ All variables should be factors (characters may work but are not guaranteed).
 \item{colo}{(optional but recommended) vector of colours to use for the fill scale (character vector of colours,
 length the same as the number of levels of the factor that is the first variable of \code{dat}.)
 If \code{NULL} (default) the pallete from \code{OMESurvey::get_OME_colours(type='distinct')} is used.
-When \code{na.rm = FALSE} a grey colour is prepended for the "No response" level.
+When \code{na.rm = FALSE} a grey colour is prepended for the "Missing" level.
 Note that percentage labels are in white, so the pallete needs to work with that.
 (... or this function needs upgrading!)}
 
 \item{na.rm}{logical. If \code{TRUE} then remove \code{NA} responses from the data;
-if \code{FALSE} (default) then they are converted to "(No response)" and treated as an additional allowed response.}
+if \code{FALSE} (default) then they are converted to "Missing" and treated as an additional allowed response.}
 
 \item{horiz}{logical (default FALSE) determining whether to coord_flip() so that bars are horizontal and place legend below the plot.}
 
