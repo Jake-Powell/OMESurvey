@@ -904,7 +904,8 @@ for(sec in sections){
     }
 
 
-    # build df for bar charts: variable of interest, then grouping vars
+    # Build df for bar charts: variable of interest, then grouping vars.
+    # Respecting the condition if present
     if (length(grouping_vars) == 0) {
       if (!is.null(cond_expr)) {
         df_for_bar <- data |>
@@ -961,8 +962,8 @@ for(sec in sections){
     }
     
     # a table of values for factors, otherwise a skim() of the data
-    if (is.factor(data[[var]])) {
-      janitor::tabyl(data[[var]]) |>
+    if (is.factor(df_for_bar[[var]])) {
+      janitor::tabyl(df_for_bar[[var]]) |>
         janitor::adorn_totals() |>
         janitor::adorn_pct_formatting(digits=1) |>
         as.data.frame() |>
@@ -972,7 +973,7 @@ for(sec in sections){
         as.character() |>
         cat()
     } else {
-      skimr::skim(data[[var]]) |>
+      skimr::skim(df_for_bar[[var]]) |>
         kable_narrow() |>
         as.character() |>
         cat()
