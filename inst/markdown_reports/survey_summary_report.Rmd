@@ -221,7 +221,7 @@ if (is.null(params$est_chars_path)){
       } else if (grepl("^numeric-",est_char_types[i])) {
         
       # first look up x-iles from the establishment characteristics spreadsheet
-        if (!exists(est_stats)){
+        if (!exists("est_stats")){
           est_stats <-
             readxl::read_excel(
               params$est_chars_path,
