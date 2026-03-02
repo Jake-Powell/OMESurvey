@@ -27,17 +27,6 @@ params:
 ---
 
 
-```{r debug}
-if (params$verbose){
-  params$output_title
-  params$output_author
-  params$output_date
-  
-  message("knit_root_dir: ", knitr::opts_knit$get("root.dir"))
-  message("working dir: ", getwd())
-}
-```
-
 # Setup
 
 ## Preliminaries
@@ -240,6 +229,7 @@ if (is.null(params$est_chars_path)){
         est_xiles <-
           est_stats |>
           dplyr::filter(variable==est_char_vars[i], grepl("/5$",statistic)) |>
+          dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
           dplyr::arrange(statistic) |>
           dplyr::pull(value)
         label_prefix <- "Quintile "
@@ -248,14 +238,22 @@ if (is.null(params$est_chars_path)){
         est_xiles <-
           est_stats |>
           dplyr::filter(variable==est_char_vars[i], grepl("/3$",statistic)) |>
+          dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
           dplyr::arrange(statistic) |>
           dplyr::pull(value)
         label_prefix <- "Tertile "
         label_max_num <- 3
       } else if (endsWith(est_char_types[i], "-quartiles")){
-        stop("Can't do quartiles yet (as a numeric-xxx est_char_types entry)")
+        est_xiles <-
+          est_stats |>
+          dplyr::filter(variable==est_char_vars[i], grepl("/[24]$",statistic)) |>
+          dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+          dplyr::arrange(statistic) |>
+          dplyr::pull(value)
+        label_prefix <- "Quartile "
+        label_max_num <- 4
       } else {
-        stop("Unknown suffix in a est_char_types entry of the form numeric-xxx")
+        stop("Unknown suffix in a `est_char_types` entry of the form numeric-xxx.")
       }
       
       # Construct the factor labels

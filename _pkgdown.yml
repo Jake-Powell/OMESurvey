@@ -35,6 +35,7 @@ reference:
   - get_OME_colours
   - convert_NA
   - suppress_specific_warning
+  - frac_to_num
 
 - title: Dave survey summary functions
   contents:

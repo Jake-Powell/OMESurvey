@@ -106,7 +106,7 @@ render_survey_summary(
       "UrbanRural",
       "PercentageFSM"),
   est_char_types =
-    c("factor-neg-pos",
+    c("factor-lo-hi",
       "factor-unordered",
       "numeric-quintiles"),
   est_char_values =

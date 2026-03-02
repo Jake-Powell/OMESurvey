@@ -728,3 +728,21 @@ suppress_specific_warning <- function(expr, pattern) {
   )
   list(value = value, suppressed = suppressed)
 }
+
+
+#' Convert simple text fractions to numeric values
+#'
+#' Parses character strings of the form `"a/b"` and returns their numeric
+#' value \eqn{a/b}. Intended for ordering or comparing simple fractions.
+#'
+#' @param x A character vector of fractions written as `"a/b"`.
+#'
+#' @return A numeric vector of the same length as `x`.
+#' @export
+#' @examples
+#' frac_to_num(c("1/4", "1/2", "3/4"))
+#'
+frac_to_num <- function(x) {
+  parts <- strsplit(x, "/", fixed = TRUE)
+  sapply(parts, function(p) as.numeric(p[1]) / as.numeric(p[2]))
+}
