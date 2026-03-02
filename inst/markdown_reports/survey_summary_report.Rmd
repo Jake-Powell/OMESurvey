@@ -219,70 +219,77 @@ if (is.null(params$est_chars_path)){
                         grouping_var = "T",
                         condition = NA)
       } else if (grepl("^numeric-",est_char_types[i])) {
+        
       # first look up x-iles from the establishment characteristics spreadsheet
-      est_stats <-
-        readxl::read_excel(
-          params$est_chars_path,
-          sheet = "stats_sec")
-      
-      if (endsWith(est_char_types[i], "-quintiles")){
-        est_xiles <-
-          est_stats |>
-          dplyr::filter(variable==est_char_vars[i], grepl("/5$",statistic)) |>
-          dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
-          dplyr::arrange(statistic) |>
-          dplyr::pull(value)
-        label_prefix <- "Quintile "
-        label_max_num <- 5
-      } else if (endsWith(est_char_types[i], "-tertiles")){
-        est_xiles <-
-          est_stats |>
-          dplyr::filter(variable==est_char_vars[i], grepl("/3$",statistic)) |>
-          dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
-          dplyr::arrange(statistic) |>
-          dplyr::pull(value)
-        label_prefix <- "Tertile "
-        label_max_num <- 3
-      } else if (endsWith(est_char_types[i], "-quartiles")){
-        est_xiles <-
-          est_stats |>
-          dplyr::filter(variable==est_char_vars[i], grepl("/[24]$",statistic)) |>
-          dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
-          dplyr::arrange(statistic) |>
-          dplyr::pull(value)
-        label_prefix <- "Quartile "
-        label_max_num <- 4
-      } else {
-        stop("Unknown suffix in a `est_char_types` entry of the form numeric-xxx.")
-      }
-      
-      # Construct the factor labels
-      final_labels <- paste0(label_prefix, seq_len(label_max_num))
-      
-      # Add dictionary row with correct allowed values (semicolon-delimited)
-      dict <- dict |>
-        tibble::add_row(
-          `Variable name` = est_char_vars[i],
-          `Final data type` = "factor-lo-hi",
-          `Allowed values` = paste(final_labels, collapse = ";"),
-          `Item statement` = est_char_statements[i],
-          report_sec = "A: Grouping variables",
-          grouping_var = "T",
-          condition = NA
-        )
-
-      # Apply the cut() using the same labels
-      data <- data |>
-        dplyr::mutate("{est_char_vars[i]}_raw" := .data[[est_char_vars[i]]]) |>
-        dplyr::mutate("{est_char_vars[i]}" :=
-                        cut(.data[[paste0(est_char_vars[i], "_raw")]],
-                            breaks = c(-Inf, est_xiles, Inf),
-                            labels = final_labels))
-      
+        if (!exists(est_stats)){
+          est_stats <-
+            readxl::read_excel(
+              params$est_chars_path,
+              sheet = switch (params$est_chars_sheet,
+                              partner_characteristics_sec = "stats_sec",
+                              partner_characteristics_pri = "stats_pri")
+            )
+        }
+        
+        # depending on xxx in numeric-xxx, look up stats and prepare other variables
+        if (endsWith(est_char_types[i], "-quintiles")){
+          est_xiles <-
+            est_stats |>
+            dplyr::filter(variable==est_char_vars[i], grepl("/5$",statistic)) |>
+            dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+            dplyr::arrange(statistic) |>
+            dplyr::pull(value)
+          label_prefix <- "Quintile "
+          label_max_num <- 5
+        } else if (endsWith(est_char_types[i], "-tertiles")){
+          est_xiles <-
+            est_stats |>
+            dplyr::filter(variable==est_char_vars[i], grepl("/3$",statistic)) |>
+            dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+            dplyr::arrange(statistic) |>
+            dplyr::pull(value)
+          label_prefix <- "Tertile "
+          label_max_num <- 3
+        } else if (endsWith(est_char_types[i], "-quartiles")){
+          est_xiles <-
+            est_stats |>
+            dplyr::filter(variable==est_char_vars[i], grepl("/[24]$",statistic)) |>
+            dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+            dplyr::arrange(statistic) |>
+            dplyr::pull(value)
+          label_prefix <- "Quartile "
+          label_max_num <- 4
+        } else {
+          stop("Unknown suffix in a `est_char_types` entry of the form numeric-xxx.")
+        }
+        
+        # Construct the factor labels
+        final_labels <- paste0(label_prefix, seq_len(label_max_num))
+        
+        # Add dictionary row with correct allowed values (semicolon-delimited)
+        dict <- dict |>
+          tibble::add_row(
+            `Variable name` = est_char_vars[i],
+            `Final data type` = "factor-lo-hi",
+            `Allowed values` = paste(final_labels, collapse = ";"),
+            `Item statement` = est_char_statements[i],
+            report_sec = "A: Grouping variables",
+            grouping_var = "T",
+            condition = NA
+          )
+        
+        # Apply the cut() using the same labels
+        data <- data |>
+          dplyr::mutate("{est_char_vars[i]}_raw" := .data[[est_char_vars[i]]]) |>
+          dplyr::mutate("{est_char_vars[i]}" :=
+                          cut(.data[[paste0(est_char_vars[i], "_raw")]],
+                              breaks = c(-Inf, est_xiles, Inf),
+                              labels = final_labels))
+        
       }
     }
   }
-
+  
   est_chars |> remove()
 }
 ```
