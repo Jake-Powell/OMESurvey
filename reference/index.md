@@ -54,6 +54,8 @@
   : Convert "N-A" to NA across a data frame
 - [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
   : Suppress warnings matching a specific pattern
+- [`frac_to_num()`](https://jake-powell.github.io/OMESurvey/reference/frac_to_num.md)
+  : Convert simple text fractions to numeric values
 
 ## Dave survey summary functions
 
