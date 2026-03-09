@@ -359,6 +359,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
 
   colnames(dat)[1:3] = c("var_name", "var_subdivide", "var_facet")
+  dat$var_subdivide <- factor(dat$var_subdivide, levels = levels(dat$var_subdivide))
 
   has_facet <- any(dat$var_facet != "")
 
