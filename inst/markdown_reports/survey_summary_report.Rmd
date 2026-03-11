@@ -157,6 +157,12 @@ Now deal with any grouping variables from the establishment characteristics. Loa
 if (is.null(params$est_chars_path)){
   cat("**No establishment characteristics.**")
 }else{
+  # first check that the establishment ID variable EST_ID is present in the survey data
+  num_EST_ID <- sum("EST_ID" == names(data))
+  if (num_EST_ID != 1) {
+    stop(paste0("The variable 'EST_ID' needs to appear in the data file once. But I can see it ",num_EST_ID," times."))
+  }
+  
   # load establishment characteristics file
   est_chars <-
     readxl::read_excel(
