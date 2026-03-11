@@ -270,7 +270,7 @@ render_survey_summary <- function(data_path,
 #' * percentage labels inside bar segments (above a cutoff),
 #' * `(n)` labels showing the number of responses per bar.
 #'
-#' The function returns a `ggplot` (or `cowplot` if it is installed) object ready for further customization or direct printing.
+#' The function returns a `ggplot` object ready for further customization or direct printing.
 #'
 #' @param dat A data frame with 1–3 variables:
 #'   * **1 variable** → a single proportional bar.
@@ -314,7 +314,7 @@ render_survey_summary <- function(data_path,
 #'   arranged in a single row; otherwise default facet layout is used.
 #'   (`"1col"` option planned but not yet supported.)
 #'
-#' @returns A `ggplot` object (or a `cowplot` object if `cowplot` is installed)
+#' @returns A `ggplot` object
 #'
 #' @details
 #' Percentages are displayed in segments that comprise at least `percCut` of their bar;
@@ -469,8 +469,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 
   # add percentage labels on bar segments; suppressing warning that arises by doing
   # stat_prop(geom=text) rather than stat_geom() with after_stat(prop)
-
-  #Ignoring unknown parameters: `orientation`
+  # viz "Ignoring unknown parameters: `orientation`"
 
   thePlot <- suppress_specific_warning(
     {
@@ -545,7 +544,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #'
 #' @returns
 #' A `ggplot` object (or a `cowplot` object if `cowplot` is installed) representing
-#' a horizontal stacked bar chart summarising the survey questions.#'
+#' a horizontal stacked bar chart summarising the survey questions.
 #'
 #' @note
 #' All variables in `dat` should have identical factor levels.
