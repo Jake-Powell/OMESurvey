@@ -16,7 +16,8 @@ initial_bar(
   yLabText = "Proportion of responses",
   titleText = NULL,
   facet_labels = NULL,
-  facet_layout = NULL
+  facet_layout = NULL,
+  fill_label_width = 20
 )
 }
 \arguments{
@@ -63,9 +64,12 @@ Default \code{NULL} uses the values of that variable.}
 \item{facet_layout}{Optional character. If \code{"1row"} the facets are
 arranged in a single row; otherwise default facet layout is used.
 (\code{"1col"} option planned but not yet supported.)}
+
+\item{fill_label_width}{Optional integer. Width (in characters) used when wrapping
+fill labels with \code{stringr::str_wrap()}. Default is 20.}
 }
 \value{
-A \code{ggplot} object (or a \code{cowplot} object if \code{cowplot} is installed)
+A \code{ggplot} object
 }
 \description{
 \code{initial_bar} builds a (stacked, filled) proportional bar chart from a
@@ -83,7 +87,7 @@ The plot displays:
 \item \code{(n)} labels showing the number of responses per bar.
 }
 
-The function returns a \code{ggplot} (or \code{cowplot} if it is installed) object ready for further customization or direct printing.
+The function returns a \code{ggplot} object ready for further customization or direct printing.
 
 Percentages are displayed in segments that comprise at least \code{percCut} of their bar;
 the percentage displayed is this rounded to a whole number.

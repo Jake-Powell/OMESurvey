@@ -3,6 +3,7 @@
 export(ROME_ggtheme)
 export(add_TOC_sheet)
 export(add_logo)
+export(centre_legend_below)
 export(check_IDs)
 export(check_question_columns)
 export(check_survey)

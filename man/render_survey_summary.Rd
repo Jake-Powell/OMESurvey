@@ -82,7 +82,7 @@ to be used and their details as in the data dictionary. See example below.
 # Simplest usage
 render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
-  dict_path = "data_dict_copy.xlsx",
+  dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
   output_file = "y12_summary.html",
@@ -93,7 +93,7 @@ render_survey_summary(
 # Using establishment characteristics too
 render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
-  dict_path = "data_dict_copy.xlsx",
+  dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
   output_file = "y12_summary.html",

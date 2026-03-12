@@ -42,7 +42,7 @@
 #' # Simplest usage
 #' render_survey_summary(
 #'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
-#'   dict_path = "data_dict_copy.xlsx",
+#'   dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
 #'   dict_sheet = "pupil_survey_Y12",
 #'   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
 #'   output_file = "y12_summary.html",
@@ -53,7 +53,7 @@
 #' # Using establishment characteristics too
 #' render_survey_summary(
 #'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
-#'   dict_path = "data_dict_copy.xlsx",
+#'   dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
 #'   dict_sheet = "pupil_survey_Y12",
 #'   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
 #'   output_file = "y12_summary.html",
@@ -314,6 +314,9 @@ render_survey_summary <- function(data_path,
 #'   arranged in a single row; otherwise default facet layout is used.
 #'   (`"1col"` option planned but not yet supported.)
 #'
+#' @param fill_label_width Optional integer. Width (in characters) used when wrapping
+#'   fill labels with `stringr::str_wrap()`. Default is 20.
+#'
 #' @returns A `ggplot` object
 #'
 #' @details
@@ -340,30 +343,62 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
                        fillLabText=NULL, xLabText=NULL,
                        yLabText="Proportion of responses",
                        titleText=NULL,
-                       facet_labels=NULL, facet_layout=NULL){
+                       facet_labels=NULL, facet_layout=NULL,
+                       fill_label_width=20){
 
-  if (ncol(dat)==1){
-    dat[,2] <- ""
+  # --- Normalise dat to have 3 columns: name, subdivide, facet ---
+
+  if (ncol(dat) == 1) {
+    # Only response column provided
+    dat <- tibble::tibble(
+      var_name      = dat[[1]],
+      var_subdivide = factor("All"),   # <-- stable placeholder
+      var_facet     = factor(NA)       # unused but present
+    )
     xLabText <- NULL
-  }else if (identical(xLabText,"")){
-    xLabText <- colnames(dat)[2]
+
+  } else if (ncol(dat) == 2) {
+    # Response + subdividing variable
+    dat <- tibble::tibble(
+      var_name      = dat[[1]],
+      var_subdivide = dat[[2]],
+      var_facet     = factor(NA)
+    )
+    if (identical(xLabText, "")) {
+      xLabText <- colnames(dat)[2]
+    }
+
+  } else {
+    # Response + subdividing + facet
+    dat <- tibble::tibble(
+      var_name      = dat[[1]],
+      var_subdivide = dat[[2]],
+      var_facet     = dat[[3]]
+    )
+    if (identical(xLabText, "")) {
+      xLabText <- colnames(dat)[2]
+    }
   }
 
-  if (ncol(dat)==2){
-    dat[,3] <- ""
-  }#else{ }
+  # var_subdivide: preserve factor levels if already a factor, otherwise create them
+  if (!is.factor(dat$var_subdivide)) {
+    dat$var_subdivide <- factor(dat$var_subdivide)
+  }
 
-  if (identical(fillLabText,"")){
+  # var_facet: same logic
+  if (!is.factor(dat$var_facet)) {
+    dat$var_facet <- factor(dat$var_facet)
+  }
+
+  # Fill label default
+  if (identical(fillLabText, "")) {
     fillLabText <- colnames(dat)[1]
   }
 
+  has_facet <- any(!is.na(dat$var_facet))
 
-  colnames(dat)[1:3] = c("var_name", "var_subdivide", "var_facet")
-  dat$var_subdivide <- factor(dat$var_subdivide, levels = levels(dat$var_subdivide))
 
-  has_facet <- any(dat$var_facet != "")
-
-  # convert percCut to proportion (with defualt 5%)
+  # convert percCut to proportion (with default 5%)
   percCut <- ifelse(is.null(percCut), 0.05, percCut / 100)
 
   # in normal usage this should not be needed, but keeping it because I'm scared it's used somewhere
@@ -376,7 +411,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
       colo <- dat |> dplyr::pull(var_name) |> nlevels() |> get_OME_colours(type='distinct')
     }
   }
-  else{ # if not removing NAs convert them to a proper level, sort out a colour pallete if needed,
+  else{ # if not removing NAs: convert them to a proper level, sort out a colour pallete if needed,
     # then prepend grey to the pallete for the NAs
     dat <- dat |>
       dplyr::mutate(dplyr::across(1, ~ .x |>
@@ -419,11 +454,11 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
     fill_guide <- ggplot2::guide_legend()
   }
 
-  fill_labels <- function(x) stringr::str_wrap(x,width=20)
+  fill_labels <- function(x) stringr::str_wrap(x,width=fill_label_width)
 
   if (is.null(colo)){
     thePlot <- thePlot +
-      ggplot2::scale_fill_discrete(labels=fill_labels, guide=fill_guide)
+      ggplot2::scale_fill_discrete(labels=fill_labels, drop=FALSE, guide=fill_guide)
   } else {
     thePlot <- thePlot +
       ggplot2::scale_fill_manual(values=colo, labels=fill_labels, drop=FALSE, guide=fill_guide)
@@ -539,12 +574,17 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #' When `na.rm = FALSE` a grey colour is prepended for the "No response" level.
 #' Note that percentage labels are in white, so the pallete needs to work with that.
 #'  (... or this function needs upgrading!)
-#' @param order_values optional vector of question responses that determine the ordering of questions in the plot.
-#' @param titleText text to use as plot title.
+#' @param order_values Optional. Controls how questions are ordered in the plot.
+#'   May be a character vector of response levels, or the special value
+#'   `"mean(as.numeric())"`. See Details.
+#' @param titleText Optional text to use as plot title.
+#' @param fill_label_width Optional integer. Width (in characters) used when wrapping
+#'   fill labels with `stringr::str_wrap()`. Passed to `initial_bar()`. Default is 20.
+#' @param axis_label_width Optional integer. Width (in characters) used when wrapping
+#'   axis labels with `stringr::str_wrap()`. Default is 30.
 #'
 #' @returns
-#' A `ggplot` object (or a `cowplot` object if `cowplot` is installed) representing
-#' a horizontal stacked bar chart summarising the survey questions.
+#' A `ggplot` object, a horizontal stacked bar chart summarising the survey questions.
 #'
 #' @note
 #' All variables in `dat` should have identical factor levels.
@@ -552,12 +592,26 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #' Values in `order_values` must be valid levels of the response factor.
 #'
 #' @details
-#' `order_values` specifies the responses which count for ordering the questions in the plot. e.g. `c("Strongly agree", "Agree")` will result in the questions being ordered according to the proportion of respondents who agree.
+#' The `order_values` argument controls how questions are ordered in the
+#' horizontal bar chart.
+#'
+#' * If `order_values` is a character vector of response levels (e.g.
+#'   `c("Strongly agree", "Agree")`), questions are ordered by the proportion
+#'   of respondents whose answers fall into those levels.
+#'   (Intended for factors with positive-negative / divergent scales.)
+#'
+#' * If `order_values` is exactly `"mean(as.numeric())"`, the function instead
+#'   orders questions by the mean of the numeric codes of the response factor.
+#'   (Intended for factors with low-high / sequential scales.)
+#'
+#' Axis labels are wrapped using `stringr::str_wrap()` with a width controlled
+#' by `axis_label_width`. Legend/fill labels are treated the same using `fill_label_width`.
 #'
 #' @section Legend placement:
-#' If the `cowplot` package is installed, the legend is extracted and placed
-#' beneath the plot, centred horizontally. If `cowplot` is not available,
-#' the legend remains in the default ggplot position.
+#' By default, the legend is placed horizontally according to the standard
+#' ggplot2 layout. If you want the legend to be centred across the full width
+#' of the final figure, the helper function `centre_legend_below()` can be used
+#' after plotting. (This must be done after any tweaks to the ggplot theme, annotations, etc)
 #'
 #'
 #' @export
@@ -576,7 +630,9 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #'
 plot_many_questions <- function(dat, labels_vec, percCut=5,
                                 colo=NULL, order_values = NULL,
-                                titleText=NULL){
+                                titleText=NULL,
+                                fill_label_width=20,
+                                axis_label_width=30){
 
   # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
@@ -598,7 +654,7 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
                   question = forcats::fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
 
 
-  # get plotting
+  # do the plotting
   thePlot <-
     dat |>
     dplyr::select(Response, question) |>
@@ -608,22 +664,67 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
                 yLabText=NULL,
                 xLabText=NULL,
                 colo=colo,
-                titleText=titleText) +
-    ggplot2::scale_x_discrete(labels = stringr::str_wrap(labels_vec, width=30))
-
-  # now use cowplot to centre the legend horizontally underneath the whole figure,
-  # not just under the plotting area
-
-  if (requireNamespace("cowplot", quietly=TRUE)){
-    legend <- cowplot::get_legend(thePlot)
-    thePlot_clean <- thePlot + ggplot2::theme(legend.position = "none")
-    thePlot <- cowplot::plot_grid(thePlot_clean, legend,
-                                  ncol=1, rel_heights=c(1,0.15))
-  } else {
-    # no warning/similar at this point that cowplot is required to centre legends under plots
-  }
+                titleText=titleText,
+                fill_label_width = fill_label_width) +
+    ggplot2::scale_x_discrete(labels = stringr::str_wrap(labels_vec, width=axis_label_width))
 
   return(thePlot)
+}
+
+
+
+#' Centre a ggplot legend beneath the plot using cowplot
+#'
+#' Extract the legend from a ggplot object and place it centred beneath
+#' the plot. If the \pkg{cowplot} package is not installed, the plot is
+#' returned unchanged.
+#'
+#' @param p A ggplot object whose legend should be centred beneath the plot.
+#' @param rel_heights A numeric vector of length two giving the relative
+#'   heights of the plot area and the legend area when stacked vertically.
+#'   Defaults to \code{c(1, 0.1)}, which gives the legend 10% of the vertical
+#'   space the plot gets.
+#'
+#' @returns
+#' If \pkg{cowplot} is installed, a \pkg{cowplot} object with the legend
+#' centred underneath the plot. Otherwise, the original ggplot object is
+#' returned unchanged.
+#'
+#' @details
+#' This function extracts the legend from the supplied ggplot object,
+#' removes the legend from the plot itself, and then stacks the plot and
+#' legend vertically using \code{cowplot::plot_grid()}. The relative
+#' heights of the two components can be controlled via \code{rel_heights}.
+#'
+#' @examples
+#' \dontrun{
+#'   p <- ggplot2::ggplot(mtcars, ggplot2::aes(factor(cyl), mpg, fill = factor(cyl))) +
+#'     ggplot2::geom_col()
+#'   centre_legend_below(p)
+#' }
+#'
+#' @export
+
+centre_legend_below <- function(p, rel_heights=c(1,0.1)) {
+
+  # Only proceed if cowplot is available
+  if (!requireNamespace("cowplot", quietly = TRUE)) {
+    return(p)
+  }
+
+  # Extract legend
+  legend <- cowplot::get_legend(p)
+
+  # Remove legend from the original plot
+  p_clean <- p + ggplot2::theme(legend.position = "none")
+
+  # Stack plot and legend
+  cowplot::plot_grid(
+    p_clean,
+    legend,
+    ncol = 1,
+    rel_heights = rel_heights
+  )
 }
 
 

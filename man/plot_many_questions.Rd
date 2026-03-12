@@ -10,7 +10,9 @@ plot_many_questions(
   percCut = 5,
   colo = NULL,
   order_values = NULL,
-  titleText = NULL
+  titleText = NULL,
+  fill_label_width = 20,
+  axis_label_width = 30
 )
 }
 \arguments{
@@ -27,13 +29,20 @@ When \code{na.rm = FALSE} a grey colour is prepended for the "No response" level
 Note that percentage labels are in white, so the pallete needs to work with that.
 (... or this function needs upgrading!)}
 
-\item{order_values}{optional vector of question responses that determine the ordering of questions in the plot.}
+\item{order_values}{Optional. Controls how questions are ordered in the plot.
+May be a character vector of response levels, or the special value
+\code{"mean(as.numeric())"}. See Details.}
 
-\item{titleText}{text to use as plot title.}
+\item{titleText}{Optional text to use as plot title.}
+
+\item{fill_label_width}{Optional integer. Width (in characters) used when wrapping
+fill labels with \code{stringr::str_wrap()}. Passed to \code{initial_bar()}. Default is 20.}
+
+\item{axis_label_width}{Optional integer. Width (in characters) used when wrapping
+axis labels with \code{stringr::str_wrap()}. Default is 30.}
 }
 \value{
-A \code{ggplot} object (or a \code{cowplot} object if \code{cowplot} is installed) representing
-a horizontal stacked bar chart summarising the survey questions.#'
+A \code{ggplot} object, a horizontal stacked bar chart summarising the survey questions.
 }
 \description{
 Make a horizontal stacked bar chart to summarise several survey questions,
@@ -41,7 +50,20 @@ with questions ordered according to the proportion of responses that fit a
 particular pattern.
 }
 \details{
-\code{order_values} specifies the responses which count for ordering the questions in the plot. e.g. \code{c("Strongly agree", "Agree")} will result in the questions being ordered according to the proportion of respondents who agree.
+The \code{order_values} argument controls how questions are ordered in the
+horizontal bar chart.
+\itemize{
+\item If \code{order_values} is a character vector of response levels (e.g.
+\code{c("Strongly agree", "Agree")}), questions are ordered by the proportion
+of respondents whose answers fall into those levels.
+(Intended for factors with positive-negative / divergent scales.)
+\item If \code{order_values} is exactly \code{"mean(as.numeric())"}, the function instead
+orders questions by the mean of the numeric codes of the response factor.
+(Intended for factors with low-high / sequential scales.)
+}
+
+Axis labels are wrapped using \code{stringr::str_wrap()} with a width controlled
+by \code{axis_label_width}. Legend/fill labels are treated the same using \code{fill_label_width}.
 }
 \note{
 All variables in \code{dat} should have identical factor levels.
@@ -50,9 +72,10 @@ Values in \code{order_values} must be valid levels of the response factor.
 }
 \section{Legend placement}{
 
-If the \code{cowplot} package is installed, the legend is extracted and placed
-beneath the plot, centred horizontally. If \code{cowplot} is not available,
-the legend remains in the default ggplot position.
+By default, the legend is placed horizontally according to the standard
+ggplot2 layout. If you want the legend to be centred across the full width
+of the final figure, the helper function \code{centre_legend_below()} can be used
+after plotting. (This must be done after any tweaks to the ggplot theme, annotations, etc)
 }
 
 \examples{
