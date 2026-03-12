@@ -25,7 +25,7 @@ reference:
   - ROME_ggtheme
   - plot_ROME_survey
 
-- title:SharePoint paths
+- title: SharePoint paths
   contents:
   - set_OME_sharepoint_root
   - sp_path
