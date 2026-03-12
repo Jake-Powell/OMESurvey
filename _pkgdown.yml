@@ -25,6 +25,11 @@ reference:
   - ROME_ggtheme
   - plot_ROME_survey
 
+- title:SharePoint paths
+  contents:
+  - set_OME_sharepoint_root
+  - sp_path
+
 - title: Misc
   contents:
   - survey_values
