@@ -144,6 +144,13 @@ check
   [`plot_ROME_survey_by_demographic()`](https://jake-powell.github.io/OMESurvey/reference/plot_ROME_survey.md)
   : Plot stacked Likert-style survey questions (ROME style)
 
+## SharePoint paths
+
+- [`set_OME_sharepoint_root()`](https://jake-powell.github.io/OMESurvey/reference/set_OME_sharepoint_root.md)
+  : Explain how to set the OME SharePoint root folder
+- [`sp_path()`](https://jake-powell.github.io/OMESurvey/reference/sp_path.md)
+  : Build a path within the OME SharePoint root
+
 ## Misc
 
 - [`survey_values`](https://jake-powell.github.io/OMESurvey/reference/survey_values.md)
