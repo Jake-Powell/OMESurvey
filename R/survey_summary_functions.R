@@ -708,10 +708,19 @@ plot_box_with_counts <- function(data,
 
   # --- Input validation -------------------------------------------------------
 
-  if (!all(c(deparse(substitute(group_var)),
-             deparse(substitute(value_var))) %in% names(data))) {
+  # Capture column names safely (works with bare names, strings, and !!sym())
+  group_var_sym  <- rlang::ensym(group_var)
+  value_var_sym  <- rlang::ensym(value_var)
+
+  group_var_name <- rlang::as_name(group_var_sym)
+  value_var_name <- rlang::as_name(value_var_sym)
+
+  # Validate inputs
+  if (!group_var_name %in% names(data) ||
+      !value_var_name %in% names(data)) {
     stop("group_var and value_var must be columns in `data`.")
   }
+
 
   if (!is.factor(dplyr::pull(data, {{group_var}}))) {
     stop("group must be a factor.")
@@ -719,6 +728,13 @@ plot_box_with_counts <- function(data,
   if (!is.numeric(dplyr::pull(data, {{value_var}}))) {
     stop("value_var must be numeric.")
   }
+
+  # Ensure factor levels match the order of appearance in the data
+  data[[group_var_name]] <- factor(
+    data[[group_var_name]],
+    levels = unique(data[[group_var_name]])
+  )
+
 
   # --- Extract grouping levels ------------------------------------------------
 
@@ -730,7 +746,7 @@ plot_box_with_counts <- function(data,
     unique(group_vals)
   }
 
-  group_var_name <- rlang::as_name(rlang::ensym(group_var))
+  #group_var_name <- rlang::as_name(rlang::ensym(group_var))
 
   # --- Summaries --------------------------------------------------------------
 
@@ -761,6 +777,7 @@ plot_box_with_counts <- function(data,
       labels = ggplot2::waiver(),
       sec.axis = ggplot2::dup_axis(
         labels = right_labels,
+        breaks = group_levels,
         name = NULL
       )
     ) +
@@ -786,7 +803,7 @@ plot_box_with_counts <- function(data,
       )
   }
 
-  return(p)
+  p
 }
 
 

@@ -1018,14 +1018,21 @@ for(sec in sections){
       group_vars <- names(df_for_bar)[-1]
       
       #first the overall plot
-      p_overall <-
-        ggplot2::ggplot(df_for_bar, ggplot2::aes(x=factor(1), y = .data[[num_var]])) +
-        #ggplot2::geom_boxplot(width = 0.3, outlier.shape = 21, fill = "lightblue") +
-        ggplot2::geom_boxplot() +
-        ggplot2::labs(y=NULL, x=NULL, title=label) +
-        ggplot2::theme_minimal() +
-        ggplot2::coord_flip()
-      
+      # p_overall <-
+      #   ggplot2::ggplot(df_for_bar, ggplot2::aes(x=factor(1), y = .data[[num_var]])) +
+      #   #ggplot2::geom_boxplot(width = 0.3, outlier.shape = 21, fill = "lightblue") +
+      #   ggplot2::geom_boxplot() +
+      #   ggplot2::labs(y=NULL, x=NULL, title=label) +
+      #   ggplot2::theme_minimal() +
+      #   ggplot2::coord_flip()
+      df_for_bar$overall_group <- factor("Overall")
+      p_overall <- OMESurvey::plot_box_with_counts(
+        data = df_for_bar,
+        group_var = overall_group,
+        value_var = !!rlang::sym(num_var),
+        title = label
+      )
+
       # ensure fig path exists
       fig_dir <- knitr::opts_chunk$get("fig.path")
       if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
@@ -1048,11 +1055,18 @@ for(sec in sections){
       for (j in seq_along(group_vars)) {
         g <- group_vars[j]
         # j is the numeric index, g is the name
-        p <- ggplot2::ggplot(df_for_bar, ggplot2::aes(x = .data[[g]], y = .data[[num_var]])) +
-          ggplot2::geom_boxplot() +
-          ggplot2::labs(x=NULL, y=NULL, title=paste0(label,"\n by ", g)) +
-          ggplot2::theme_minimal() +
-          ggplot2::coord_flip()
+        # p <- ggplot2::ggplot(df_for_bar, ggplot2::aes(x = .data[[g]], y = .data[[num_var]])) +
+        #   ggplot2::geom_boxplot() +
+        #   ggplot2::labs(x=NULL, y=NULL, title=paste0(label,"\n by ", g)) +
+        #   ggplot2::theme_minimal() +
+        #   ggplot2::coord_flip()
+        p <- OMESurvey::plot_box_with_counts(
+          data = df_for_bar,
+          group_var = !!rlang::sym(g),
+          value_var = !!rlang::sym(num_var),
+          title = paste0(label, "\n by ", g)
+        )
+
         
         # create a unique, stable filename (using section/variable/plot indices)
         fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png",
