@@ -36,7 +36,7 @@
   data <- data[, keep_cols, drop = FALSE]
 
   # 1) Extract question names (order = columns)
-  questions   <- setdiff(names(data), demographic %||% character(0))
+  questions   <- setdiff(names(data), if (is.null(demographic)) character(0) else demographic)
   n_questions <- length(questions)
 
   # 2) Build long data
