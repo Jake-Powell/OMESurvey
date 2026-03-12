@@ -672,6 +672,123 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
 }
 
 
+#' Boxplot with right-side counts
+#'
+#' @param data A data frame
+#' @param group_var Grouping variable (factor)
+#' @param value_var Numeric variable to plot
+#' @param title Optional plot title
+#' @param colour Boxplot outline colour
+#' @param dashed_at Optional horizontal reference line
+#'
+#' @return A ggplot object
+#' @export
+#'
+#' @examples
+#'
+#' df <- tibble::tibble(
+#'   group = factor(c("A", "A", "B", "B")),
+#'   value = c(3.2, 4.1, 5.0, NA)
+#' )
+#'
+#' plot_box_with_counts(
+#'   data = df,
+#'   group_var = group,
+#'   value_var = value,
+#'   title = "Example boxplot"
+#' )
+
+plot_box_with_counts <- function(data,
+                                 group_var,
+                                 value_var,
+                                 title = NULL,
+                                 colour = OMESurvey::get_OME_colours(1),
+                                 dashed_at = NULL
+) {
+
+  # --- Input validation -------------------------------------------------------
+
+  if (!all(c(deparse(substitute(group_var)),
+             deparse(substitute(value_var))) %in% names(data))) {
+    stop("group_var and value_var must be columns in `data`.")
+  }
+
+  if (!is.factor(dplyr::pull(data, {{group_var}}))) {
+    stop("group must be a factor.")
+  }
+  if (!is.numeric(dplyr::pull(data, {{value_var}}))) {
+    stop("value_var must be numeric.")
+  }
+
+  # --- Extract grouping levels ------------------------------------------------
+
+  group_vals <- dplyr::pull(data, {{ group_var }})
+
+  group_levels <- if (is.factor(group_vals)) {
+    levels(group_vals)
+  } else {
+    unique(group_vals)
+  }
+
+  group_var_name <- rlang::as_name(rlang::ensym(group_var))
+
+  # --- Summaries --------------------------------------------------------------
+
+  group_counts <- data |>
+    dplyr::summarise(
+      non_na = sum(!is.na({{ value_var }})),
+      total  = dplyr::n(),
+      .by = {{ group_var }}
+    ) |>
+    dplyr::mutate(label = sprintf("(%d/%d)", non_na, total))
+
+  # Align labels to factor order
+  idx <- match(group_levels, group_counts[[group_var_name]])
+  right_labels <- stats::setNames(group_counts$label[idx], group_levels)
+
+
+  # Build plot
+  p <-
+    data |>
+    ggplot2::ggplot(ggplot2::aes(x = {{value_var}}, y = {{group_var}})) +
+    ggplot2::geom_boxplot(
+      colour = colour,
+      width = 0.7,
+      na.rm = TRUE
+    ) +
+    ggplot2::labs(x = NULL, y = NULL, title = title) +
+    ggplot2::scale_y_discrete(
+      labels = ggplot2::waiver(),
+      sec.axis = ggplot2::dup_axis(
+        labels = right_labels,
+        name = NULL
+      )
+    ) +
+    OMESurvey::ROME_ggtheme(base_size = 12) +
+    ggplot2::theme(
+      axis.line = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank()
+    )
+  # ggplot2::theme_bw() +
+  # ggplot2::theme(
+  #   panel.grid.major = ggplot2::element_line(colour = "grey90"),
+  #   panel.grid.minor = ggplot2::element_line(colour = "grey95")
+  # )
+
+
+  # Optional dashed reference line
+  if (!is.null(dashed_at)) {
+    p <- p +
+      ggplot2::geom_hline(
+        yintercept = dashed_at,
+        linetype = "dashed",
+        linewidth = 0.3
+      )
+  }
+
+  return(p)
+}
+
 
 #' Centre a ggplot legend beneath the plot using cowplot
 #'

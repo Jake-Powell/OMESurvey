@@ -29,6 +29,7 @@ Imports:
     reactable,
     readr,
     readxl,
+    rlang,
     rmarkdown,
     scales,
     stringr,
