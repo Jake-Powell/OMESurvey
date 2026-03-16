@@ -2,12 +2,12 @@
 % Please edit documentation in R/survey_summary_functions.R
 \name{plot_box_with_counts}
 \alias{plot_box_with_counts}
-\title{Boxplot with right-side counts}
+\title{Boxplot with right-side counts showing valid & total #datapoints for boxes}
 \usage{
 plot_box_with_counts(
   data,
-  group_var,
   value_var,
+  group_var,
   title = NULL,
   colour = OMESurvey::get_OME_colours(1),
   dashed_at = NULL
@@ -16,9 +16,9 @@ plot_box_with_counts(
 \arguments{
 \item{data}{A data frame}
 
-\item{group_var}{Grouping variable (factor)}
-
 \item{value_var}{Numeric variable to plot}
+
+\item{group_var}{Grouping variable (factor)}
 
 \item{title}{Optional plot title}
 
@@ -30,7 +30,7 @@ plot_box_with_counts(
 A ggplot object
 }
 \description{
-Boxplot with right-side counts
+Boxplot with right-side counts showing valid & total #datapoints for boxes
 }
 \examples{
 
@@ -41,8 +41,8 @@ df <- tibble::tibble(
 
 plot_box_with_counts(
   data = df,
-  group_var = group,
   value_var = value,
+  group_var = group,
   title = "Example boxplot"
 )
 }

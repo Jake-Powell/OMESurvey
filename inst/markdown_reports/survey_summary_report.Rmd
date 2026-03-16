@@ -1026,10 +1026,10 @@ for(sec in sections){
       #   ggplot2::theme_minimal() +
       #   ggplot2::coord_flip()
       df_for_bar$overall_group <- factor("Overall")
-      p_overall <- OMESurvey::plot_box_with_counts(
+      p_overall <- OMESurvey::OME_boxplot(
         data = df_for_bar,
-        group_var = overall_group,
         value_var = !!rlang::sym(num_var),
+        group_var = overall_group,
         title = label
       )
 
@@ -1060,10 +1060,10 @@ for(sec in sections){
         #   ggplot2::labs(x=NULL, y=NULL, title=paste0(label,"\n by ", g)) +
         #   ggplot2::theme_minimal() +
         #   ggplot2::coord_flip()
-        p <- OMESurvey::plot_box_with_counts(
+        p <- OMESurvey::OME_boxplot(
           data = df_for_bar,
-          group_var = !!rlang::sym(g),
           value_var = !!rlang::sym(num_var),
+          group_var = !!rlang::sym(g),
           title = paste0(label, "\n by ", g)
         )
 

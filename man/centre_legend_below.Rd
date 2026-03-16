@@ -21,8 +21,8 @@ returned unchanged.
 }
 \description{
 Extract the legend from a ggplot object and place it centred beneath
-the plot. If the \pkg{cowplot} package is not installed, the plot is
-returned unchanged.
+the whole plot. (As opposed to centred under the axis area only.) If the
+\pkg{cowplot} package is not installed, the plot is returned unchanged.
 }
 \details{
 This function extracts the legend from the supplied ggplot object,
