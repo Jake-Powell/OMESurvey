@@ -174,7 +174,7 @@ render_survey_summary <- function(data_path,
   if (file.exists(out_full)) {
     if (!overwrite) {
       if (interactive()) {
-        cat("Output file ", out_full)
+        cat("Chosen output file path \n", out_full)
         ans <- tolower(trimws(readline(
           paste0("File already exists. Overwrite? [y/N]: ")
         )))
@@ -255,204 +255,268 @@ render_survey_summary <- function(data_path,
 
 
 
-
-#' Make stacked bar chart (possibly split into separate bars and facetted) in the OME style. (Dave's version.)
+#' Stacked proportional bar chart in OME style (Dave's version.)
 #'
-#' `initial_bar` builds a (stacked, filled) proportional bar chart from a
-#' tidy data frame of survey responses. The first column is treated as the
-#' response factor (fill), the optional second column as the grouping/subdivision,
-#' and the optional third column is used for faceting.
+#' `OME_stacked_bar()` builds a stacked (filled) proportional bar chart from
+#' survey-style data using **bare column names**.
+#' `OME_stacked_bar_()` is the programmatic interface and underlying engine,
+#' designed for use when column names are supplied as **strings** or **symbols**.
 #'
 #' The plot displays:
-#' * relative frequencies of the first variable,
+#' * relative frequencies of the response variable,
 #' * optional subdivision into separate bars,
 #' * optional faceting,
 #' * percentage labels inside bar segments (above a cutoff),
 #' * `(n)` labels showing the number of responses per bar.
 #'
-#' The function returns a `ggplot` object ready for further customization or direct printing.
+#' @author Dave Sirl
 #'
-#' @param dat A data frame with 1–3 variables:
-#'   * **1 variable** → a single proportional bar.
-#'   * **2 variables** → separate bars for each level of the second variable.
-#'   * **3 variables** → facetted bars by the third variable.
+#' @note Future/possible extensions include adding an optional dashed line
+#'   (like `OME_boxplot()`), making the `(n)` labels optional, using a
+#'   secondary axis for `(n)` labels, improving percentage‑label contrast for
+#'   light fill colours, and a 1‑column option for facet layout.
+#'
+#' @param dat A data frame.
+#' @param response_var Bare column name giving the response categories (used for fill).
+#' @param group_var Optional bare column name defining separate bars.
+#' @param facet_var Optional bare column name used for faceting.
 #'   All variables should be factors (characters may work but are not guaranteed).
 #'
-#' @param percCut numeric scalar (0-100). Cutoff below which percentages are not shown in bar segments. Default `5`.
+#' @param percCut Numeric scalar (0–100). Cutoff below which percentages are not
+#'   shown in bar segments. Default `5`; use a number >100 to suppress all percentages.
 #'
-#' @param colo (optional but recommended) vector of colours to use for the fill scale (character vector of colours,
-#' length the same as the number of levels of the factor that is the first variable of `dat`.)
-#' If `NULL` (default) the pallete from `OMESurvey::get_OME_colours(type='distinct')` is used.
-#' When `na.rm = FALSE` a grey colour is prepended for the "Missing" level.
-#' Note that percentage labels are in white, so the pallete needs to work with that.
-#'  (... or this function needs upgrading!)
+#' @param colo Optional character vector of fill colours (one per response
+#'   level). If `NULL` (default), colours are taken from
+#'   `OMESurvey::get_OME_colours(type = "distinct")`.
+#'   When `na.rm = FALSE`, a grey colour is prepended for the `"Missing"` level.
 #'
-#' @param na.rm logical. If `TRUE` then remove `NA` responses from the data;
-#' if `FALSE` (default) then they are converted to "Missing" and treated as an additional allowed response.
+#' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
+#'   convert them to `"Missing"` and treat as an additional response level.
 #'
-#' @param horiz logical (default FALSE) determining whether to coord_flip() so that bars are horizontal and place legend below the plot.
+#' @param horiz Logical (default `FALSE`). If `TRUE`, flip coordinates so bars
+#'   are horizontal and place the legend below the plot.
 #'
-#' @param text_scale positive number (default 1) for scaling the size of the percentage and #response labels.
+#' @param text_scale Positive number (default `1`) scaling the size of
+#'   percentage and `(n)` labels.
 #'
-#' @param fillLabText Optional character. Label for the fill/legend.
-#'   If `NULL` (the default) the legend title is removed (no label).
-#'   If `""` the name of the first variable in `dat` is used.
+#' @param fillLabText Optional legend title for the fill variable. If `NULL`
+#'   (default) the title is removed; if `""` the name of `response_var` is used.
 #'
-#' @param xLabText optional text for labelling the second-variable-in-`dat` axis.
-#'   If `NULL` (the default) the label is removed (no label).
-#'   If `""` the name of the first variable in `dat` is used.
+#' @param xLabText Optional label for the bar‑group axis. If `NULL` the label is
+#'   removed; if `""` the name of `group_var` is used.
 #'
-#' @param yLabText optional text for labelling the 'proportion' axis. Default `"Proportion of responses"`.
+#' @param yLabText Label for the proportion axis. Default `"Proportion of responses"`.
 #'
-#' @param titleText optional text for plot title. With default `NULL` the title is removed.
+#' @param titleText Optional plot title. Default `NULL` removes the title.
 #'
 #' @param facet_labels Optional named character vector used as a labeller for
 #'   facets (names are original facet values, values are labels to display).
-#'   Default `NULL` uses the values of that variable.
+#'   Default `NULL` uses the raw facet values.
 #'
-#' @param facet_layout Optional character. If `"1row"` the facets are
-#'   arranged in a single row; otherwise default facet layout is used.
-#'   (`"1col"` option planned but not yet supported.)
+#' @param facet_layout Optional character. If `"1row"` the facets are arranged
+#'   in a single row; otherwise the default facet layout is used.
 #'
-#' @param fill_label_width Optional integer. Width (in characters) used when wrapping
-#'   fill labels with `stringr::str_wrap()`. Default is 20.
+#' @param fill_label_width Optional integer. Width (in characters) used when
+#'   wrapping fill labels with `stringr::str_wrap()`. Default is 20.
 #'
-#' @returns A `ggplot` object
+#' @param ... Additional arguments passed to the underlying engine.
+#'
+#' @returns A `ggplot` object.
 #'
 #' @details
-#' Percentages are displayed in segments that comprise at least `percCut` of their bar;
-#' the percentage displayed is this rounded to a whole number.
-#'
-#' @export
-#'
+#' `OME_stacked_bar()` uses tidy‑evaluation;
+#' `OME_stacked_bar_()` uses standard evaluation and is safe for loops and
+#' programmatic workflows.
 #' @examples
-#' # Minimal example with two questions and three response levels
 #' dat <- tibble::tibble(
-#'   Response = factor(c("Yes", "No", "Yes", "Maybe")),
-#'   Group    = factor(c("A", "A", "B", "B"))
+#'   Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe")),
+#'   Group    = factor(c("A", "A", "A", "A", "B", "B"))
 #' )
 #'
-#' initial_bar(dat)
+#' # Basic example (NA is made explicit)
+#' OME_stacked_bar(dat, Response, Group)
+#'
+#' # NA's ignored
+#' OME_stacked_bar(dat, Response, Group, na.rm=TRUE)
 #'
 #' # Horizontal version with a title
-#' initial_bar(dat, horiz = TRUE, titleText = "Example bar chart")
+#' OME_stacked_bar(
+#'    dat,
+#'    response_var = Response,
+#'    group_var = Group,
+#'    horiz = TRUE,
+#'    titleText = "Example bar chart"
+#' )
 #'
+#' # Example programmatic use
+#' \dontrun{
+#'   vars <- c("Gender", "Ethnicity", "FSM")
+#'   for (v in vars) {
+#'     p <- OME_stacked_bar_(dat = survey_df, response_var = v)
+#'     print(p)
+#'   }
+#' }
+#'
+#' @export
 
-initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
-                       horiz=FALSE, text_scale=1,
-                       fillLabText=NULL, xLabText=NULL,
-                       yLabText="Proportion of responses",
-                       titleText=NULL,
-                       facet_labels=NULL, facet_layout=NULL,
-                       fill_label_width=20){
 
-  # --- Normalise dat to have 3 columns: name, subdivide, facet ---
+OME_stacked_bar_ = function(dat, response_var,
+                           group_var=NULL, facet_var=NULL,
+                           percCut=NULL, colo=NULL, na.rm=FALSE,
+                           horiz=FALSE, text_scale=1,
+                           fillLabText=NULL, xLabText=NULL,
+                           yLabText="Proportion of responses",
+                           titleText=NULL,
+                           facet_labels=NULL, facet_layout=NULL,
+                           fill_label_width=20){
 
-  if (ncol(dat) == 1) {
-    # Only response column provided
-    dat <- tibble::tibble(
-      var_name      = dat[[1]],
-      var_subdivide = factor("All"),   # <-- stable placeholder
-      var_facet     = factor(NA)       # unused but present
+  # cat("DEBUG: response_var =", response_var, "\n")
+  # cat("DEBUG: group_var    =", group_var, "\n")
+  # cat("DEBUG: facet_var    =", facet_var, "\n")
+
+
+  # --- Handle NULL grouping/faceting, then capture tidy-eval response/grouping/faceting inputs ----------------------------------------------
+
+  if (is.null(group_var)) {
+    dat <- dat |> dplyr::mutate(.__group__ = factor("All"))
+    group_var <- ".__group__"
+  }
+
+  if (is.null(facet_var)) {
+    dat <- dat |> dplyr::mutate(.__facet__ = factor("All"))
+    facet_var <- ".__facet__"
+  }
+
+
+  response_sym <- rlang::sym(response_var)
+  group_sym    <- if (!is.null(group_var)) rlang::sym(group_var) else NULL
+  facet_sym    <- if (!is.null(facet_var)) rlang::sym(facet_var) else NULL
+
+  response_name <- rlang::as_name(response_sym)
+  group_name    <- if (!is.null(group_sym)) rlang::as_name(group_sym) else NULL
+  facet_name    <- if (!is.null(facet_sym)) rlang::as_name(facet_sym) else NULL
+
+  # cat("\n--- OME_stacked_bar DEBUG ---\n")
+  # cat("raw response_var: "); print(response_var)
+  # cat("response_sym: ");    print(response_sym)
+  # cat("response_name: ");   print(response_name)
+  # cat("names(dat): ");      print(names(dat))
+  # cat("--- END DEBUG ---\n\n")
+
+
+  # --- Validate response/group/facet inputs ----
+
+  if (!response_name %in% names(dat)) {
+    stop("response_var must be a column in `dat`.")
+  }
+  if (!group_name %in% names(dat)) {
+    stop("group_var must be a column in `dat`.")
+  }
+  if (!facet_name %in% names(dat)) {
+    stop("facet_var must be a column in `dat`.")
+  }
+
+  if (!is.factor(dat[[group_name]])) {
+    stop("group_var must be a factor.")
+  }
+  if (!is.factor(dat[[facet_name]])) {
+    stop("facet_var must be a factor.")
+  }
+
+
+  # --- Build internal 3-column structure -------------------------------------
+
+  dat2 <- dat |>
+    dplyr::mutate(
+      var_name      = .data[[response_name]],
+      var_subdivide = .data[[group_name]],
+      var_facet     = .data[[facet_name]]
     )
-    xLabText <- NULL
 
-  } else if (ncol(dat) == 2) {
-    # Response + subdividing variable
-    dat <- tibble::tibble(
-      var_name      = dat[[1]],
-      var_subdivide = dat[[2]],
-      var_facet     = factor(NA)
-    )
-    if (identical(xLabText, "")) {
-      xLabText <- colnames(dat)[2]
-    }
+  # Ensure factors
+  if (!is.factor(dat2$var_subdivide))
+    dat2$var_subdivide <- factor(dat2$var_subdivide)
+  if (!is.factor(dat2$var_facet))
+    dat2$var_facet <- factor(dat2$var_facet)
 
-  } else {
-    # Response + subdividing + facet
-    dat <- tibble::tibble(
-      var_name      = dat[[1]],
-      var_subdivide = dat[[2]],
-      var_facet     = dat[[3]]
-    )
-    if (identical(xLabText, "")) {
-      xLabText <- colnames(dat)[2]
-    }
-  }
+  # Label defaults
+  if (identical(fillLabText, ""))
+    fillLabText <- response_name
+  if (identical(xLabText, ""))
+    xLabText <- group_name
 
-  # var_subdivide: preserve factor levels if already a factor, otherwise create them
-  if (!is.factor(dat$var_subdivide)) {
-    dat$var_subdivide <- factor(dat$var_subdivide)
-  }
-
-  # var_facet: same logic
-  if (!is.factor(dat$var_facet)) {
-    dat$var_facet <- factor(dat$var_facet)
-  }
-
-  # Fill label default
-  if (identical(fillLabText, "")) {
-    fillLabText <- colnames(dat)[1]
-  }
-
-  has_facet <- any(!is.na(dat$var_facet))
+  has_facet <- length(unique(dat2$var_facet)) > 1
 
 
-  # convert percCut to proportion (with default 5%)
+  # --- Convert percCut to proportion, normalise colours -----------------------------------------
+
   percCut <- ifelse(is.null(percCut), 0.05, percCut / 100)
-
-  # in normal usage this should not be needed, but keeping it because I'm scared it's used somewhere
   colo <- convert_colo(colo)
+  # in normal usage this should not be needed, but keeping it because I'm scared it's used somewhere
 
-  # if removing NAs filter them out and sort out a colour pallete if needed
-  if(na.rm){
-    dat <- dat |> dplyr::filter(!is.na(var_name))
+
+  # --- deal with NAs and how they impact colours ----------------
+
+  if(na.rm){ # if removing NAs: do so and make a colour palette if needed
+    dat2 <- dat2 |> dplyr::filter(!is.na(var_name))
     if (is.null(colo)){
-      colo <- dat |> dplyr::pull(var_name) |> nlevels() |> get_OME_colours(type='distinct')
+      colo <- dat2 |> dplyr::pull(var_name) |> nlevels() |> get_OME_colours(type='distinct')
     }
   }
   else{ # if not removing NAs: convert them to a proper level, sort out a colour pallete if needed,
     # then prepend grey to the pallete for the NAs
-    dat <- dat |>
-      dplyr::mutate(dplyr::across(1, ~ .x |>
-                                    forcats::fct_expand("Missing") |>
-                                    forcats::fct_na_value_to_level(level = "Missing") |>
-                                    forcats::fct_relevel("Missing", after=0)))
+    dat2 <- dat2 |>
+      dplyr::mutate(
+        var_name = var_name |>
+          forcats::fct_expand("Missing") |>
+          forcats::fct_na_value_to_level(level = "Missing") |>
+          forcats::fct_relevel("Missing", after = 0)
+      )
     if (is.null(colo)){
-      colo <- (dat |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
+      colo <- (dat2 |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
     }
     colo = c("grey",colo)
   }
 
+  # print("here!")
+  # print(str(dat2))
+
+
+  # --- Build plot -------------------------------------------------------------
 
   thePlot <-
-    ggplot2::ggplot(dat, ggplot2::aes(x=var_subdivide, by=var_subdivide, fill=var_name)) +
+    #ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, by=var_subdivide, fill=var_name)) +
+    #ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, group = interaction(var_subdivide, var_name), fill=var_name)) +
+    ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, fill=var_name)) +
     ggplot2::geom_bar(position = "fill") +
-    ggplot2::theme_bw() +
-    ggplot2::theme(
-      axis.ticks = ggplot2::element_blank(),
-      panel.border = ggplot2::element_blank(),
-      plot.title.position = "plot")
+    OMESurvey::ROME_ggtheme(base_size = 12) #+
+    #ggplot2::theme(
+      #axis.ticks = ggplot2::element_blank(),
+      #panel.border = ggplot2::element_blank(),
+      #plot.title.position = "plot")
 
+  # Further theme()ing
   if (horiz) {
     thePlot <- thePlot +
       ggplot2::theme(
-        legend.position="bottom",
-        panel.grid.major.x = ggplot2::element_line(linewidth=0.2, colour="grey30"),
-        panel.grid.major.y = ggplot2::element_blank(),
-        panel.grid.minor = ggplot2::element_blank()
+        legend.position="bottom"#,
+        #panel.grid.major.x = ggplot2::element_line(linewidth=0.2, colour="grey30"),
+        #panel.grid.major.y = ggplot2::element_blank(),
+        #panel.grid.minor = ggplot2::element_blank()
       )
     fill_guide <- ggplot2::guide_legend(nrow=1, reverse=TRUE)
   } else {
     thePlot <- thePlot +
       ggplot2::theme(
-        legend.position="right",
-        panel.grid.major.x = ggplot2::element_blank(),
-        panel.grid.major.y = ggplot2::element_line(linewidth=0.2, colour="grey30"),
-        panel.grid.minor = ggplot2::element_blank()
+        legend.position="right"#,
+        #panel.grid.major.x = ggplot2::element_blank(),
+        #panel.grid.major.y = ggplot2::element_line(linewidth=0.2, colour="grey30"),
+        #panel.grid.minor = ggplot2::element_blank()
       )
     fill_guide <- ggplot2::guide_legend()
   }
+
+  # Labels and scales
 
   fill_labels <- function(x) stringr::str_wrap(x,width=fill_label_width)
 
@@ -464,10 +528,18 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
       ggplot2::scale_fill_manual(values=colo, labels=fill_labels, drop=FALSE, guide=fill_guide)
   }
 
+  thePlot <- thePlot +
+    ggplot2::labs(x=xLabText, y=yLabText,
+                  fill=fillLabText, title=titleText) +
+    ggplot2::scale_y_continuous(breaks=seq(0,1,0.25),
+                                labels=scales::percent_format(accuracy=1),
+                                minor_breaks=seq(0,1,0.05))
+
+
 
   # calculate and annotate with the (n) labels
   dat_sum <-
-    dat |>
+    dat2 |>
     dplyr::summarise(
       num_resp = dplyr::n(),
       .by = c(var_facet,var_subdivide)
@@ -477,57 +549,72 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
   vjust_val <- if (horiz) 0.5 else 0
   hjust_val <- if (horiz) 0 else 0.5
 
-  thePlot = thePlot +
+  thePlot <- thePlot +
     ggplot2::geom_text(
       ggplot2::aes(
-        x = var_subdivide,
-        y = 1.02,
-        by = NULL,
-        fill = NULL,
+        x = var_subdivide, y = 1.02,
+        by = NULL, fill = NULL,
         label = num_resp
       ),
-      dat_sum,
-      colour = "black",
-      vjust = vjust_val,
-      hjust = hjust_val,
-      size = 3*text_scale
-      )
+      data = dat_sum,
+      colour = "black", size = 3*text_scale,
+      vjust = vjust_val, hjust = hjust_val
+    )
 
-  # add axis labels, fill/legend label, title
-  # and set breaks/labels on the proportion axis
-  thePlot = thePlot +
-    ggplot2::labs(x=xLabText, y=yLabText,
-                  fill=fillLabText, title=titleText) +
-    ggplot2::scale_y_continuous(breaks=seq(0,1,0.25),
-                                labels=scales::percent_format(accuracy=1),
-                                minor_breaks=seq(0,1,0.05))
+  # --- Percentage labels inside bars -----------------------------------------
 
-  # add percentage labels on bar segments; suppressing warning that arises by doing
-  # stat_prop(geom=text) rather than stat_geom() with after_stat(prop)
+  dat3 <- dat2 |>
+    dplyr::count(var_subdivide, var_name, var_facet) |>
+    dplyr::group_by(var_subdivide, var_facet) |>
+    dplyr::mutate(prop = n / sum(n)) |>
+    dplyr::ungroup()
+
+  thePlot <- thePlot +
+    ggplot2::geom_text(
+      data = dat3,
+      ggplot2::aes(
+        x = var_subdivide,
+        y = prop,
+        label = ifelse(
+          prop < percCut,
+          "",
+          scales::percent(prop, accuracy = 1)
+        )
+      ),
+      position = ggplot2::position_stack(vjust = 0.5),
+      colour = "white",
+      size = 3 * text_scale
+    )
+
+
+
+  # suppressing warning that arises by doing stat_prop(geom=text) rather than
+  # stat_geom() with after_stat(prop)
   # viz "Ignoring unknown parameters: `orientation`"
 
-  thePlot <- suppress_specific_warning(
-    {
-      thePlot +
-        ggstats::stat_prop(
-          ggplot2::aes(
-            x = var_subdivide,
-            label = ifelse(ggplot2::after_stat(prop) < percCut,
-                           "",
-                           scales::percent(ggplot2::after_stat(prop), accuracy = 1))
-          ),
-          geom = "text",
-          position = ggplot2::position_fill(vjust = 0.5),
-          colour = "white",
-          size = 3 * text_scale,
-          show.legend = FALSE
-        )
-    },
-    pattern = "Ignoring unknown parameters: `orientation`"
-  )$value
+  # thePlot <- suppress_specific_warning(
+  #   {
+  #     thePlot +
+  #       ggstats::stat_prop(
+  #         ggplot2::aes(
+  #           x = var_subdivide,
+  #           group = var_subdivide,
+  #           label = ifelse(ggplot2::after_stat(prop) < percCut,
+  #                          "",
+  #                          scales::percent(ggplot2::after_stat(prop), accuracy = 1))
+  #         ),
+  #         geom = "text",
+  #         position = ggplot2::position_fill(vjust = 0.5),
+  #         colour = "white",
+  #         size = 3 * text_scale,
+  #         show.legend = FALSE
+  #       )
+  #   },
+  #   pattern = "Ignoring unknown parameters: `orientation`"
+  # )$value
 
 
-  # Add faceting if needed
+  # --- Faceting ---------------------------------------------------------------
   if (has_facet) {
     facet_args <- list(facets = ~var_facet)
 
@@ -545,6 +632,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
   }
 
 
+  # --- Final coordinate system ------------------------------------------------
 
   if (horiz) {
     thePlot <- thePlot + ggplot2::coord_flip(ylim = c(NA, 1.1))
@@ -556,6 +644,38 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
   return(thePlot)
 
 }
+
+
+
+#' @rdname OME_stacked_bar_
+#' @export
+OME_stacked_bar <- function(dat, response_var,
+                            group_var = NULL, facet_var = NULL,
+                            ...) {
+
+  # Capture bare names safely (never evaluate)
+  response_quo <- rlang::enquo(response_var)
+  group_quo    <- rlang::enquo(group_var)
+  facet_quo    <- rlang::enquo(facet_var)
+
+  # Convert to strings (NULL stays NULL)
+  response_str <- rlang::as_name(response_quo)
+  group_str    <- if (!rlang::quo_is_null(group_quo)) rlang::as_name(group_quo) else NULL
+  facet_str    <- if (!rlang::quo_is_null(facet_quo)) rlang::as_name(facet_quo) else NULL
+
+  # Call the programmatic version
+  OME_stacked_bar_(
+    dat          = dat,
+    response_var = response_str,
+    group_var    = group_str,
+    facet_var    = facet_str,
+    ...
+  )
+}
+
+
+
+
 
 
 
@@ -579,7 +699,7 @@ initial_bar = function(dat, percCut=NULL, colo=NULL, na.rm=FALSE,
 #'   `"mean(as.numeric())"`. See Details.
 #' @param titleText Optional text to use as plot title.
 #' @param fill_label_width Optional integer. Width (in characters) used when wrapping
-#'   fill labels with `stringr::str_wrap()`. Passed to `initial_bar()`. Default is 20.
+#'   fill labels with `stringr::str_wrap()`. Passed to `OME_stacked_bar()`. Default is 20.
 #' @param axis_label_width Optional integer. Width (in characters) used when wrapping
 #'   axis labels with `stringr::str_wrap()`. Default is 30.
 #'
@@ -657,15 +777,16 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
   # do the plotting
   thePlot <-
     dat |>
-    dplyr::select(Response, question) |>
-    initial_bar(horiz=TRUE,
-                percCut=percCut,
-                fillLabText=NULL,
-                yLabText=NULL,
-                xLabText=NULL,
-                colo=colo,
-                titleText=titleText,
-                fill_label_width = fill_label_width) +
+    OME_stacked_bar(response_var = Response,
+                    group_var = question,
+                    horiz=TRUE,
+                    percCut=percCut,
+                    fillLabText=NULL,
+                    yLabText=NULL,
+                    xLabText=NULL,
+                    colo=colo,
+                    titleText=titleText,
+                    fill_label_width = fill_label_width) +
     ggplot2::scale_x_discrete(labels = stringr::str_wrap(labels_vec, width=axis_label_width))
 
   return(thePlot)
@@ -673,16 +794,17 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
 
 
 #' Boxplot (horizontal) with optional right-side counts showing valid & total
-#'  #datapoints for boxes
+#'  #datapoints for boxes, in an OME style.
 #'
 #' @author Dave Sirl
 #'
-#' @note Future/possible extensions include support for dodging/colour (and maybe faceting).
+#' @note Future/possible extensions include support for dodging/colour
+#' (and maybe vertical-ness and/or faceting).
 #'
 #' @param data A data frame.
 #' @param value_var Numeric variable to plot.
 #' @param group_var Grouping variable (factor).
-#' @param showCounts Logical; whether to display (valid/total) counts on the
+#' @param show_counts Logical; whether to display (valid/total) counts on the
 #'   right-hand axis. Defaults to TRUE.
 #' @param title Optional plot title.
 #' @param colour Boxplot outline colour (any valid R colour). Defaults to [get_OME_colours](1).
@@ -771,7 +893,7 @@ OME_boxplot <- function(data,
     right_labels <- stats::setNames(group_counts$label[idx], group_levels)
   }
 
-  # Build plot
+  # ---  Build plot ----
   p <-
     data |>
     ggplot2::ggplot(ggplot2::aes(x = {{value_var}}, y = {{group_var}})) +

@@ -45,6 +45,10 @@ reference:
 - title: Dave survey summary functions
   contents:
   - render_survey_summary
-  - initial_bar
+  - OME_stacked_bar
+  - OME_boxplot
   - plot_many_questions
+  - centre_legend_below
+  - suppress_specific_warning
+  - frac_to_num
   - convert_colo

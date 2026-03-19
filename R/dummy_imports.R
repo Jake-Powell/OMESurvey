@@ -1,2 +1,2 @@
-readxl::read_excel
-ggstats::stat_prop
+#' @importFrom readxl read_excel
+NULL

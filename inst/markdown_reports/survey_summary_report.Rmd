@@ -1018,13 +1018,6 @@ for(sec in sections){
       group_vars <- names(df_for_bar)[-1]
       
       #first the overall plot
-      # p_overall <-
-      #   ggplot2::ggplot(df_for_bar, ggplot2::aes(x=factor(1), y = .data[[num_var]])) +
-      #   #ggplot2::geom_boxplot(width = 0.3, outlier.shape = 21, fill = "lightblue") +
-      #   ggplot2::geom_boxplot() +
-      #   ggplot2::labs(y=NULL, x=NULL, title=label) +
-      #   ggplot2::theme_minimal() +
-      #   ggplot2::coord_flip()
       df_for_bar$overall_group <- factor("Overall")
       p_overall <- OMESurvey::OME_boxplot(
         data = df_for_bar,
@@ -1055,11 +1048,6 @@ for(sec in sections){
       for (j in seq_along(group_vars)) {
         g <- group_vars[j]
         # j is the numeric index, g is the name
-        # p <- ggplot2::ggplot(df_for_bar, ggplot2::aes(x = .data[[g]], y = .data[[num_var]])) +
-        #   ggplot2::geom_boxplot() +
-        #   ggplot2::labs(x=NULL, y=NULL, title=paste0(label,"\n by ", g)) +
-        #   ggplot2::theme_minimal() +
-        #   ggplot2::coord_flip()
         p <- OMESurvey::OME_boxplot(
           data = df_for_bar,
           value_var = !!rlang::sym(num_var),
@@ -1087,35 +1075,60 @@ for(sec in sections){
     }
 
 
-    # could add functionality to initial_bar() [which might actually be initial_bar_explore()] to take arguments (I) string which is name for the variable - actually just use text - and/or (ii) named vector for the grouping variables, grouping_var_names maybe
-    
     colo_arg <- v$colo[[1]]
     
-    # wrapper function for initial_bar() that just forwards all arguments; but wraps in a try/catch (with nice error-printing)
-    initial_bar_tryCatch <- function(...) {
+    # wrapper function for OME_stacked_bar() that just forwards all arguments; but wraps in a try/catch (with nice error-printing)
+    OME_stacked_bar_tryCatch <- function(dat,
+                                         response_var,
+                                         group_var = NULL,
+                                         facet_var = NULL,
+                                         ...) {
+      print("WRAPPER DEBUG:")
+      print(response_var)
+      print(typeof(response_var))
+      
       tryCatch({
-        res <- OMESurvey::initial_bar(...)
+        
+        # Call the function
+        res <- OME_stacked_bar_(
+          dat          = dat,
+          response_var = response_var,
+          group_var    = group_var,
+          facet_var    = facet_var,
+          ...
+        )
+        
+
+        # if ggplot save and add to document
         if (inherits(res, "ggplot")) {
-          # ensure fig path exists
           fig_dir <- knitr::opts_chunk$get("fig.path")
           if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
           if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
-          
-          # create a unique, stable filename (using section/variable/plot indices)
-          fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png",
-                                              stringr::str_extract(sec, "^[^:]+"), i, j))
+          fname <- file.path(
+            fig_dir,
+            sprintf("sec_%s_var_%02d_plot%02d.png",
+                    stringr::str_extract(sec, "^[^:]+"), i, j)
+          )
           fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
           
-          # save the plot at the computed size
           ggplot2::ggsave(fname, plot = res,
                           width = 8, height = 3,
                           units = "in", dpi = 300)
           
-          # emit markdown image tag (works inside results='asis')
           cat(sprintf("![](%s){width=100%%}\n\n", fname))
+        } else{
+          cat("Not a ggplot object")
+          class(res)
         }
         invisible(res)
-      }, error = function(e) {
+        
+      }, # if there was an error, print it
+      error = function(e) {
+        #message("ERROR: ", conditionMessage(e))
+        #message("TRACEBACK:")
+        #print(sys.calls())
+        #NULL
+        
         cat("\n**Error drawing variable plot:** ", e$message, "\n\n", sep = "")
         invisible(NULL)
       })
@@ -1125,22 +1138,34 @@ for(sec in sections){
     nvars <- ncol(df_for_bar)
     
     if (is.null(nvars) || nvars == 0) {
-      # nothing to do
+      cat("No bar plots to do here.")
     } else {
       for (j in seq.int(1, nvars)) {
-        sub_df <- df_for_bar[, unique(c(1, j)), drop=FALSE]
-        plot_title <- paste0(
-          label,
-          if (j>1){paste0("\n by ", names(sub_df)[2])}
+        sub_df <- df_for_bar[, unique(c(1, j)), drop = FALSE]
+        print(names(sub_df))
+        
+        plot_title <-
+          paste0(
+            label,
+            if (j > 1) paste0("\n by ", names(sub_df)[2])
+          )
+        
+        # Build symbols for tidy-eval
+        resp_name <- names(sub_df)[1]
+        grp_name  <- if (ncol(sub_df) > 1) names(sub_df)[2] else NULL
+
+        OME_stacked_bar_tryCatch(
+          dat          = sub_df,
+          response_var = resp_name,
+          group_var    = grp_name,
+          percCut      = percCutVert,
+          colo         = colo_arg,
+          fillLabText  = NULL,
+          yLabText     = NULL,
+          titleText    = plot_title
         )
-        #drop=FALSE to ensure j=1 stays a dataframe (doesn't become a vector)
-        initial_bar_tryCatch(sub_df, percCut=percCutVert,
-                             colo = colo_arg, fillLabText=NULL, yLabText=NULL,
-                             titleText=plot_title)
       }
     }
-    
-    
     
   } # end per-variable loop
 } # end section loop

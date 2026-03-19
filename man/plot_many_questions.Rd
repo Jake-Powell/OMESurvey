@@ -36,7 +36,7 @@ May be a character vector of response levels, or the special value
 \item{titleText}{Optional text to use as plot title.}
 
 \item{fill_label_width}{Optional integer. Width (in characters) used when wrapping
-fill labels with \code{stringr::str_wrap()}. Passed to \code{initial_bar()}. Default is 20.}
+fill labels with \code{stringr::str_wrap()}. Passed to \code{OME_stacked_bar()}. Default is 20.}
 
 \item{axis_label_width}{Optional integer. Width (in characters) used when wrapping
 axis labels with \code{stringr::str_wrap()}. Default is 30.}

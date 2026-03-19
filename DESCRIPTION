@@ -18,7 +18,6 @@ Imports:
     dplyr,
     forcats,
     ggplot2,
-    ggstats,
     grDevices,
     gridExtra,
     kableExtra,
