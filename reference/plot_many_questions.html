@@ -61,7 +61,9 @@ particular pattern.</p>
 <span>  percCut <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  colo <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  order_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  titleText <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fill_label_width <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  axis_label_width <span class="op">=</span> <span class="fl">30</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -91,21 +93,41 @@ Note that percentage labels are in white, so the pallete needs to work with that
 
 
 <dt id="arg-order-values">order_values<a class="anchor" aria-label="anchor" href="#arg-order-values"></a></dt>
-<dd><p>optional vector of question responses that determine the ordering of questions in the plot.</p></dd>
+<dd><p>Optional. Controls how questions are ordered in the plot.
+May be a character vector of response levels, or the special value
+<code>"mean(as.numeric())"</code>. See Details.</p></dd>
 
 
 <dt id="arg-titletext">titleText<a class="anchor" aria-label="anchor" href="#arg-titletext"></a></dt>
-<dd><p>text to use as plot title.</p></dd>
+<dd><p>Optional text to use as plot title.</p></dd>
+
+
+<dt id="arg-fill-label-width">fill_label_width<a class="anchor" aria-label="anchor" href="#arg-fill-label-width"></a></dt>
+<dd><p>Optional integer. Width (in characters) used when wrapping
+fill labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Passed to <code><a href="OME_stacked_bar_.html">OME_stacked_bar()</a></code>. Default is 20.</p></dd>
+
+
+<dt id="arg-axis-label-width">axis_label_width<a class="anchor" aria-label="anchor" href="#arg-axis-label-width"></a></dt>
+<dd><p>Optional integer. Width (in characters) used when wrapping
+axis labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Default is 30.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>ggplot</code> object (or a <code>cowplot</code> object if <code>cowplot</code> is installed) representing
-a horizontal stacked bar chart summarising the survey questions.#'</p>
+    <p>A <code>ggplot</code> object, a horizontal stacked bar chart summarising the survey questions.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p><code>order_values</code> specifies the responses which count for ordering the questions in the plot. e.g. <code>c("Strongly agree", "Agree")</code> will result in the questions being ordered according to the proportion of respondents who agree.</p>
+    <p>The <code>order_values</code> argument controls how questions are ordered in the
+horizontal bar chart.</p><ul><li><p>If <code>order_values</code> is a character vector of response levels (e.g.
+<code>c("Strongly agree", "Agree")</code>), questions are ordered by the proportion
+of respondents whose answers fall into those levels.
+(Intended for factors with positive-negative / divergent scales.)</p></li>
+<li><p>If <code>order_values</code> is exactly <code>"mean(as.numeric())"</code>, the function instead
+orders questions by the mean of the numeric codes of the response factor.
+(Intended for factors with low-high / sequential scales.)</p></li>
+</ul><p>Axis labels are wrapped using <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code> with a width controlled
+by <code>axis_label_width</code>. Legend/fill labels are treated the same using <code>fill_label_width</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
@@ -117,9 +139,10 @@ Values in <code>order_values</code> must be valid levels of the response factor.
     <h2 id="legend-placement">Legend placement<a class="anchor" aria-label="anchor" href="#legend-placement"></a></h2>
 
 
-<p>If the <code>cowplot</code> package is installed, the legend is extracted and placed
-beneath the plot, centred horizontally. If <code>cowplot</code> is not available,
-the legend remains in the default ggplot position.</p>
+<p>By default, the legend is placed horizontally according to the standard
+ggplot2 layout. If you want the legend to be centred across the full width
+of the final figure, the helper function <code><a href="centre_legend_below.html">centre_legend_below()</a></code> can be used
+after plotting. (This must be done after any tweaks to the ggplot theme, annotations, etc)</p>
     </div>
 
     <div class="section level2">

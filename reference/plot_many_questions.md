@@ -13,7 +13,9 @@ plot_many_questions(
   percCut = 5,
   colo = NULL,
   order_values = NULL,
-  titleText = NULL
+  titleText = NULL,
+  fill_label_width = 20,
+  axis_label_width = 30
 )
 ```
 
@@ -47,25 +49,54 @@ plot_many_questions(
 
 - order_values:
 
-  optional vector of question responses that determine the ordering of
-  questions in the plot.
+  Optional. Controls how questions are ordered in the plot. May be a
+  character vector of response levels, or the special value
+  `"mean(as.numeric())"`. See Details.
 
 - titleText:
 
-  text to use as plot title.
+  Optional text to use as plot title.
+
+- fill_label_width:
+
+  Optional integer. Width (in characters) used when wrapping fill labels
+  with
+  [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
+  Passed to
+  [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md).
+  Default is 20.
+
+- axis_label_width:
+
+  Optional integer. Width (in characters) used when wrapping axis labels
+  with
+  [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
+  Default is 30.
 
 ## Value
 
-A `ggplot` object (or a `cowplot` object if `cowplot` is installed)
-representing a horizontal stacked bar chart summarising the survey
-questions.#'
+A `ggplot` object, a horizontal stacked bar chart summarising the survey
+questions.
 
 ## Details
 
-`order_values` specifies the responses which count for ordering the
-questions in the plot. e.g. `c("Strongly agree", "Agree")` will result
-in the questions being ordered according to the proportion of
-respondents who agree.
+The `order_values` argument controls how questions are ordered in the
+horizontal bar chart.
+
+- If `order_values` is a character vector of response levels (e.g.
+  `c("Strongly agree", "Agree")`), questions are ordered by the
+  proportion of respondents whose answers fall into those levels.
+  (Intended for factors with positive-negative / divergent scales.)
+
+- If `order_values` is exactly `"mean(as.numeric())"`, the function
+  instead orders questions by the mean of the numeric codes of the
+  response factor. (Intended for factors with low-high / sequential
+  scales.)
+
+Axis labels are wrapped using
+[`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html)
+with a width controlled by `axis_label_width`. Legend/fill labels are
+treated the same using `fill_label_width`.
 
 ## Note
 
@@ -75,9 +106,12 @@ All variables in `dat` should have identical factor levels. The names of
 
 ## Legend placement
 
-If the `cowplot` package is installed, the legend is extracted and
-placed beneath the plot, centred horizontally. If `cowplot` is not
-available, the legend remains in the default ggplot position.
+By default, the legend is placed horizontally according to the standard
+ggplot2 layout. If you want the legend to be centred across the full
+width of the final figure, the helper function
+[`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)
+can be used after plotting. (This must be done after any tweaks to the
+ggplot theme, annotations, etc)
 
 ## Examples
 

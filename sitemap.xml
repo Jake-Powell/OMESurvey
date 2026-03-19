@@ -9,9 +9,12 @@
 <url><loc>https://jake-powell.github.io/OMESurvey/authors.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/index.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/OMESurvey-package.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/OME_boxplot.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/ROME_ggtheme.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/add_TOC_sheet.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/add_logo.html</loc></url>
+<url><loc>https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/check_question_columns.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/convert_NA.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/convert_colo.html</loc></url>
@@ -23,7 +26,6 @@
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/get_theme_and_questions.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/get_theme_columns.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/index.html</loc></url>
-<url><loc>https://jake-powell.github.io/OMESurvey/reference/initial_bar.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_ROME_survey.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_bar.html</loc></url>
 <url><loc>https://jake-powell.github.io/OMESurvey/reference/plot_many_questions.html</loc></url>
