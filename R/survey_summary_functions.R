@@ -380,6 +380,7 @@ render_survey_summary <- function(data_path,
 OME_stacked_bar_ = function(dat, response_var,
                            group_var=NULL, facet_var=NULL,
                            percCut=NULL, colo=NULL, na.rm=FALSE,
+                           show_counts=TRUE,
                            horiz=FALSE, text_scale=1,
                            fillLabText=NULL, groupLabText=NULL,
                            propLabText="Proportion of responses",
@@ -536,10 +537,8 @@ OME_stacked_bar_ = function(dat, response_var,
     fill_guide <- ggplot2::guide_legend(direction="vertical")
   }
 
-  # Labels and scales
-
+  # Labels and scales - for the fill
   fill_labels <- function(x) stringr::str_wrap(x, width=fill_label_width)
-
 
   if (is.null(colo)){
     thePlot <- thePlot +
@@ -549,34 +548,97 @@ OME_stacked_bar_ = function(dat, response_var,
       ggplot2::scale_fill_manual(values=colo, labels=fill_labels, drop=FALSE, guide=fill_guide)
   }
 
+  # Labels and scales - for the groups
+  group_levels <- levels(dat2$var_subdivide)
 
+  # --- Left-axis labels (group labels)
   if (is.null(group_labels)) {
-
     # No custom labels supplied
     if (is.null(group_label_width)) {
-      group_labeller <- ggplot2::waiver()   # use default labels
+      left_labeller <- ggplot2::waiver()   # use default labels
     } else {
-      group_labeller <- function(x) {
+      left_labeller <- function(x) {
         stringr::str_wrap(x, width = group_label_width)
       }
+    }
+  } else {
+    # Custom labels supplied (named vector)
+    if (is.null(group_label_width)) {
+      left_labeller <- group_labels
+    } else {
+      left_labeller <- stringr::str_wrap(group_labels, width = group_label_width) |>
+        setNames(names(group_labels))
+    }
+  }
+
+  # Optional override
+  if (!is.null(group_labels) && !all(names(group_labels) %in% group_levels)) {
+    warning("Names of `group_labels` do not match the levels of the grouping variable.")
+  }
+
+  if (exists("omitGroupLabels") && omitGroupLabels) {
+    left_labeller <- NULL
+  }
+
+
+
+
+
+
+  if (exists("show_counts") && show_counts) {
+    group_counts <- dat2 |>
+      dplyr::summarise(
+        non_na = sum(!is.na(.data[[response_name]])),
+        total  = dplyr::n(),
+        .by = var_subdivide
+      ) |>
+      dplyr::mutate(label = sprintf("(%d/%d)", non_na, total))
+
+    idx <- match(group_levels, group_counts$var_subdivide)
+    right_labels <- stats::setNames(group_counts$label[idx], group_levels)
+  }
+
+  if (horiz) {
+
+    # Horizontal: group labels on y-axis
+    if (exists("show_counts") && show_counts) {
+      thePlot <- thePlot +
+        ggplot2::scale_x_discrete(
+          labels = left_labeller,
+          sec.axis = ggplot2::dup_axis(
+            labels = right_labels,
+            breaks = group_levels,
+            name = NULL
+          )
+        )
+    } else {
+      thePlot <- thePlot +
+        ggplot2::scale_x_discrete(labels = left_labeller)
     }
 
   } else {
 
-    # Custom labels supplied (named vector)
-    if (is.null(group_label_width)) {
-      group_labeller <- group_labels
+    # Vertical: group labels on x-axis
+    if (exists("show_counts") && show_counts) {
+      thePlot <- thePlot +
+        ggplot2::scale_x_discrete(
+          labels = left_labeller,
+          sec.axis = ggplot2::dup_axis(
+            labels = right_labels,
+            breaks = group_levels,
+            name = NULL
+          )
+        )
     } else {
-      group_labeller <- stringr::str_wrap(group_labels, width = group_label_width) |>
-        setNames(names(group_labels))
+      thePlot <- thePlot +
+        ggplot2::scale_x_discrete(labels = left_labeller)
     }
-
   }
 
 
-  thePlot <- thePlot +
-    ggplot2::scale_x_discrete(labels = group_labeller)
 
+
+  # Labels and scales - other
 
   thePlot <- thePlot +
     ggplot2::labs(x=groupLabText, y=propLabText,
@@ -586,30 +648,29 @@ OME_stacked_bar_ = function(dat, response_var,
                                 minor_breaks = NULL)
 
 
-
-  # calculate and annotate with the (n) labels
-  dat_sum <-
-    dat2 |>
-    dplyr::summarise(
-      num_resp = dplyr::n(),
-      .by = c(var_facet,var_subdivide)
-      ) |>
-    dplyr::mutate(num_resp = scales::label_comma(prefix="(", suffix=")")(num_resp) )
-
-  vjust_val <- if (horiz) 0.5 else 0
-  hjust_val <- if (horiz) 0 else 0.5
-
-  thePlot <- thePlot +
-    ggplot2::geom_text(
-      ggplot2::aes(
-        x = var_subdivide, y = 1.02,
-        by = NULL, fill = NULL,
-        label = num_resp
-      ),
-      data = dat_sum,
-      colour = "black", size = 3*text_scale,
-      vjust = vjust_val, hjust = hjust_val
-    )
+  # --- Calculate and annotate with the (n) labels ------------------------
+  # dat_sum <-
+  #   dat2 |>
+  #   dplyr::summarise(
+  #     num_resp = dplyr::n(),
+  #     .by = c(var_facet,var_subdivide)
+  #     ) |>
+  #   dplyr::mutate(num_resp = scales::label_comma(prefix="(", suffix=")")(num_resp) )
+  #
+  # vjust_val <- if (horiz) 0.5 else 0
+  # hjust_val <- if (horiz) 0 else 0.5
+  #
+  # thePlot <- thePlot +
+  #   ggplot2::geom_text(
+  #     ggplot2::aes(
+  #       x = var_subdivide, y = 1.02,
+  #       by = NULL, fill = NULL,
+  #       label = num_resp
+  #     ),
+  #     data = dat_sum,
+  #     colour = "black", size = 3*text_scale,
+  #     vjust = vjust_val, hjust = hjust_val
+  #   )
 
   # --- Percentage labels inside bars -----------------------------------------
 
@@ -702,9 +763,9 @@ OME_stacked_bar_ = function(dat, response_var,
   # --- Final coordinate system ------------------------------------------------
 
   if (horiz) {
-    thePlot <- thePlot + ggplot2::coord_flip(ylim = c(NA, 1.1))
+    thePlot <- thePlot + ggplot2::coord_flip()
   } else {
-    thePlot <- thePlot + ggplot2::coord_cartesian(ylim = c(NA, 1.1))
+    thePlot <- thePlot + ggplot2::coord_cartesian()
   }
 
 
@@ -996,7 +1057,7 @@ OME_boxplot_ <- function(data,
       dplyr::summarise(
         non_na = sum(!is.na(.data[[value_var]])),
         total  = dplyr::n(),
-        .by = dplyr::all_of(group_var)   # <-- EXACTLY like stacked-bar
+        .by = dplyr::all_of(group_var)
       ) |>
       dplyr::mutate(label = sprintf("(%d/%d)", non_na, total))
 
