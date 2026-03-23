@@ -9,13 +9,13 @@ responses that fit a particular pattern.
 ``` r
 plot_many_questions(
   dat,
-  labels_vec,
+  labels_vec = NULL,
   percCut = 5,
   colo = NULL,
   order_values = NULL,
   titleText = NULL,
   fill_label_width = 20,
-  axis_label_width = 30
+  question_label_width = 30
 )
 ```
 
@@ -66,7 +66,7 @@ plot_many_questions(
   [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md).
   Default is 20.
 
-- axis_label_width:
+- question_label_width:
 
   Optional integer. Width (in characters) used when wrapping axis labels
   with
@@ -95,8 +95,8 @@ horizontal bar chart.
 
 Axis labels are wrapped using
 [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html)
-with a width controlled by `axis_label_width`. Legend/fill labels are
-treated the same using `fill_label_width`.
+with a width controlled by `question_label_width`. Legend/fill labels
+are treated the same using `fill_label_width`.
 
 ## Note
 
@@ -118,9 +118,9 @@ ggplot theme, annotations, etc)
 ``` r
 # Minimal example with three questions and three response levels
 dat <- tibble::tibble(
-  Q1 = factor(c("Yes", "No", "Yes", "Maybe")),
-  Q2 = factor(c("No", "No", "Yes", "Maybe")),
-  Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"))
+  Q1 = factor(c("Yes", "No", "Yes", NA), levels=c("No", "Maybe", "Yes")),
+  Q2 = factor(c("No", "No", "Yes", "Maybe"), levels=c("No", "Maybe", "Yes")),
+  Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"), levels=c("No", "Maybe", "Yes"))
 )
 
 labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")

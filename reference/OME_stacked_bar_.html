@@ -69,12 +69,15 @@ designed for use when column names are supplied as <strong>strings</strong> or <
 <span>  horiz <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  text_scale <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  fillLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  xLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  yLabText <span class="op">=</span> <span class="st">"Proportion of responses"</span>,</span>
+<span>  groupLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  propLabText <span class="op">=</span> <span class="st">"Proportion of responses"</span>,</span>
 <span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet_labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  facet_layout <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  fill_label_width <span class="op">=</span> <span class="fl">20</span></span>
+<span>  separate_at <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fill_label_width <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  group_label_width <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  group_labels <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">OME_stacked_bar</span><span class="op">(</span><span class="va">dat</span>, <span class="va">response_var</span>, group_var <span class="op">=</span> <span class="cn">NULL</span>, facet_var <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -133,12 +136,12 @@ percentage and <code>(n)</code> labels.</p></dd>
 (default) the title is removed; if <code>""</code> the name of <code>response_var</code> is used.</p></dd>
 
 
-<dt id="arg-xlabtext">xLabText<a class="anchor" aria-label="anchor" href="#arg-xlabtext"></a></dt>
+<dt id="arg-grouplabtext">groupLabText<a class="anchor" aria-label="anchor" href="#arg-grouplabtext"></a></dt>
 <dd><p>Optional label for the bar‑group axis. If <code>NULL</code> the label is
 removed; if <code>""</code> the name of <code>group_var</code> is used.</p></dd>
 
 
-<dt id="arg-ylabtext">yLabText<a class="anchor" aria-label="anchor" href="#arg-ylabtext"></a></dt>
+<dt id="arg-proplabtext">propLabText<a class="anchor" aria-label="anchor" href="#arg-proplabtext"></a></dt>
 <dd><p>Label for the proportion axis. Default <code>"Proportion of responses"</code>.</p></dd>
 
 
@@ -157,9 +160,29 @@ Default <code>NULL</code> uses the raw facet values.</p></dd>
 in a single row; otherwise the default facet layout is used.</p></dd>
 
 
+<dt id="arg-separate-at">separate_at<a class="anchor" aria-label="anchor" href="#arg-separate-at"></a></dt>
+<dd><p>Optional integer specifying where to draw a horizontal
+separation line between groups defined by <code>group_var</code>.</p><ul><li><p>If positive n the separation line is after the first n categories</p></li>
+<li><p>If negative n the separation line is before the n-th last category.
+Default <code>NULL</code> or 0 omits the line.</p></li>
+</ul></dd>
+
+
 <dt id="arg-fill-label-width">fill_label_width<a class="anchor" aria-label="anchor" href="#arg-fill-label-width"></a></dt>
 <dd><p>Optional integer. Width (in characters) used when
 wrapping fill labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Default is 20.</p></dd>
+
+
+<dt id="arg-group-label-width">group_label_width<a class="anchor" aria-label="anchor" href="#arg-group-label-width"></a></dt>
+<dd><p>Optional integer. Width (in characters) used when
+wrapping group labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Default is <code>NULL</code>, to not wrap.</p></dd>
+
+
+<dt id="arg-group-labels">group_labels<a class="anchor" aria-label="anchor" href="#arg-group-labels"></a></dt>
+<dd><p>Optional named character vector providing alternative
+labels for the grouping variable. Should be of the form
+<code>c(level1 = "Label 1", level2 = "Label 2")</code>. Default is <code>NULL</code>, which
+uses the factor’s existing levels.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
@@ -183,8 +206,7 @@ programmatic workflows.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>Future/possible extensions include adding an optional dashed line
-(like <code><a href="OME_boxplot.html">OME_boxplot()</a></code>), making the <code>(n)</code> labels optional, using a
+    <p>Future/possible extensions include making the <code>(n)</code> labels optional, using a
 secondary axis for <code>(n)</code> labels, improving percentage‑label contrast for
 light fill colours, and a 1‑column option for facet layout.</p>
     </div>
@@ -222,7 +244,11 @@ light fill colours, and a 1‑column option for facet layout.</p>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span>  <span class="va">vars</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Gender"</span>, <span class="st">"Ethnicity"</span>, <span class="st">"FSM"</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="kw">for</span> <span class="op">(</span><span class="va">v</span> <span class="kw">in</span> <span class="va">vars</span><span class="op">)</span> <span class="op">{</span></span></span>
-<span class="r-in"><span>    <span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">OME_stacked_bar_</span><span class="op">(</span>dat <span class="op">=</span> <span class="va">survey_df</span>, response_var <span class="op">=</span> <span class="va">v</span><span class="op">)</span></span></span>
+<span class="r-in"><span>    <span class="va">p</span> <span class="op">&lt;-</span> <span class="fu">OME_stacked_bar_</span><span class="op">(</span></span></span>
+<span class="r-in"><span>      dat <span class="op">=</span> <span class="va">survey_df</span>,</span></span>
+<span class="r-in"><span>      response_var <span class="op">=</span> <span class="st">"some_variable"</span>,</span></span>
+<span class="r-in"><span>      group_var <span class="op">=</span> <span class="va">v</span></span></span>
+<span class="r-in"><span>     <span class="op">)</span></span></span>
 <span class="r-in"><span>    <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="op">}</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>

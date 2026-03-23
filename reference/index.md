@@ -71,9 +71,9 @@
 - [`OME_stacked_bar_()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   : Stacked proportional bar chart in OME style (Dave's version.)
-- [`OME_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot.md)
-  : Boxplot (horizontal) with optional right-side counts showing valid &
-  total \#datapoints for boxes, in an OME style.
+- [`OME_boxplot_()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot_.md)
+  [`OME_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot_.md)
+  : Boxplot (horizontal), in an OME style.
 - [`plot_many_questions()`](https://jake-powell.github.io/OMESurvey/reference/plot_many_questions.md)
   : Make a stacked bar chart summarising many survey questions
 - [`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)

@@ -19,12 +19,15 @@ OME_stacked_bar_(
   horiz = FALSE,
   text_scale = 1,
   fillLabText = NULL,
-  xLabText = NULL,
-  yLabText = "Proportion of responses",
+  groupLabText = NULL,
+  propLabText = "Proportion of responses",
   titleText = NULL,
   facet_labels = NULL,
   facet_layout = NULL,
-  fill_label_width = 20
+  separate_at = NULL,
+  fill_label_width = 20,
+  group_label_width = NULL,
+  group_labels = NULL
 )
 
 OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
@@ -82,12 +85,12 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   Optional legend title for the fill variable. If `NULL` (default) the
   title is removed; if `""` the name of `response_var` is used.
 
-- xLabText:
+- groupLabText:
 
   Optional label for the bar‑group axis. If `NULL` the label is removed;
   if `""` the name of `group_var` is used.
 
-- yLabText:
+- propLabText:
 
   Label for the proportion axis. Default `"Proportion of responses"`.
 
@@ -106,12 +109,36 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   Optional character. If `"1row"` the facets are arranged in a single
   row; otherwise the default facet layout is used.
 
+- separate_at:
+
+  Optional integer specifying where to draw a horizontal separation line
+  between groups defined by `group_var`.
+
+  - If positive n the separation line is after the first n categories
+
+  - If negative n the separation line is before the n-th last category.
+    Default `NULL` or 0 omits the line.
+
 - fill_label_width:
 
   Optional integer. Width (in characters) used when wrapping fill labels
   with
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is 20.
+
+- group_label_width:
+
+  Optional integer. Width (in characters) used when wrapping group
+  labels with
+  [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
+  Default is `NULL`, to not wrap.
+
+- group_labels:
+
+  Optional named character vector providing alternative labels for the
+  grouping variable. Should be of the form
+  `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
+  uses the factor’s existing levels.
 
 - ...:
 
@@ -140,11 +167,9 @@ standard evaluation and is safe for loops and programmatic workflows.
 
 ## Note
 
-Future/possible extensions include adding an optional dashed line (like
-[`OME_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot.md)),
-making the `(n)` labels optional, using a secondary axis for `(n)`
-labels, improving percentage‑label contrast for light fill colours, and
-a 1‑column option for facet layout.
+Future/possible extensions include making the `(n)` labels optional,
+using a secondary axis for `(n)` labels, improving percentage‑label
+contrast for light fill colours, and a 1‑column option for facet layout.
 
 ## Author
 
@@ -180,7 +205,11 @@ OME_stacked_bar(
 if (FALSE) { # \dontrun{
   vars <- c("Gender", "Ethnicity", "FSM")
   for (v in vars) {
-    p <- OME_stacked_bar_(dat = survey_df, response_var = v)
+    p <- OME_stacked_bar_(
+      dat = survey_df,
+      response_var = "some_variable",
+      group_var = v
+     )
     print(p)
   }
 } # }
