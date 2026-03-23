@@ -1019,10 +1019,11 @@ for(sec in sections){
       
       #first the overall plot
       df_for_bar$overall_group <- factor("Overall")
-      p_overall <- OMESurvey::OME_boxplot(
+      p_overall <- OMESurvey::OME_boxplot_(
         data = df_for_bar,
-        value_var = !!rlang::sym(num_var),
-        group_var = overall_group,
+        value_var = num_var,
+        group_var = "overall_group",
+        omitGroupLabels = TRUE,
         title = label
       )
 
@@ -1048,10 +1049,10 @@ for(sec in sections){
       for (j in seq_along(group_vars)) {
         g <- group_vars[j]
         # j is the numeric index, g is the name
-        p <- OMESurvey::OME_boxplot(
+        p <- OMESurvey::OME_boxplot_(
           data = df_for_bar,
-          value_var = !!rlang::sym(num_var),
-          group_var = !!rlang::sym(g),
+          value_var = num_var,
+          group_var = g,
           title = paste0(label, "\n by ", g)
         )
 
@@ -1083,13 +1084,13 @@ for(sec in sections){
                                          group_var = NULL,
                                          facet_var = NULL,
                                          ...) {
-      print("WRAPPER DEBUG:")
-      print(response_var)
-      print(typeof(response_var))
+      #print("WRAPPER DEBUG:")
+      #print(response_var)
+      #print(typeof(response_var))
       
       tryCatch({
         
-        # Call the function
+        # Call the (programmatic _() version of the) function
         res <- OME_stacked_bar_(
           dat          = dat,
           response_var = response_var,
@@ -1142,7 +1143,7 @@ for(sec in sections){
     } else {
       for (j in seq.int(1, nvars)) {
         sub_df <- df_for_bar[, unique(c(1, j)), drop = FALSE]
-        print(names(sub_df))
+        #print(names(sub_df))
         
         plot_title <-
           paste0(
@@ -1161,7 +1162,7 @@ for(sec in sections){
           percCut      = percCutVert,
           colo         = colo_arg,
           fillLabText  = NULL,
-          yLabText     = NULL,
+          propLabText  = NULL,
           titleText    = plot_title
         )
       }

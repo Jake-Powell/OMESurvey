@@ -16,12 +16,15 @@ OME_stacked_bar_(
   horiz = FALSE,
   text_scale = 1,
   fillLabText = NULL,
-  xLabText = NULL,
-  yLabText = "Proportion of responses",
+  groupLabText = NULL,
+  propLabText = "Proportion of responses",
   titleText = NULL,
   facet_labels = NULL,
   facet_layout = NULL,
-  fill_label_width = 20
+  separate_at = NULL,
+  fill_label_width = 20,
+  group_label_width = NULL,
+  group_labels = NULL
 )
 
 OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
@@ -56,10 +59,10 @@ percentage and \code{(n)} labels.}
 \item{fillLabText}{Optional legend title for the fill variable. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{response_var} is used.}
 
-\item{xLabText}{Optional label for the bar‑group axis. If \code{NULL} the label is
+\item{groupLabText}{Optional label for the bar‑group axis. If \code{NULL} the label is
 removed; if \code{""} the name of \code{group_var} is used.}
 
-\item{yLabText}{Label for the proportion axis. Default \code{"Proportion of responses"}.}
+\item{propLabText}{Label for the proportion axis. Default \code{"Proportion of responses"}.}
 
 \item{titleText}{Optional plot title. Default \code{NULL} removes the title.}
 
@@ -70,8 +73,24 @@ Default \code{NULL} uses the raw facet values.}
 \item{facet_layout}{Optional character. If \code{"1row"} the facets are arranged
 in a single row; otherwise the default facet layout is used.}
 
+\item{separate_at}{Optional integer specifying where to draw a horizontal
+separation line between groups defined by \code{group_var}.
+\itemize{
+\item If positive n the separation line is after the first n categories
+\item If negative n the separation line is before the n-th last category.
+Default \code{NULL} or 0 omits the line.
+}}
+
 \item{fill_label_width}{Optional integer. Width (in characters) used when
 wrapping fill labels with \code{stringr::str_wrap()}. Default is 20.}
+
+\item{group_label_width}{Optional integer. Width (in characters) used when
+wrapping group labels with \code{stringr::str_wrap()}. Default is \code{NULL}, to not wrap.}
+
+\item{group_labels}{Optional named character vector providing alternative
+labels for the grouping variable. Should be of the form
+\code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
+uses the factor’s existing levels.}
 
 \item{...}{Additional arguments passed to the underlying engine.}
 }
@@ -99,8 +118,7 @@ The plot displays:
 programmatic workflows.
 }
 \note{
-Future/possible extensions include adding an optional dashed line
-(like \code{OME_boxplot()}), making the \code{(n)} labels optional, using a
+Future/possible extensions include making the \code{(n)} labels optional, using a
 secondary axis for \code{(n)} labels, improving percentage‑label contrast for
 light fill colours, and a 1‑column option for facet layout.
 }
@@ -129,7 +147,11 @@ OME_stacked_bar(
 \dontrun{
   vars <- c("Gender", "Ethnicity", "FSM")
   for (v in vars) {
-    p <- OME_stacked_bar_(dat = survey_df, response_var = v)
+    p <- OME_stacked_bar_(
+      dat = survey_df,
+      response_var = "some_variable",
+      group_var = v
+     )
     print(p)
   }
 }

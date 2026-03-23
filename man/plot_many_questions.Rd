@@ -6,13 +6,13 @@
 \usage{
 plot_many_questions(
   dat,
-  labels_vec,
+  labels_vec = NULL,
   percCut = 5,
   colo = NULL,
   order_values = NULL,
   titleText = NULL,
   fill_label_width = 20,
-  axis_label_width = 30
+  question_label_width = 30
 )
 }
 \arguments{
@@ -38,7 +38,7 @@ May be a character vector of response levels, or the special value
 \item{fill_label_width}{Optional integer. Width (in characters) used when wrapping
 fill labels with \code{stringr::str_wrap()}. Passed to \code{OME_stacked_bar()}. Default is 20.}
 
-\item{axis_label_width}{Optional integer. Width (in characters) used when wrapping
+\item{question_label_width}{Optional integer. Width (in characters) used when wrapping
 axis labels with \code{stringr::str_wrap()}. Default is 30.}
 }
 \value{
@@ -63,7 +63,7 @@ orders questions by the mean of the numeric codes of the response factor.
 }
 
 Axis labels are wrapped using \code{stringr::str_wrap()} with a width controlled
-by \code{axis_label_width}. Legend/fill labels are treated the same using \code{fill_label_width}.
+by \code{question_label_width}. Legend/fill labels are treated the same using \code{fill_label_width}.
 }
 \note{
 All variables in \code{dat} should have identical factor levels.
@@ -81,9 +81,9 @@ after plotting. (This must be done after any tweaks to the ggplot theme, annotat
 \examples{
 # Minimal example with three questions and three response levels
 dat <- tibble::tibble(
-  Q1 = factor(c("Yes", "No", "Yes", "Maybe")),
-  Q2 = factor(c("No", "No", "Yes", "Maybe")),
-  Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"))
+  Q1 = factor(c("Yes", "No", "Yes", NA), levels=c("No", "Maybe", "Yes")),
+  Q2 = factor(c("No", "No", "Yes", "Maybe"), levels=c("No", "Maybe", "Yes")),
+  Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"), levels=c("No", "Maybe", "Yes"))
 )
 
 labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")

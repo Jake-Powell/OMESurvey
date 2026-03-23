@@ -271,8 +271,7 @@ render_survey_summary <- function(data_path,
 #'
 #' @author Dave Sirl
 #'
-#' @note Future/possible extensions include adding an optional dashed line
-#'   (like `OME_boxplot()`), making the `(n)` labels optional, using a
+#' @note Future/possible extensions include making the `(n)` labels optional, using a
 #'   secondary axis for `(n)` labels, improving percentage‑label contrast for
 #'   light fill colours, and a 1‑column option for facet layout.
 #'
@@ -302,10 +301,10 @@ render_survey_summary <- function(data_path,
 #' @param fillLabText Optional legend title for the fill variable. If `NULL`
 #'   (default) the title is removed; if `""` the name of `response_var` is used.
 #'
-#' @param xLabText Optional label for the bar‑group axis. If `NULL` the label is
+#' @param groupLabText Optional label for the bar‑group axis. If `NULL` the label is
 #'   removed; if `""` the name of `group_var` is used.
 #'
-#' @param yLabText Label for the proportion axis. Default `"Proportion of responses"`.
+#' @param propLabText Label for the proportion axis. Default `"Proportion of responses"`.
 #'
 #' @param titleText Optional plot title. Default `NULL` removes the title.
 #'
@@ -316,8 +315,22 @@ render_survey_summary <- function(data_path,
 #' @param facet_layout Optional character. If `"1row"` the facets are arranged
 #'   in a single row; otherwise the default facet layout is used.
 #'
+#' @param separate_at Optional integer specifying where to draw a horizontal
+#'   separation line between groups defined by `group_var`.
+#'   * If positive n the separation line is after the first n categories
+#'   * If negative n the separation line is before the n-th last category.
+#'  Default `NULL` or 0 omits the line.
+#'
 #' @param fill_label_width Optional integer. Width (in characters) used when
 #'   wrapping fill labels with `stringr::str_wrap()`. Default is 20.
+#'
+#' @param group_label_width Optional integer. Width (in characters) used when
+#'   wrapping group labels with `stringr::str_wrap()`. Default is `NULL`, to not wrap.
+#'
+#' @param group_labels Optional named character vector providing alternative
+#'   labels for the grouping variable. Should be of the form
+#'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
+#'   uses the factor’s existing levels.
 #'
 #' @param ... Additional arguments passed to the underlying engine.
 #'
@@ -352,7 +365,11 @@ render_survey_summary <- function(data_path,
 #' \dontrun{
 #'   vars <- c("Gender", "Ethnicity", "FSM")
 #'   for (v in vars) {
-#'     p <- OME_stacked_bar_(dat = survey_df, response_var = v)
+#'     p <- OME_stacked_bar_(
+#'       dat = survey_df,
+#'       response_var = "some_variable",
+#'       group_var = v
+#'      )
 #'     print(p)
 #'   }
 #' }
@@ -364,11 +381,14 @@ OME_stacked_bar_ = function(dat, response_var,
                            group_var=NULL, facet_var=NULL,
                            percCut=NULL, colo=NULL, na.rm=FALSE,
                            horiz=FALSE, text_scale=1,
-                           fillLabText=NULL, xLabText=NULL,
-                           yLabText="Proportion of responses",
+                           fillLabText=NULL, groupLabText=NULL,
+                           propLabText="Proportion of responses",
                            titleText=NULL,
                            facet_labels=NULL, facet_layout=NULL,
-                           fill_label_width=20){
+                           separate_at = NULL,
+                           fill_label_width=20,
+                           group_label_width=NULL,
+                           group_labels=NULL){
 
   # cat("DEBUG: response_var =", response_var, "\n")
   # cat("DEBUG: group_var    =", group_var, "\n")
@@ -442,8 +462,8 @@ OME_stacked_bar_ = function(dat, response_var,
   # Label defaults
   if (identical(fillLabText, ""))
     fillLabText <- response_name
-  if (identical(xLabText, ""))
-    xLabText <- group_name
+  if (identical(groupLabText, ""))
+    groupLabText <- group_name
 
   has_facet <- length(unique(dat2$var_facet)) > 1
 
@@ -504,7 +524,7 @@ OME_stacked_bar_ = function(dat, response_var,
         #panel.grid.major.y = ggplot2::element_blank(),
         #panel.grid.minor = ggplot2::element_blank()
       )
-    fill_guide <- ggplot2::guide_legend(nrow=1, reverse=TRUE)
+    fill_guide <- ggplot2::guide_legend(direction="horizontal", nrow=1, reverse=TRUE)
   } else {
     thePlot <- thePlot +
       ggplot2::theme(
@@ -513,12 +533,13 @@ OME_stacked_bar_ = function(dat, response_var,
         #panel.grid.major.y = ggplot2::element_line(linewidth=0.2, colour="grey30"),
         #panel.grid.minor = ggplot2::element_blank()
       )
-    fill_guide <- ggplot2::guide_legend()
+    fill_guide <- ggplot2::guide_legend(direction="vertical")
   }
 
   # Labels and scales
 
-  fill_labels <- function(x) stringr::str_wrap(x,width=fill_label_width)
+  fill_labels <- function(x) stringr::str_wrap(x, width=fill_label_width)
+
 
   if (is.null(colo)){
     thePlot <- thePlot +
@@ -528,12 +549,41 @@ OME_stacked_bar_ = function(dat, response_var,
       ggplot2::scale_fill_manual(values=colo, labels=fill_labels, drop=FALSE, guide=fill_guide)
   }
 
+
+  if (is.null(group_labels)) {
+
+    # No custom labels supplied
+    if (is.null(group_label_width)) {
+      group_labeller <- ggplot2::waiver()   # use default labels
+    } else {
+      group_labeller <- function(x) {
+        stringr::str_wrap(x, width = group_label_width)
+      }
+    }
+
+  } else {
+
+    # Custom labels supplied (named vector)
+    if (is.null(group_label_width)) {
+      group_labeller <- group_labels
+    } else {
+      group_labeller <- stringr::str_wrap(group_labels, width = group_label_width) |>
+        setNames(names(group_labels))
+    }
+
+  }
+
+
   thePlot <- thePlot +
-    ggplot2::labs(x=xLabText, y=yLabText,
+    ggplot2::scale_x_discrete(labels = group_labeller)
+
+
+  thePlot <- thePlot +
+    ggplot2::labs(x=groupLabText, y=propLabText,
                   fill=fillLabText, title=titleText) +
-    ggplot2::scale_y_continuous(breaks=seq(0,1,0.25),
-                                labels=scales::percent_format(accuracy=1),
-                                minor_breaks=seq(0,1,0.05))
+    ggplot2::scale_y_continuous(breaks = seq(0,1,0.25),
+                                labels = scales::percent_format(accuracy=1),
+                                minor_breaks = NULL)
 
 
 
@@ -631,6 +681,23 @@ OME_stacked_bar_ = function(dat, response_var,
     thePlot <- thePlot + do.call(ggplot2::facet_wrap, facet_args)
   }
 
+  # --- Optional dashed reference line -----------------------------------------
+  if (!is.null(separate_at) && separate_at != 0) {
+
+    # first interpret separate_at
+    if (separate_at > 0) {
+      intercept <- separate_at + 0.5
+    } else {
+      intercept <- length(levels(dat2$var_subdivide)) - abs(separate_at) + 0.5
+    }
+    thePlot <- thePlot +
+      ggplot2::geom_vline(
+        xintercept = intercept,
+        linetype = "dashed",
+        linewidth = 0.3
+      )
+  }
+
 
   # --- Final coordinate system ------------------------------------------------
 
@@ -700,7 +767,7 @@ OME_stacked_bar <- function(dat, response_var,
 #' @param titleText Optional text to use as plot title.
 #' @param fill_label_width Optional integer. Width (in characters) used when wrapping
 #'   fill labels with `stringr::str_wrap()`. Passed to `OME_stacked_bar()`. Default is 20.
-#' @param axis_label_width Optional integer. Width (in characters) used when wrapping
+#' @param question_label_width Optional integer. Width (in characters) used when wrapping
 #'   axis labels with `stringr::str_wrap()`. Default is 30.
 #'
 #' @returns
@@ -725,7 +792,7 @@ OME_stacked_bar <- function(dat, response_var,
 #'   (Intended for factors with low-high / sequential scales.)
 #'
 #' Axis labels are wrapped using `stringr::str_wrap()` with a width controlled
-#' by `axis_label_width`. Legend/fill labels are treated the same using `fill_label_width`.
+#' by `question_label_width`. Legend/fill labels are treated the same using `fill_label_width`.
 #'
 #' @section Legend placement:
 #' By default, the legend is placed horizontally according to the standard
@@ -739,20 +806,20 @@ OME_stacked_bar <- function(dat, response_var,
 #' @examples
 #' # Minimal example with three questions and three response levels
 #' dat <- tibble::tibble(
-#'   Q1 = factor(c("Yes", "No", "Yes", "Maybe")),
-#'   Q2 = factor(c("No", "No", "Yes", "Maybe")),
-#'   Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"))
+#'   Q1 = factor(c("Yes", "No", "Yes", NA), levels=c("No", "Maybe", "Yes")),
+#'   Q2 = factor(c("No", "No", "Yes", "Maybe"), levels=c("No", "Maybe", "Yes")),
+#'   Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"), levels=c("No", "Maybe", "Yes"))
 #' )
 #'
 #' labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
 #'
 #' plot_many_questions(dat, labels_vec = labels)
 #'
-plot_many_questions <- function(dat, labels_vec, percCut=5,
+plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
                                 colo=NULL, order_values = NULL,
                                 titleText=NULL,
                                 fill_label_width=20,
-                                axis_label_width=30){
+                                question_label_width=30){
 
   # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
@@ -775,27 +842,35 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
 
 
   # do the plotting
-  thePlot <-
-    dat |>
-    OME_stacked_bar(response_var = Response,
-                    group_var = question,
-                    horiz=TRUE,
-                    percCut=percCut,
-                    fillLabText=NULL,
-                    yLabText=NULL,
-                    xLabText=NULL,
-                    colo=colo,
-                    titleText=titleText,
-                    fill_label_width = fill_label_width) +
-    ggplot2::scale_x_discrete(labels = stringr::str_wrap(labels_vec, width=axis_label_width))
-
+  thePlot <- dat |>
+    OME_stacked_bar_(response_var = "Response",
+                    group_var = "question",
+                    horiz = TRUE,
+                    percCut = percCut,
+                    fillLabText = NULL,
+                    propLabText = NULL,
+                    groupLabText = NULL,
+                    colo = colo,
+                    titleText = titleText,
+                    fill_label_width = fill_label_width,
+                    group_label_width = question_label_width,
+                    group_labels = labels_vec)
   return(thePlot)
 }
 
 
-#' Boxplot (horizontal) with optional right-side counts showing valid & total
-#'  #datapoints for boxes, in an OME style.
+
+#' Boxplot (horizontal), in an OME style.
 #'
+#' `OME_boxplot()` builds a boxplot from survey-style data using **bare column names**.
+#' `OME_boxplot_()` is the programmatic interface and underlying engine,
+#' designed for use when column names are supplied as **strings** or **symbols**.
+#'
+#' Features include:
+#' * optional subdivision into separate boxes,
+#' * optional `(n/m)` style labels showing the number of non-NA responses per box,
+#' * optional dashed line to visually separate some of the boxes.
+
 #' @author Dave Sirl
 #'
 #' @note Future/possible extensions include support for dodging/colour
@@ -803,135 +878,200 @@ plot_many_questions <- function(dat, labels_vec, percCut=5,
 #'
 #' @param data A data frame.
 #' @param value_var Numeric variable to plot.
-#' @param group_var Grouping variable (factor).
+#' @param group_var Optional grouping variable (factor).
 #' @param show_counts Logical; whether to display (valid/total) counts on the
 #'   right-hand axis. Defaults to TRUE.
-#' @param title Optional plot title.
+#' @param valueLabText Optional title for the value variable axis. If `NULL`
+#'   (default) the title is removed; if `""` the name of `value_var` is used.
+#' @param groupLabText Optional title for the group variable axis. If `NULL`
+#'   (default) the title is removed; if `""` the name of `group_var` is used.
+#' @param omitGroupLabels Optional logical controlling whether to omit group labels.
+#'   Helpful when group_var=NULL. Default FALSE.
+
+#' @param titleText Optional plot title.
 #' @param colour Boxplot outline colour (any valid R colour). Defaults to [get_OME_colours](1).
-#' @param dashed_at Optional horizontal reference line.
+#' @param separate_at Optional integer specifying where to draw a horizontal
+#'   separation line between groups defined by `group_var`.
+#'   * If positive n the separation line is after the first n categories
+#'   * If negative n the separation line is before the n-th last category.
+#'  Default `NULL` or 0 omits the line.
+#' @param group_label_width Optional integer. Width (in characters) used when
+#'   wrapping group labels with `stringr::str_wrap()`. Default is `NULL`, to not wrap.
+
+#' @param ... Additional arguments passed to the underlying engine.
 #'
+#' @details
+#' `OME_boxplot()` uses tidy‑evaluation;
+#' `OME_boxplot_()` uses standard evaluation and is safe for loops and
+#' programmatic workflows.
+
 #' @return A ggplot object
-#' @export
 #'
 #' @examples
-#'
-#' df <- tibble::tibble(
-#'   group = factor(c("A", "A", "B", "B")),
-#'   value = c(3.2, 4.1, 5.0, NA)
+#' dat <- tibble::tibble(
+#'   Score = c(5, 7, 6, 9, 4, NA),
+#'   Group = factor(c("Alpha", "Alpha", "Alpha", "Beta", "Beta", "Beta")),
+#'   Grouping2 = factor(c("G1", "G2", "G1", "G2", "G1", "G2"))
 #' )
 #'
+#' # Basic example
+#' OME_boxplot(dat, Score, Group)
+#'
+#' # Without right‑hand counts
+#' OME_boxplot(dat, Score, Group, show_counts = FALSE)
+#'
+#' # With a title
 #' OME_boxplot(
-#'   data = df,
-#'   value_var = value,
-#'   group_var = group,
+#'   dat,
+#'   value_var = Score,
+#'   group_var = Group,
 #'   title = "Example boxplot"
 #' )
+#'
+#' # Example programmatic use
+#' \dontrun{
+#'   group_vars <- c("Group", "Grouping2")
+#'   for (v in group_vars) {
+#'     p <- OME_boxplot_(
+#'       data      = dat,
+#'       value_var = "Score",
+#'       group_var = v
+#'     )
+#'     print(p)
+#'   }
+#' }
+#'
+#' @export
 
-OME_boxplot <- function(data,
-                        value_var,
-                        group_var,
-                        show_counts = TRUE,
-                        title = NULL,
-                        colour = OMESurvey::get_OME_colours(1),
-                        dashed_at = NULL
-) {
+
+OME_boxplot_ <- function(data,
+                         value_var,
+                         group_var = NULL,
+                         show_counts = TRUE,
+                         valueLabText = NULL,
+                         groupLabText = NULL,
+                         omitGroupLabels = FALSE,
+                         titleText = NULL,
+                         colour = OMESurvey::get_OME_colours(1),
+                         separate_at = NULL,
+                         group_label_width = 20) {
+
+  # --- Handle NULL grouping (same as stacked-bar) -----------------------------
+  if (is.null(group_var)) {
+    data <- data |>
+      dplyr::mutate(.__group__ = factor("All"))
+    group_var <- ".__group__"
+  }
 
   # --- Input validation -------------------------------------------------------
-
-  # Capture column names safely (works with bare names, strings, and !!sym())
-  group_var_sym  <- rlang::ensym(group_var)
-  value_var_sym  <- rlang::ensym(value_var)
-
-  group_var_name <- rlang::as_name(group_var_sym)
-  value_var_name <- rlang::as_name(value_var_sym)
-
-  # Validate inputs
-  if (!group_var_name %in% names(data) ||
-      !value_var_name %in% names(data)) {
+  if (!value_var %in% names(data) || !group_var %in% names(data)) {
     stop("group_var and value_var must be columns in `data`.")
   }
 
-
-  if (!is.factor(dplyr::pull(data, {{group_var}}))) {
-    stop("group must be a factor.")
+  if (!is.factor(data[[group_var]])) {
+    stop("group_var must be a factor.")
   }
-  if (!is.numeric(dplyr::pull(data, {{value_var}}))) {
+  if (!is.numeric(data[[value_var]])) {
     stop("value_var must be numeric.")
   }
 
-  # Ensure factor levels match the order of appearance in the data
-  data[[group_var_name]] <- factor(
-    data[[group_var_name]],
-    levels = unique(data[[group_var_name]])
+  # Ensure factor levels follow order of appearance
+  data[[group_var]] <- factor(
+    data[[group_var]],
+    levels = unique(data[[group_var]])
   )
 
+  group_levels <- levels(data[[group_var]])
 
-  # --- Extract grouping levels ------------------------------------------------
+  # Label defaults
+  if (identical(valueLabText, ""))
+    valueLabText <- value_var
+  if (identical(groupLabText, ""))
+    groupLabText <- group_var
 
-  group_vals <- dplyr::pull(data, {{ group_var }})
 
-  group_levels <- if (is.factor(group_vals)) {
-    levels(group_vals)
-  } else {
-    unique(group_vals)
-  }
-
-  #group_var_name <- rlang::as_name(rlang::ensym(group_var))
-
-  # --- Summaries (only if show_counts=TRUE --------------------------------------------------------------
-  if (show_counts){
+  # --- Summaries for counts ---------------------------------------------------
+  if (show_counts) {
     group_counts <- data |>
       dplyr::summarise(
-        non_na = sum(!is.na({{ value_var }})),
+        non_na = sum(!is.na(.data[[value_var]])),
         total  = dplyr::n(),
-        .by = {{ group_var }}
+        .by = dplyr::all_of(group_var)   # <-- EXACTLY like stacked-bar
       ) |>
       dplyr::mutate(label = sprintf("(%d/%d)", non_na, total))
 
-    # Align labels to factor order
-    idx <- match(group_levels, group_counts[[group_var_name]])
+    idx <- match(group_levels, group_counts[[group_var]])
     right_labels <- stats::setNames(group_counts$label[idx], group_levels)
   }
 
-  # ---  Build plot ----
-  p <-
-    data |>
-    ggplot2::ggplot(ggplot2::aes(x = {{value_var}}, y = {{group_var}})) +
+  # --- Build plot -------------------------------------------------------------
+  p <- data |>
+    ggplot2::ggplot(
+      ggplot2::aes(
+        x = .data[[value_var]],
+        y = .data[[group_var]]
+      )
+    ) +
     ggplot2::geom_boxplot(
       colour = colour,
       width = 0.7,
       na.rm = TRUE
     ) +
-    ggplot2::labs(x = NULL, y = NULL, title = title) +
+    ggplot2::labs(x=groupLabText, y=valueLabText,
+                  title=titleText) +
     OMESurvey::ROME_ggtheme(base_size = 12) +
     ggplot2::theme(
       axis.line = ggplot2::element_blank(),
       axis.ticks = ggplot2::element_blank()
     )
+
+
+
   # ggplot2::theme_bw() +
   # ggplot2::theme(
   #   panel.grid.major = ggplot2::element_line(colour = "grey90"),
   #   panel.grid.minor = ggplot2::element_line(colour = "grey95")
   # )
 
-  # Add secondary axis only if showCounts = TRUE
+  # --- Label wrapping + optional counts ---------------------------------------
+  if (omitGroupLabels) {
+    y_labeller <- NULL
+  } else {
+    y_labeller <- function(x) stringr::str_wrap(x, width = group_label_width)
+  }
+
   if (show_counts) {
     p <- p +
       ggplot2::scale_y_discrete(
-        labels = ggplot2::waiver(),
+        labels = y_labeller,
         sec.axis = ggplot2::dup_axis(
           labels = right_labels,
           breaks = group_levels,
           name = NULL
         )
       )
+  } else {
+    p <- p +
+      ggplot2::scale_y_discrete(
+        labels = y_labeller
+      )
   }
 
-  # Optional dashed reference line
-  if (!is.null(dashed_at)) {
+
+  # --- Optional dashed reference line -----------------------------------------
+  if (!is.null(separate_at) && separate_at != 0) {
+
+    # first interpret separate_at
+    if (separate_at > 0) {
+      intercept <- separate_at + 0.5
+    } else {
+      intercept <- length(levels(data[[group_var]])) - abs(separate_at) + 0.5
+    }
+
+    length(levels(data[[group_var]])) |> print()
     p <- p +
       ggplot2::geom_hline(
-        yintercept = dashed_at,
+        yintercept = intercept,
         linetype = "dashed",
         linewidth = 0.3
       )
@@ -939,6 +1079,36 @@ OME_boxplot <- function(data,
 
   p
 }
+
+
+
+
+#' @rdname OME_boxplot_
+#' @export
+OME_boxplot <- function(data,
+                        value_var,
+                        group_var = NULL,
+                        ...) {
+  # Capture bare names safely (never evaluate)
+  value_quo <- rlang::enquo(value_var)
+  group_quo    <- rlang::enquo(group_var)
+
+  # Convert to strings (NULL stays NULL)
+  value_str <- rlang::as_name(value_quo)
+  group_str    <- if (!rlang::quo_is_null(group_quo)) rlang::as_name(group_quo) else NULL
+
+  # Call the programmatic version
+  OME_boxplot_(
+    data      = data,
+    value_var = value_str,
+    group_var = group_str,
+    ...
+  )
+}
+
+
+
+
 
 
 #' Centre a ggplot legend beneath the plot using cowplot
