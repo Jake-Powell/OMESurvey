@@ -147,7 +147,7 @@ you pass in. Internally the function fixes factor levels (with
 [`get_OME_colours`](https://jake-powell.github.io/OMESurvey/reference/get_OME_colours.md),
 [`ggplot2::ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html),
 [`cowplot::plot_grid`](https://wilkelab.org/cowplot/reference/plot_grid.html),
-[`patchwork::plot_layout`](https://patchwork.data-imaginist.com/reference/plot_layout.html)
+`patchwork::plot_layout`
 
 ## Examples
 
