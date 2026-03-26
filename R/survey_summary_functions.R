@@ -1122,11 +1122,11 @@ OME_boxplot_ <- function(data,
     stop("value_var must be numeric.")
   }
 
-  # Ensure factor levels follow order of appearance
-  data[[group_var]] <- factor(
-    data[[group_var]],
-    levels = unique(data[[group_var]])
-  )
+  # Ensure factor levels follow order of appearance  CHECK IF SIMILAR IS IN STACKED_BAR!!!!!!!
+  # data[[group_var]] <- factor(
+  #   data[[group_var]],
+  #   levels = unique(data[[group_var]])
+  # )
 
   group_levels <- levels(data[[group_var]])
 
