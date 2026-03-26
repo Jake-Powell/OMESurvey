@@ -1268,7 +1268,6 @@ OME_boxplot_ <- function(data,
       intercept <- length(levels(data[[group_var]])) - abs(separate_at) + 0.5
     }
 
-    length(levels(data[[group_var]])) |> print()
     p <- p +
       ggplot2::geom_hline(
         yintercept = intercept,
