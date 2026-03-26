@@ -66,7 +66,8 @@ designed for use when column names are supplied as <strong>strings</strong> or <
 <span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colour <span class="op">=</span> <span class="fu">OMESurvey</span><span class="fu">::</span><span class="fu"><a href="get_OME_colours.html">get_OME_colours</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>,</span>
 <span>  separate_at <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  group_label_width <span class="op">=</span> <span class="fl">20</span></span>
+<span>  group_label_width <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  group_labels <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">data</span>, <span class="va">value_var</span>, group_var <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -129,6 +130,13 @@ Default <code>NULL</code> or 0 omits the line.</p></li>
 wrapping group labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Default is <code>NULL</code>, to not wrap.</p></dd>
 
 
+<dt id="arg-group-labels">group_labels<a class="anchor" aria-label="anchor" href="#arg-group-labels"></a></dt>
+<dd><p>Optional named character vector providing alternative
+labels for the grouping variable. Should be of the form
+<code>c(level1 = "Label 1", level2 = "Label 2")</code>. Default is <code>NULL</code>, which
+uses the factor's existing levels.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to the underlying engine.</p></dd>
 
@@ -148,9 +156,10 @@ programmatic workflows.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
-    <p>Future/possible extensions include support for dodging/colour
-(and maybe vertical-ness and/or faceting).</p>
-    </div>
+    <p>Future/possible extensions include</p><ul><li><p>support for dodging/colour</p></li>
+<li><p>maybe vertical/horizontal switching</p></li>
+<li><p>maybe faceting</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="author">Author<a class="anchor" aria-label="anchor" href="#author"></a></h2>
     <p>Dave Sirl</p>
@@ -168,7 +177,7 @@ programmatic workflows.</p>
 <span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">dat</span>, <span class="va">Score</span>, <span class="va">Group</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="OME_boxplot_-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Without right‑hand counts</span></span></span>
+<span class="r-in"><span><span class="co"># Without counts</span></span></span>
 <span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">dat</span>, <span class="va">Score</span>, <span class="va">Group</span>, show_counts <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="OME_boxplot_-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>

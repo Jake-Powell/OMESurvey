@@ -25,9 +25,9 @@ suppress_specific_warning(expr, pattern)
 
 A list with two elements:
 
-- `value` — the result of evaluating `expr`
+- `value` - the result of evaluating `expr`
 
-- `suppressed` — a character vector of suppressed warning messages
+- `suppressed` - a character vector of suppressed warning messages
 
 ## Examples
 

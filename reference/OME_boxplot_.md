@@ -19,7 +19,8 @@ OME_boxplot_(
   titleText = NULL,
   colour = OMESurvey::get_OME_colours(1),
   separate_at = NULL,
-  group_label_width = 20
+  group_label_width = NULL,
+  group_labels = NULL
 )
 
 OME_boxplot(data, value_var, group_var = NULL, ...)
@@ -85,6 +86,13 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is `NULL`, to not wrap.
 
+- group_labels:
+
+  Optional named character vector providing alternative labels for the
+  grouping variable. Should be of the form
+  `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
+  uses the factor's existing levels.
+
 - ...:
 
   Additional arguments passed to the underlying engine.
@@ -109,8 +117,13 @@ evaluation and is safe for loops and programmatic workflows.
 
 ## Note
 
-Future/possible extensions include support for dodging/colour (and maybe
-vertical-ness and/or faceting).
+Future/possible extensions include
+
+- support for dodging/colour
+
+- maybe vertical/horizontal switching
+
+- maybe faceting
 
 ## Author
 
@@ -129,7 +142,7 @@ dat <- tibble::tibble(
 OME_boxplot(dat, Score, Group)
 
 
-# Without right‑hand counts
+# Without counts
 OME_boxplot(dat, Score, Group, show_counts = FALSE)
 
 

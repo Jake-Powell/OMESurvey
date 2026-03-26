@@ -16,6 +16,7 @@ OME_stacked_bar_(
   percCut = NULL,
   colo = NULL,
   na.rm = FALSE,
+  show_counts = TRUE,
   horiz = FALSE,
   text_scale = 1,
   fillLabText = NULL,
@@ -26,6 +27,7 @@ OME_stacked_bar_(
   facet_layout = NULL,
   separate_at = NULL,
   fill_label_width = 20,
+  omitGroupLabels = FALSE,
   group_label_width = NULL,
   group_labels = NULL
 )
@@ -54,7 +56,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - percCut:
 
-  Numeric scalar (0–100). Cutoff below which percentages are not shown
+  Numeric scalar (0-100). Cutoff below which percentages are not shown
   in bar segments. Default `5`; use a number \>100 to suppress all
   percentages.
 
@@ -70,6 +72,11 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
   convert them to `"Missing"` and treat as an additional response level.
 
+- show_counts:
+
+  Logical; whether to display (n) counts for each bar. Defaults to TRUE.
+  Needs care if used with faceting.
+
 - horiz:
 
   Logical (default `FALSE`). If `TRUE`, flip coordinates so bars are
@@ -77,8 +84,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - text_scale:
 
-  Positive number (default `1`) scaling the size of percentage and `(n)`
-  labels.
+  Positive number (default `1`) scaling the size of percentage labels.
 
 - fillLabText:
 
@@ -106,8 +112,9 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - facet_layout:
 
-  Optional character. If `"1row"` the facets are arranged in a single
-  row; otherwise the default facet layout is used.
+  Optional character. If `"1row"` or `"1col"` the facets are arranged in
+  a single row or column. Otherwise (or if `NULL`) the default facet
+  layout is used. Should be `"1col"` if used with `show_counts=TRUE`.
 
 - separate_at:
 
@@ -126,6 +133,11 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is 20.
 
+- omitGroupLabels:
+
+  Optional logical controlling whether to omit group labels. Helpful
+  when group_var=NULL. Default FALSE.
+
 - group_label_width:
 
   Optional integer. Width (in characters) used when wrapping group
@@ -138,7 +150,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   Optional named character vector providing alternative labels for the
   grouping variable. Should be of the form
   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
-  uses the factor’s existing levels.
+  uses the factor's existing levels.
 
 - ...:
 
@@ -160,16 +172,24 @@ The plot displays:
 
 - percentage labels inside bar segments (above a cutoff),
 
-- `(n)` labels showing the number of responses per bar.
+- optional `(n)` labels showing the number of responses per bar. (though
+  these need care if combined with faceting)
 
 `OME_stacked_bar()` uses tidy‑evaluation; `OME_stacked_bar_()` uses
 standard evaluation and is safe for loops and programmatic workflows.
 
 ## Note
 
-Future/possible extensions include making the `(n)` labels optional,
-using a secondary axis for `(n)` labels, improving percentage‑label
-contrast for light fill colours, and a 1‑column option for facet layout.
+Future/possible extensions include
+
+- edit show_counts argument to allow optional (m/n) formatting of labels
+  (where m = \# non-missing values and n = \# values)
+
+- adding a count_scope = c("facet","global") argument so (n) labelling
+  groups over facets (seems unlikely to be very helpful?)
+
+- much deeper fiddling to let (n) labelling work with multi-column
+  faceting.
 
 ## Author
 
@@ -179,7 +199,8 @@ Dave Sirl
 
 ``` r
 dat <- tibble::tibble(
-  Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe")),
+  Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe"),
+                    levels = c("No", "Maybe", "Yes")),
   Group    = factor(c("A", "A", "A", "A", "B", "B"))
 )
 
