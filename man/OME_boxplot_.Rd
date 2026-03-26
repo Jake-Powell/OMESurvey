@@ -16,7 +16,8 @@ OME_boxplot_(
   titleText = NULL,
   colour = OMESurvey::get_OME_colours(1),
   separate_at = NULL,
-  group_label_width = 20
+  group_label_width = NULL,
+  group_labels = NULL
 )
 
 OME_boxplot(data, value_var, group_var = NULL, ...)
@@ -55,6 +56,11 @@ Default \code{NULL} or 0 omits the line.
 \item{group_label_width}{Optional integer. Width (in characters) used when
 wrapping group labels with \code{stringr::str_wrap()}. Default is \code{NULL}, to not wrap.}
 
+\item{group_labels}{Optional named character vector providing alternative
+labels for the grouping variable. Should be of the form
+\code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
+uses the factor's existing levels.}
+
 \item{...}{Additional arguments passed to the underlying engine.}
 }
 \value{
@@ -78,8 +84,12 @@ Features include:
 programmatic workflows.
 }
 \note{
-Future/possible extensions include support for dodging/colour
-(and maybe vertical-ness and/or faceting).
+Future/possible extensions include
+\itemize{
+\item support for dodging/colour
+\item maybe vertical/horizontal switching
+\item maybe faceting
+}
 }
 \examples{
 dat <- tibble::tibble(
@@ -91,7 +101,7 @@ dat <- tibble::tibble(
 # Basic example
 OME_boxplot(dat, Score, Group)
 
-# Without right‑hand counts
+# Without counts
 OME_boxplot(dat, Score, Group, show_counts = FALSE)
 
 # With a title

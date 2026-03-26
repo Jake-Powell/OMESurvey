@@ -15,8 +15,8 @@ should be suppressed.}
 \value{
 A list with two elements:
 \itemize{
-\item \code{value} — the result of evaluating \code{expr}
-\item \code{suppressed} — a character vector of suppressed warning messages
+\item \code{value} - the result of evaluating \code{expr}
+\item \code{suppressed} - a character vector of suppressed warning messages
 }
 }
 \description{

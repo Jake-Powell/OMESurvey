@@ -13,6 +13,7 @@ OME_stacked_bar_(
   percCut = NULL,
   colo = NULL,
   na.rm = FALSE,
+  show_counts = TRUE,
   horiz = FALSE,
   text_scale = 1,
   fillLabText = NULL,
@@ -23,6 +24,7 @@ OME_stacked_bar_(
   facet_layout = NULL,
   separate_at = NULL,
   fill_label_width = 20,
+  omitGroupLabels = FALSE,
   group_label_width = NULL,
   group_labels = NULL
 )
@@ -39,7 +41,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 \item{facet_var}{Optional bare column name used for faceting.
 All variables should be factors (characters may work but are not guaranteed).}
 
-\item{percCut}{Numeric scalar (0–100). Cutoff below which percentages are not
+\item{percCut}{Numeric scalar (0-100). Cutoff below which percentages are not
 shown in bar segments. Default \code{5}; use a number >100 to suppress all percentages.}
 
 \item{colo}{Optional character vector of fill colours (one per response
@@ -50,11 +52,14 @@ When \code{na.rm = FALSE}, a grey colour is prepended for the \code{"Missing"} l
 \item{na.rm}{Logical. If \code{TRUE}, remove \code{NA} responses; if \code{FALSE} (default)
 convert them to \code{"Missing"} and treat as an additional response level.}
 
+\item{show_counts}{Logical; whether to display (n) counts for each bar.
+Defaults to TRUE. Needs care if used with faceting.}
+
 \item{horiz}{Logical (default \code{FALSE}). If \code{TRUE}, flip coordinates so bars
 are horizontal and place the legend below the plot.}
 
 \item{text_scale}{Positive number (default \code{1}) scaling the size of
-percentage and \code{(n)} labels.}
+percentage labels.}
 
 \item{fillLabText}{Optional legend title for the fill variable. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{response_var} is used.}
@@ -70,8 +75,9 @@ removed; if \code{""} the name of \code{group_var} is used.}
 facets (names are original facet values, values are labels to display).
 Default \code{NULL} uses the raw facet values.}
 
-\item{facet_layout}{Optional character. If \code{"1row"} the facets are arranged
-in a single row; otherwise the default facet layout is used.}
+\item{facet_layout}{Optional character. If \code{"1row"} or \code{"1col"} the facets
+are arranged in a single row or column. Otherwise (or if \code{NULL}) the default
+facet layout is used. Should be \code{"1col"} if used with \code{show_counts=TRUE}.}
 
 \item{separate_at}{Optional integer specifying where to draw a horizontal
 separation line between groups defined by \code{group_var}.
@@ -84,13 +90,16 @@ Default \code{NULL} or 0 omits the line.
 \item{fill_label_width}{Optional integer. Width (in characters) used when
 wrapping fill labels with \code{stringr::str_wrap()}. Default is 20.}
 
+\item{omitGroupLabels}{Optional logical controlling whether to omit group labels.
+Helpful when group_var=NULL. Default FALSE.}
+
 \item{group_label_width}{Optional integer. Width (in characters) used when
 wrapping group labels with \code{stringr::str_wrap()}. Default is \code{NULL}, to not wrap.}
 
 \item{group_labels}{Optional named character vector providing alternative
 labels for the grouping variable. Should be of the form
 \code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
-uses the factor’s existing levels.}
+uses the factor's existing levels.}
 
 \item{...}{Additional arguments passed to the underlying engine.}
 }
@@ -110,7 +119,8 @@ The plot displays:
 \item optional subdivision into separate bars,
 \item optional faceting,
 \item percentage labels inside bar segments (above a cutoff),
-\item \code{(n)} labels showing the number of responses per bar.
+\item optional \code{(n)} labels showing the number of responses per bar.
+(though these need care if combined with faceting)
 }
 
 \code{OME_stacked_bar()} uses tidy‑evaluation;
@@ -118,13 +128,19 @@ The plot displays:
 programmatic workflows.
 }
 \note{
-Future/possible extensions include making the \code{(n)} labels optional, using a
-secondary axis for \code{(n)} labels, improving percentage‑label contrast for
-light fill colours, and a 1‑column option for facet layout.
+Future/possible extensions include
+\itemize{
+\item edit show_counts argument to allow optional (m/n) formatting of labels
+(where m = # non-missing values and n = # values)
+\item adding a count_scope = c("facet","global") argument so (n) labelling groups
+over facets (seems unlikely to be very helpful?)
+\item much deeper fiddling to let (n) labelling work with multi-column faceting.
+}
 }
 \examples{
 dat <- tibble::tibble(
-  Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe")),
+  Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe"),
+                    levels = c("No", "Maybe", "Yes")),
   Group    = factor(c("A", "A", "A", "A", "B", "B"))
 )
 

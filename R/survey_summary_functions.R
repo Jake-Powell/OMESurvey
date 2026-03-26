@@ -267,13 +267,17 @@ render_survey_summary <- function(data_path,
 #' * optional subdivision into separate bars,
 #' * optional faceting,
 #' * percentage labels inside bar segments (above a cutoff),
-#' * `(n)` labels showing the number of responses per bar.
+#' * optional `(n)` labels showing the number of responses per bar.
+#'     (though these need care if combined with faceting)
 #'
 #' @author Dave Sirl
 #'
-#' @note Future/possible extensions include making the `(n)` labels optional, using a
-#'   secondary axis for `(n)` labels, improving percentage‑label contrast for
-#'   light fill colours, and a 1‑column option for facet layout.
+#' @note Future/possible extensions include
+#'   * edit show_counts argument to allow optional (m/n) formatting of labels
+#'       (where m = # non-missing values and n = # values)
+#'   * adding a count_scope = c("facet","global") argument so (n) labelling groups
+#'        over facets (seems unlikely to be very helpful?)
+#'   * much deeper fiddling to let (n) labelling work with multi-column faceting.
 #'
 #' @param dat A data frame.
 #' @param response_var Bare column name giving the response categories (used for fill).
@@ -281,7 +285,7 @@ render_survey_summary <- function(data_path,
 #' @param facet_var Optional bare column name used for faceting.
 #'   All variables should be factors (characters may work but are not guaranteed).
 #'
-#' @param percCut Numeric scalar (0–100). Cutoff below which percentages are not
+#' @param percCut Numeric scalar (0-100). Cutoff below which percentages are not
 #'   shown in bar segments. Default `5`; use a number >100 to suppress all percentages.
 #'
 #' @param colo Optional character vector of fill colours (one per response
@@ -292,11 +296,14 @@ render_survey_summary <- function(data_path,
 #' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
 #'   convert them to `"Missing"` and treat as an additional response level.
 #'
+#' @param show_counts Logical; whether to display (n) counts for each bar.
+#'  Defaults to TRUE. Needs care if used with faceting.
+#'
 #' @param horiz Logical (default `FALSE`). If `TRUE`, flip coordinates so bars
 #'   are horizontal and place the legend below the plot.
 #'
 #' @param text_scale Positive number (default `1`) scaling the size of
-#'   percentage and `(n)` labels.
+#'   percentage labels.
 #'
 #' @param fillLabText Optional legend title for the fill variable. If `NULL`
 #'   (default) the title is removed; if `""` the name of `response_var` is used.
@@ -312,8 +319,9 @@ render_survey_summary <- function(data_path,
 #'   facets (names are original facet values, values are labels to display).
 #'   Default `NULL` uses the raw facet values.
 #'
-#' @param facet_layout Optional character. If `"1row"` the facets are arranged
-#'   in a single row; otherwise the default facet layout is used.
+#' @param facet_layout Optional character. If `"1row"` or `"1col"` the facets
+#'   are arranged in a single row or column. Otherwise (or if `NULL`) the default
+#'   facet layout is used. Should be `"1col"` if used with `show_counts=TRUE`.
 #'
 #' @param separate_at Optional integer specifying where to draw a horizontal
 #'   separation line between groups defined by `group_var`.
@@ -324,13 +332,14 @@ render_survey_summary <- function(data_path,
 #' @param fill_label_width Optional integer. Width (in characters) used when
 #'   wrapping fill labels with `stringr::str_wrap()`. Default is 20.
 #'
+#' @param omitGroupLabels Optional logical controlling whether to omit group labels.
+#'   Helpful when group_var=NULL. Default FALSE.
 #' @param group_label_width Optional integer. Width (in characters) used when
 #'   wrapping group labels with `stringr::str_wrap()`. Default is `NULL`, to not wrap.
-#'
 #' @param group_labels Optional named character vector providing alternative
 #'   labels for the grouping variable. Should be of the form
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
-#'   uses the factor’s existing levels.
+#'   uses the factor's existing levels.
 #'
 #' @param ... Additional arguments passed to the underlying engine.
 #'
@@ -342,7 +351,8 @@ render_survey_summary <- function(data_path,
 #' programmatic workflows.
 #' @examples
 #' dat <- tibble::tibble(
-#'   Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe")),
+#'   Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe"),
+#'                     levels = c("No", "Maybe", "Yes")),
 #'   Group    = factor(c("A", "A", "A", "A", "B", "B"))
 #' )
 #'
@@ -388,8 +398,9 @@ OME_stacked_bar_ = function(dat, response_var,
                            facet_labels=NULL, facet_layout=NULL,
                            separate_at = NULL,
                            fill_label_width=20,
-                           group_label_width=NULL,
-                           group_labels=NULL){
+                           omitGroupLabels = FALSE,
+                           group_label_width = NULL,
+                           group_labels = NULL){
 
   # cat("DEBUG: response_var =", response_var, "\n")
   # cat("DEBUG: group_var    =", group_var, "\n")
@@ -469,6 +480,15 @@ OME_stacked_bar_ = function(dat, response_var,
   has_facet <- length(unique(dat2$var_facet)) > 1
 
 
+  if (show_counts && has_facet && !(facet_layout %in% "1col")) {
+    warning(
+      "Faceting detected: secondary‑axis count labels may misalign.\n",
+      "Use `facet_layout = \"1col\"` for reliable display/alignment of the (n) counts."
+    )
+  }
+
+
+
   # --- Convert percCut to proportion, normalise colours -----------------------------------------
 
   percCut <- ifelse(is.null(percCut), 0.05, percCut / 100)
@@ -510,29 +530,36 @@ OME_stacked_bar_ = function(dat, response_var,
     #ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, group = interaction(var_subdivide, var_name), fill=var_name)) +
     ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, fill=var_name)) +
     ggplot2::geom_bar(position = "fill") +
-    OMESurvey::ROME_ggtheme(base_size = 12) #+
-    #ggplot2::theme(
-      #axis.ticks = ggplot2::element_blank(),
-      #panel.border = ggplot2::element_blank(),
-      #plot.title.position = "plot")
+    OMESurvey::ROME_ggtheme(base_size = 12) +
+    ggplot2::theme(
+      axis.ticks = ggplot2::element_blank(),
+      panel.border = ggplot2::element_blank(),
+      axis.line = ggplot2::element_blank(),
+      strip.background = ggplot2::element_blank(),
+      strip.text = ggplot2::element_text(
+        size = ggplot2::rel(0.85), face = "plain", color = "black",
+        margin = ggplot2::margin(5, 0, 5, 0)
+      ),
+      plot.title.position = "plot"
+    )
 
   # Further theme()ing
   if (horiz) {
     thePlot <- thePlot +
       ggplot2::theme(
-        legend.position="bottom"#,
+        legend.position="bottom",
         #panel.grid.major.x = ggplot2::element_line(linewidth=0.2, colour="grey30"),
-        #panel.grid.major.y = ggplot2::element_blank(),
-        #panel.grid.minor = ggplot2::element_blank()
+        panel.grid.major.y = ggplot2::element_blank(),
+        panel.grid.minor = ggplot2::element_blank()
       )
     fill_guide <- ggplot2::guide_legend(direction="horizontal", nrow=1, reverse=TRUE)
   } else {
     thePlot <- thePlot +
       ggplot2::theme(
-        legend.position="right"#,
-        #panel.grid.major.x = ggplot2::element_blank(),
+        legend.position="right",
+        panel.grid.major.x = ggplot2::element_blank(),
         #panel.grid.major.y = ggplot2::element_line(linewidth=0.2, colour="grey30"),
-        #panel.grid.minor = ggplot2::element_blank()
+        panel.grid.minor = ggplot2::element_blank()
       )
     fill_guide <- ggplot2::guide_legend(direction="vertical")
   }
@@ -552,88 +579,136 @@ OME_stacked_bar_ = function(dat, response_var,
   group_levels <- levels(dat2$var_subdivide)
 
   # --- Left-axis labels (group labels)
-  if (is.null(group_labels)) {
-    # No custom labels supplied
+  if (omitGroupLabels) {
+
+    primary_labeller <- NULL
+
+  } else if (is.null(group_labels)) {
+
+    # No custom labels
     if (is.null(group_label_width)) {
-      left_labeller <- ggplot2::waiver()   # use default labels
+      primary_labeller <- ggplot2::waiver()
     } else {
-      left_labeller <- function(x) {
-        stringr::str_wrap(x, width = group_label_width)
-      }
+      primary_labeller <- function(x) stringr::str_wrap(x, width = group_label_width)
     }
+
   } else {
-    # Custom labels supplied (named vector)
+
+    # Custom labels supplied
     if (is.null(group_label_width)) {
-      left_labeller <- group_labels
+      primary_labeller <- group_labels
     } else {
-      left_labeller <- stringr::str_wrap(group_labels, width = group_label_width) |>
-        setNames(names(group_labels))
+      primary_labeller <- stringr::str_wrap(group_labels, width = group_label_width) |>
+        stats::setNames(names(group_labels))
     }
   }
 
-  # Optional override
   if (!is.null(group_labels) && !all(names(group_labels) %in% group_levels)) {
     warning("Names of `group_labels` do not match the levels of the grouping variable.")
   }
 
-  if (exists("omitGroupLabels") && omitGroupLabels) {
-    left_labeller <- NULL
-  }
 
 
-
-
+  # --- Secondary axis labeller (counts) --------------------------------
 
 
   if (exists("show_counts") && show_counts) {
-    group_counts <- dat2 |>
-      dplyr::summarise(
-        non_na = sum(!is.na(.data[[response_name]])),
-        total  = dplyr::n(),
-        .by = var_subdivide
-      ) |>
-      dplyr::mutate(label = sprintf("(%d/%d)", non_na, total))
 
-    idx <- match(group_levels, group_counts$var_subdivide)
-    right_labels <- stats::setNames(group_counts$label[idx], group_levels)
+    if (has_facet) {
+      # Per‑facet counts
+      group_counts <- dat2 |>
+        dplyr::summarise(
+          non_na = sum(!is.na(.data[[response_name]])),
+          total  = dplyr::n(),
+          .by = c(var_facet, var_subdivide)
+        ) |>
+        #dplyr::mutate(label = sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total)))
+        dplyr::mutate(label = sprintf("(%s)", scales::comma(total)))
+
+      right_labels <- group_counts |>
+        split(~var_facet) |>
+        lapply(function(df) {
+          idx <- match(group_levels, df$var_subdivide)
+          stats::setNames(df$label[idx], group_levels)
+        })
+
+
+    } else {
+      # Global counts (no real faceting)
+      group_counts <- dat2 |>
+        dplyr::summarise(
+          non_na = sum(!is.na(.data[[response_name]])),
+          total  = dplyr::n(),
+          .by = var_subdivide
+        ) |>
+        #dplyr::mutate(label = sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total)))
+        dplyr::mutate(label = sprintf("(%s)", scales::comma(total)))
+
+      idx <- match(group_levels, group_counts$var_subdivide)
+      right_labels <- stats::setNames(group_counts$label[idx], group_levels)
+
+    }
   }
 
-  if (horiz) {
 
-    # Horizontal: group labels on y-axis
-    if (exists("show_counts") && show_counts) {
-      thePlot <- thePlot +
-        ggplot2::scale_x_discrete(
-          labels = left_labeller,
-          sec.axis = ggplot2::dup_axis(
-            labels = right_labels,
-            breaks = group_levels,
-            name = NULL
-          )
-        )
-    } else {
-      thePlot <- thePlot +
-        ggplot2::scale_x_discrete(labels = left_labeller)
-    }
-
+  if (show_counts) {
+    secondary_labeller <- right_labels
   } else {
-
-    # Vertical: group labels on x-axis
-    if (exists("show_counts") && show_counts) {
-      thePlot <- thePlot +
-        ggplot2::scale_x_discrete(
-          labels = left_labeller,
-          sec.axis = ggplot2::dup_axis(
-            labels = right_labels,
-            breaks = group_levels,
-            name = NULL
-          )
-        )
-    } else {
-      thePlot <- thePlot +
-        ggplot2::scale_x_discrete(labels = left_labeller)
-    }
+    secondary_labeller <- NULL
   }
+
+
+
+  thePlot <- thePlot + ggplot2::scale_x_discrete(
+    labels = primary_labeller,
+    sec.axis = if (show_counts) {
+      ggplot2::dup_axis(
+        labels = secondary_labeller,
+        breaks = group_levels,
+        name = NULL
+      )
+    } else {
+      ggplot2::waiver()
+    }
+  )
+
+
+  # if (horiz) {
+  #
+  #   # Horizontal: group labels on y-axis
+  #   if (exists("show_counts") && show_counts) {
+  #     thePlot <- thePlot +
+  #       ggplot2::scale_x_discrete(
+  #         labels = left_labeller,
+  #         sec.axis = ggplot2::dup_axis(
+  #           labels = right_labels,
+  #           breaks = group_levels,
+  #           name = NULL
+  #         )
+  #       )
+  #   } else {
+  #     thePlot <- thePlot +
+  #       ggplot2::scale_x_discrete(labels = left_labeller)
+  #   }
+  #
+  # } else {
+  #
+  #   # Vertical: group labels on x-axis
+  #   if (exists("show_counts") && show_counts) {
+  #     thePlot <- thePlot +
+  #       ggplot2::scale_x_discrete(
+  #         labels = left_labeller,
+  #         sec.axis = ggplot2::dup_axis(
+  #           labels = right_labels,
+  #           breaks = group_levels,
+  #           name = NULL
+  #         )
+  #       )
+  #   } else {
+  #     thePlot <- thePlot +
+  #       ggplot2::scale_x_discrete(labels = left_labeller)
+  #   }
+  # }
 
 
 
@@ -737,6 +812,8 @@ OME_stacked_bar_ = function(dat, response_var,
     # Apply layout control if requested
     if (!is.null(facet_layout) && facet_layout == "1row") {
       facet_args$nrow <- 1
+    } else if (!is.null(facet_layout) && facet_layout == "1col") {
+      facet_args$ncol <- 1
     }
 
     thePlot <- thePlot + do.call(ggplot2::facet_wrap, facet_args)
@@ -934,23 +1011,26 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
 
 #' @author Dave Sirl
 #'
-#' @note Future/possible extensions include support for dodging/colour
-#' (and maybe vertical-ness and/or faceting).
+#' @note Future/possible extensions include
+#'   * support for dodging/colour
+#'   * maybe vertical/horizontal switching
+#'   * maybe faceting
 #'
 #' @param data A data frame.
 #' @param value_var Numeric variable to plot.
 #' @param group_var Optional grouping variable (factor).
 #' @param show_counts Logical; whether to display (valid/total) counts on the
 #'   right-hand axis. Defaults to TRUE.
+#'
 #' @param valueLabText Optional title for the value variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `value_var` is used.
 #' @param groupLabText Optional title for the group variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `group_var` is used.
 #' @param omitGroupLabels Optional logical controlling whether to omit group labels.
 #'   Helpful when group_var=NULL. Default FALSE.
-
 #' @param titleText Optional plot title.
 #' @param colour Boxplot outline colour (any valid R colour). Defaults to [get_OME_colours](1).
+#'
 #' @param separate_at Optional integer specifying where to draw a horizontal
 #'   separation line between groups defined by `group_var`.
 #'   * If positive n the separation line is after the first n categories
@@ -958,6 +1038,11 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
 #'  Default `NULL` or 0 omits the line.
 #' @param group_label_width Optional integer. Width (in characters) used when
 #'   wrapping group labels with `stringr::str_wrap()`. Default is `NULL`, to not wrap.
+#' @param group_labels Optional named character vector providing alternative
+#'   labels for the grouping variable. Should be of the form
+#'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
+#'   uses the factor's existing levels.
+
 
 #' @param ... Additional arguments passed to the underlying engine.
 #'
@@ -978,7 +1063,7 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
 #' # Basic example
 #' OME_boxplot(dat, Score, Group)
 #'
-#' # Without right‑hand counts
+#' # Without counts
 #' OME_boxplot(dat, Score, Group, show_counts = FALSE)
 #'
 #' # With a title
@@ -1015,7 +1100,8 @@ OME_boxplot_ <- function(data,
                          titleText = NULL,
                          colour = OMESurvey::get_OME_colours(1),
                          separate_at = NULL,
-                         group_label_width = 20) {
+                         group_label_width = NULL,
+                         group_labels = NULL) {
 
   # --- Handle NULL grouping (same as stacked-bar) -----------------------------
   if (is.null(group_var)) {
@@ -1083,7 +1169,9 @@ OME_boxplot_ <- function(data,
     OMESurvey::ROME_ggtheme(base_size = 12) +
     ggplot2::theme(
       axis.line = ggplot2::element_blank(),
-      axis.ticks = ggplot2::element_blank()
+      axis.ticks = ggplot2::element_blank(),
+      panel.grid.major.y = ggplot2::element_blank(),
+      panel.grid.minor.y = ggplot2::element_blank()
     )
 
 
@@ -1095,28 +1183,79 @@ OME_boxplot_ <- function(data,
   # )
 
   # --- Label wrapping + optional counts ---------------------------------------
+  # if (omitGroupLabels) {
+  #   y_labeller <- NULL
+  # } else {
+  #   y_labeller <- function(x) stringr::str_wrap(x, width = group_label_width)
+  # }
+  #
+  # if (show_counts) {
+  #   p <- p +
+  #     ggplot2::scale_y_discrete(
+  #       labels = y_labeller,
+  #       sec.axis = ggplot2::dup_axis(
+  #         labels = right_labels,
+  #         breaks = group_levels,
+  #         name = NULL
+  #       )
+  #     )
+  # } else {
+  #   p <- p +
+  #     ggplot2::scale_y_discrete(
+  #       labels = y_labeller
+  #     )
+  # }
+
+  # --- Axis labelling (group labels & counts) -----------------------------
+
+  # Primary axis (group labels)
+
   if (omitGroupLabels) {
-    y_labeller <- NULL
+
+    primary_labeller <- NULL
+
+  } else if (is.null(group_labels)) {
+
+    # No custom labels
+    if (is.null(group_label_width)) {
+      primary_labeller <- ggplot2::waiver()
+    } else {
+      primary_labeller <- function(x) stringr::str_wrap(x, width = group_label_width)
+    }
+
   } else {
-    y_labeller <- function(x) stringr::str_wrap(x, width = group_label_width)
+
+    # Custom labels supplied
+    if (is.null(group_label_width)) {
+      primary_labeller <- group_labels
+    } else {
+      primary_labeller <- stringr::str_wrap(group_labels, width = group_label_width) |>
+        stats::setNames(names(group_labels))
+    }
   }
 
+  # Secondary axis (counts)
+
   if (show_counts) {
-    p <- p +
-      ggplot2::scale_y_discrete(
-        labels = y_labeller,
-        sec.axis = ggplot2::dup_axis(
-          labels = right_labels,
-          breaks = group_levels,
-          name = NULL
-        )
-      )
+    secondary_labeller <- right_labels
   } else {
-    p <- p +
-      ggplot2::scale_y_discrete(
-        labels = y_labeller
-      )
+    secondary_labeller <- NULL
   }
+
+
+  p <- p + ggplot2::scale_y_discrete(
+    labels = primary_labeller,
+    sec.axis = if (show_counts) {
+      ggplot2::dup_axis(
+        labels = secondary_labeller,
+        breaks = group_levels,
+        name = NULL
+      )
+    } else {
+      ggplot2::waiver()
+    }
+  )
+
 
 
   # --- Optional dashed reference line -----------------------------------------
@@ -1137,6 +1276,7 @@ OME_boxplot_ <- function(data,
         linewidth = 0.3
       )
   }
+
 
   p
 }
@@ -1295,8 +1435,8 @@ convert_colo <- function(colo){
 #'   should be suppressed.
 #'
 #' @return A list with two elements:
-#'   * `value` — the result of evaluating `expr`
-#'   * `suppressed` — a character vector of suppressed warning messages
+#'   * `value` - the result of evaluating `expr`
+#'   * `suppressed` - a character vector of suppressed warning messages
 #'
 #' @examples
 #' suppress_specific_warning({
