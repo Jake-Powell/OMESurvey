@@ -64,7 +64,7 @@ percentage labels.}
 \item{fillLabText}{Optional legend title for the fill variable. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{response_var} is used.}
 
-\item{groupLabText}{Optional label for the bar‑group axis. If \code{NULL} the label is
+\item{groupLabText}{Optional label for the bar/group axis. If \code{NULL} the label is
 removed; if \code{""} the name of \code{group_var} is used.}
 
 \item{propLabText}{Label for the proportion axis. Default \code{"Proportion of responses"}.}
@@ -123,7 +123,7 @@ The plot displays:
 (though these need care if combined with faceting)
 }
 
-\code{OME_stacked_bar()} uses tidy‑evaluation;
+\code{OME_stacked_bar()} uses tidy evaluation;
 \code{OME_stacked_bar_()} uses standard evaluation and is safe for loops and
 programmatic workflows.
 }

@@ -79,7 +79,7 @@ Features include:
 \item optional dashed line to visually separate some of the boxes.
 }
 
-\code{OME_boxplot()} uses tidy‑evaluation;
+\code{OME_boxplot()} uses tidy evaluation;
 \code{OME_boxplot_()} uses standard evaluation and is safe for loops and
 programmatic workflows.
 }

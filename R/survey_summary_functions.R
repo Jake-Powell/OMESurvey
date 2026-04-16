@@ -79,8 +79,7 @@
 #'       "FSM quintile")
 #' )
 #' }
-
-
+#'
 render_survey_summary <- function(data_path,
                                   dict_path,
                                   dict_sheet,
@@ -308,7 +307,7 @@ render_survey_summary <- function(data_path,
 #' @param fillLabText Optional legend title for the fill variable. If `NULL`
 #'   (default) the title is removed; if `""` the name of `response_var` is used.
 #'
-#' @param groupLabText Optional label for the bar‑group axis. If `NULL` the label is
+#' @param groupLabText Optional label for the bar/group axis. If `NULL` the label is
 #'   removed; if `""` the name of `group_var` is used.
 #'
 #' @param propLabText Label for the proportion axis. Default `"Proportion of responses"`.
@@ -346,7 +345,7 @@ render_survey_summary <- function(data_path,
 #' @returns A `ggplot` object.
 #'
 #' @details
-#' `OME_stacked_bar()` uses tidy‑evaluation;
+#' `OME_stacked_bar()` uses tidy evaluation;
 #' `OME_stacked_bar_()` uses standard evaluation and is safe for loops and
 #' programmatic workflows.
 #' @examples
@@ -385,8 +384,7 @@ render_survey_summary <- function(data_path,
 #' }
 #'
 #' @export
-
-
+#'
 OME_stacked_bar_ = function(dat, response_var,
                            group_var=NULL, facet_var=NULL,
                            percCut=NULL, colo=NULL, na.rm=FALSE,
@@ -482,7 +480,7 @@ OME_stacked_bar_ = function(dat, response_var,
 
   if (show_counts && has_facet && !(facet_layout %in% "1col")) {
     warning(
-      "Faceting detected: secondary‑axis count labels may misalign.\n",
+      "Faceting detected: secondary axis count labels may misalign.\n",
       "Use `facet_layout = \"1col\"` for reliable display/alignment of the (n) counts."
     )
   }
@@ -615,7 +613,7 @@ OME_stacked_bar_ = function(dat, response_var,
   if (exists("show_counts") && show_counts) {
 
     if (has_facet) {
-      # Per‑facet counts
+      # Per facet counts
       group_counts <- dat2 |>
         dplyr::summarise(
           non_na = sum(!is.na(.data[[response_name]])),
@@ -1042,12 +1040,11 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
 #'   labels for the grouping variable. Should be of the form
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
 #'   uses the factor's existing levels.
-
-
+#'
 #' @param ... Additional arguments passed to the underlying engine.
 #'
 #' @details
-#' `OME_boxplot()` uses tidy‑evaluation;
+#' `OME_boxplot()` uses tidy evaluation;
 #' `OME_boxplot_()` uses standard evaluation and is safe for loops and
 #' programmatic workflows.
 
@@ -1088,8 +1085,7 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
 #' }
 #'
 #' @export
-
-
+#'
 OME_boxplot_ <- function(data,
                          value_var,
                          group_var = NULL,
@@ -1342,7 +1338,7 @@ OME_boxplot <- function(data,
 #' }
 #'
 #' @export
-
+#'
 centre_legend_below <- function(p, rel_heights=c(1,0.1)) {
 
   # Only proceed if cowplot is available
@@ -1404,7 +1400,7 @@ centre_legend_below <- function(p, rel_heights=c(1,0.1)) {
 #' convert_colo(c("thing","amijig"))  # Unintended use: vector -> returned unchanged
 #'
 #' @export
-
+#'
 convert_colo <- function(colo){
   if (is.null(colo)) return(NULL)
 
@@ -1453,6 +1449,7 @@ convert_colo <- function(colo){
 
 #'
 #' @export
+#'
 suppress_specific_warning <- function(expr, pattern) {
   suppressed <- character()
   value <- withCallingHandlers(
@@ -1485,4 +1482,42 @@ suppress_specific_warning <- function(expr, pattern) {
 frac_to_num <- function(x) {
   parts <- strsplit(x, "/", fixed = TRUE)
   sapply(parts, function(p) as.numeric(p[1]) / as.numeric(p[2]))
+}
+
+
+#' Relabel NA values in the first column of a data frame
+#'
+#' Converts the first column of a data frame to character and replaces any
+#' `NA` values in that column with a specified label (default: "Missing").
+#' Intended for use after `tabyl()` and related janitor formatting steps,
+#' once the object has been converted to a plain data frame.
+#'
+#' @param df A data frame whose first column may contain `NA` values.
+#' @param missing_label A character string used to replace `NA` values
+#'   in the first column. Defaults to `"Missing"`.
+#'
+#' @return A data frame with the first column converted to character and
+#'   any `NA` values replaced by `missing_label`.
+#'
+#' @export
+#' @examples
+#' c(rep("A", 3), rep("B", 2), rep(NA, 2)) |>
+#'   janitor::tabyl() |>
+#'   janitor::adorn_totals() |>
+#'   janitor::adorn_pct_formatting() |>
+#'   as.data.frame() |>
+#'   rename_NA_first_col()
+#'
+rename_NA_first_col <- function(df, missing_label = "Missing") {
+  # Identify the first column name
+  name_var <- names(df)[1]
+
+  # Convert first column to character
+  df[[name_var]] <- as.character(df[[name_var]])
+
+  # Replace NA with the chosen label
+  na_row <- which(is.na(df[[name_var]]))
+  df[[name_var]][na_row] <- missing_label
+
+  df
 }

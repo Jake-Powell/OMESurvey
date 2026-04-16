@@ -52,3 +52,4 @@ reference:
   - suppress_specific_warning
   - frac_to_num
   - convert_colo
+  - rename_NA_first_col
