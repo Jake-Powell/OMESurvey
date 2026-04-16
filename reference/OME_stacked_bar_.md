@@ -93,7 +93,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - groupLabText:
 
-  Optional label for the bar‑group axis. If `NULL` the label is removed;
+  Optional label for the bar/group axis. If `NULL` the label is removed;
   if `""` the name of `group_var` is used.
 
 - propLabText:
@@ -175,7 +175,7 @@ The plot displays:
 - optional `(n)` labels showing the number of responses per bar. (though
   these need care if combined with faceting)
 
-`OME_stacked_bar()` uses tidy‑evaluation; `OME_stacked_bar_()` uses
+`OME_stacked_bar()` uses tidy evaluation; `OME_stacked_bar_()` uses
 standard evaluation and is safe for loops and programmatic workflows.
 
 ## Note

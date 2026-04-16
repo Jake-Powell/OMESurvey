@@ -84,3 +84,5 @@
   : Convert simple text fractions to numeric values
 - [`convert_colo()`](https://jake-powell.github.io/OMESurvey/reference/convert_colo.md)
   : Convert shorthand colour name to a colour vector
+- [`rename_NA_first_col()`](https://jake-powell.github.io/OMESurvey/reference/rename_NA_first_col.md)
+  : Relabel NA values in the first column of a data frame

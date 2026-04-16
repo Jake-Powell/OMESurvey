@@ -112,7 +112,7 @@ Features include:
 
 - optional dashed line to visually separate some of the boxes.
 
-`OME_boxplot()` uses tidy‑evaluation; `OME_boxplot_()` uses standard
+`OME_boxplot()` uses tidy evaluation; `OME_boxplot_()` uses standard
 evaluation and is safe for loops and programmatic workflows.
 
 ## Note
