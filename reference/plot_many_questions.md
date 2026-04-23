@@ -10,6 +10,7 @@ responses that fit a particular pattern.
 plot_many_questions(
   dat,
   labels_vec = NULL,
+  na.rm = FALSE,
   percCut = 5,
   colo = NULL,
   order_values = NULL,
@@ -31,6 +32,11 @@ plot_many_questions(
   a named vector of labels to use for the questions on the plot. Names
   are variable names and values are corresponding labels.
 
+- na.rm:
+
+  Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
+  convert them to `"Missing"` and treat as an additional response level.
+
 - percCut:
 
   numeric scalar (0-100). Cutoff below which percentages are not shown
@@ -45,7 +51,7 @@ plot_many_questions(
   `OMESurvey::get_OME_colours(type='distinct')` is used. When
   `na.rm = FALSE` a grey colour is prepended for the "No response"
   level. Note that percentage labels are in white, so the pallete needs
-  to work with that. (... or this function needs upgrading!)
+  to work with that. (... or this function/package needs upgrading!)
 
 - order_values:
 
@@ -123,8 +129,23 @@ dat <- tibble::tibble(
   Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"), levels=c("No", "Maybe", "Yes"))
 )
 
-labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
-
+# Simplest use
 plot_many_questions(dat, labels_vec = labels)
+#> Error in stri_split_lines(str): argument `str` should be a character vector (or an object coercible to)
+
+# Add question labels
+labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
+plot_many_questions(dat, labels_vec = labels)
+
+
+# With custom wrapping if they are long
+labels_long <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "The third question asked as part of this series of three questions")
+plot_many_questions(dat, labels_vec = labels_long)
+
+plot_many_questions(dat, labels_vec = labels_long, question_label_width = 20)
+
+
+# Remove missing values
+plot_many_questions(dat, na.rm=FALSE)
 
 ```

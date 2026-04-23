@@ -198,6 +198,7 @@ Dave Sirl
 ## Examples
 
 ``` r
+# Minimal example data
 dat <- tibble::tibble(
   Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe"),
                     levels = c("No", "Maybe", "Yes")),
