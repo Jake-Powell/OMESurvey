@@ -351,6 +351,7 @@ render_survey_summary <- function(data_path,
 #' `OME_stacked_bar_()` uses standard evaluation and is safe for loops and
 #' programmatic workflows.
 #' @examples
+#' # Minimal example data
 #' dat <- tibble::tibble(
 #'   Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe"),
 #'                     levels = c("No", "Maybe", "Yes")),
@@ -890,15 +891,21 @@ OME_stacked_bar <- function(dat, response_var,
 #' with questions ordered according to the proportion of responses that fit a
 #' particular pattern.
 #'
-#' @param dat a tibble/data.frame, each variable corresponding to a question. All variables should be factors and all with the same possible values.
-#' @param labels_vec a named vector of labels to use for the questions on the plot. Names are variable names and values are corresponding labels.
-#' @param percCut numeric scalar (0-100). Cutoff below which percentages are not shown in bar segments. Default `5`.
-#' @param colo (optional but recommended) vector of colours to use for the fill scale (character vector of colours,
-#' length the same as the number of levels of the factor that is the first variable of `dat`.)
+#' @param dat a tibble/data.frame, each variable corresponding to a question.
+#'  All variables should be factors and all with the same possible values.
+#' @param labels_vec a named vector of labels to use for the questions on the plot.
+#'  Names are variable names and values are corresponding labels.
+#' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
+#'   convert them to `"Missing"` and treat as an additional response level.
+#' @param percCut numeric scalar (0-100). Cutoff below which percentages are not
+#'  shown in bar segments. Default `5`.
+#' @param colo (optional but recommended) vector of colours to use for the fill scale
+#'  (character vector of colours, length the same as the number of levels of the
+#'   factor that is the first variable of `dat`.)
 #' If `NULL` (default) the pallete from `OMESurvey::get_OME_colours(type='distinct')` is used.
 #' When `na.rm = FALSE` a grey colour is prepended for the "No response" level.
 #' Note that percentage labels are in white, so the pallete needs to work with that.
-#'  (... or this function needs upgrading!)
+#'  (... or this function/package needs upgrading!)
 #' @param order_values Optional. Controls how questions are ordered in the plot.
 #'   May be a character vector of response levels, or the special value
 #'   `"mean(as.numeric())"`. See Details.
@@ -949,11 +956,22 @@ OME_stacked_bar <- function(dat, response_var,
 #'   Q3 = factor(c("Maybe", "Yes", "Maybe", "Yes"), levels=c("No", "Maybe", "Yes"))
 #' )
 #'
-#' labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
-#'
+#' # Simplest use
 #' plot_many_questions(dat, labels_vec = labels)
 #'
-plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
+#' # Add question labels
+#' labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
+#' plot_many_questions(dat, labels_vec = labels)
+#'
+#' # With custom wrapping if they are long
+#' labels_long <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "The third question asked as part of this series of three questions")
+#' plot_many_questions(dat, labels_vec = labels_long)
+#' plot_many_questions(dat, labels_vec = labels_long, question_label_width = 20)
+#'
+#' # Remove missing values
+#' plot_many_questions(dat, na.rm=FALSE)
+#'
+plot_many_questions <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=5,
                                 colo=NULL, order_values = NULL,
                                 titleText=NULL,
                                 fill_label_width=20,
@@ -961,6 +979,23 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
 
   # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
+
+  # check that all variables are factors and that they all have the same levels
+  all_factors <- dat |> purrr::map_lgl(is.factor) |> all()
+
+  same_levels <- all_factors && {
+    levs <- dat |> purrr::map(levels)
+    ref <- levs[[1]]
+    levs[-1] |> purrr::map_lgl(~ identical(.x, ref)) |> all()
+  }
+
+  if (!all_factors | !same_levels){
+    warning(paste0(
+      "The dataframe passed to plot_many_questions() should have all its variables (a) factors, (b) with the same levels\n",
+      "Running with (a) ", all_factors, " and (b) ", same_levels, " ",
+      "(note that if (a) is false then the check of (b) here is not meaningful)"))
+  }
+
 
   # pivot the many questions/variables to long question&response form,
   # reorder questions according to proportion of responses that are in order_values
@@ -989,6 +1024,7 @@ plot_many_questions <- function(dat, labels_vec=NULL, percCut=5,
                     propLabText = NULL,
                     groupLabText = NULL,
                     colo = colo,
+                    na.rm = na.rm,
                     titleText = titleText,
                     fill_label_width = fill_label_width,
                     group_label_width = question_label_width,

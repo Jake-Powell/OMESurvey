@@ -138,6 +138,7 @@ over facets (seems unlikely to be very helpful?)
 }
 }
 \examples{
+# Minimal example data
 dat <- tibble::tibble(
   Response = factor(c("Yes", "No", "No", NA, "Yes", "Maybe"),
                     levels = c("No", "Maybe", "Yes")),
