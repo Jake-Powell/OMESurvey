@@ -29,6 +29,7 @@ params:
 
 # Setup
 
+
 ## Preliminaries
 ```{r setup, include=FALSE, echo=FALSE}
 #knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.height=4)
@@ -319,6 +320,7 @@ if (params$verbose){
   }
 ```
 
+
 ## Readying the dictionary
 
 
@@ -442,36 +444,19 @@ coerce_col <- function(x, type, levels = NULL) {
 
 
 
-
-
-
-
 ## Coerce variables and log results
 
 Now a loop doing the coercion and validating of all the variables to be summarised.
 ```{r}
-# helper to build a single validation row (keeps code DRY)
+# helper to build a single validation row
 make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
                                 allowed_specified, allowed,
-                                data_vec, raw_vec = NULL, invalid_mask = logical(0),
+                                n_missing, n_invalid, invalid_freq,
                                 report_sec, report_sec_ord, item_label,
                                 condition = NA_character_, n_fail_cond = NA_integer_,
                                 n_meet_cond = NA_integer_,
                                 n_meet_cond_missing = NA_integer_) {
-  # ensure invalid_mask is logical and same length as raw_vec (if provided)
-  if (length(invalid_mask) == 0) {
-    n_invalid <- NA_integer_
-    invalid_examples <- NA
-  } else {
-    n_invalid <- sum(invalid_mask, na.rm = TRUE)
-    if (!is.null(raw_vec)) {
-      invalid_values <- unique(na.omit(as.character(raw_vec[invalid_mask])))
-    } else {
-      invalid_values <- unique(na.omit(as.character(data_vec[invalid_mask])))
-    }
-    invalid_examples <- if (length(invalid_values)>0) list(head(invalid_values, 10)) else list(NA_character_)
-  }
-  
+
   list(
     variable = var,
     type = type,
@@ -479,9 +464,9 @@ make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
     order_values = order_values,
     allowed_specified = allowed_specified,
     allowed = if (allowed_specified) paste(allowed, collapse = ";") else NA_character_,
-    n_missing = sum(is.na(data_vec)),
+    n_missing = n_missing,
     n_invalid = n_invalid,
-    invalid_examples = invalid_examples,
+    invalid_freq = list(invalid_freq),
     condition = condition,
     n_fail_cond = n_fail_cond,
     n_meet_cond = n_meet_cond,
@@ -497,6 +482,12 @@ names(validation_log) <- dict$`Variable name`
 
 for (i in seq_len(nrow(dict))) {
   var <- dict$`Variable name`[i]
+  
+  # debug step
+  # message(">>> Starting variable: ", var)
+  # flush.console()
+
+  
   dtype <- tolower(dict$`Final data type`[i])
   allowed_raw <- dict$`Allowed values`[i]
   allowed <- parse_allowed(allowed_raw)           # returns NULL or character vector
@@ -561,13 +552,24 @@ for (i in seq_len(nrow(dict))) {
   
   
   
-  #  factors use allowed; compute invalid_mask from raw_chr
+  #  factors processing...
   if (grepl("^factor-", stringr::str_squish(dtype), ignore.case = TRUE)) {
+    
+    # they use allowed; compute invalid_mask from raw_chr
     if (allowed_specified) {
       invalid_mask <- !is.na(raw_chr) & !(raw_chr %in% allowed)
     } else {
       invalid_mask <- rep(FALSE, length(raw_chr))
     }
+    
+    # then make a frequency table of invalid responses
+    invalid_freq <- list()
+    if (any(invalid_mask, na.rm = TRUE)) {
+      invalid_freq$values <-
+        sort(table(raw_chr[invalid_mask]), decreasing = TRUE)
+    }
+    
+
     
     # they also need to have colour scheme determined
     # and, for neg-pos ones, levels noted to use for ordering questions in section-level overall plots
@@ -594,9 +596,9 @@ for (i in seq_len(nrow(dict))) {
       order_values = order_values,
       allowed_specified = allowed_specified,
       allowed = allowed,
-      data_vec = data[[var]],
-      raw_vec = raw_chr,
-      invalid_mask = invalid_mask,
+      n_missing = sum(is.na(data[[var]])),
+      n_invalid = sum(invalid_mask, na.rm = TRUE),
+      invalid_freq = invalid_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -613,6 +615,9 @@ for (i in seq_len(nrow(dict))) {
     
     # data[[var]] is the coerced numeric; raw_chr is the original character representation
     coerced <- data[[var]]
+    
+    out_of_range <- NULL
+    
     # invalid if original non-missing but coercion produced NA (bad numeric text)
     invalid_coercion <- !is.na(raw_chr) & is.na(coerced)
     
@@ -632,7 +637,7 @@ for (i in seq_len(nrow(dict))) {
         }
       out_of_range <- (!is.na(coerced)) & (out_low | out_high)
       
-      invalid_mask <- invalid_coercion | out_of_range
+      #invalid_mask <- invalid_coercion | out_of_range
       allowed_specified_num <- TRUE
       allowed_for_report <- paste0(
         if (range_spec$lower_incl) "[" else "(",
@@ -642,19 +647,42 @@ for (i in seq_len(nrow(dict))) {
       
     } else {
       # no numeric range specified: only mark coercion failures as invalid
-      invalid_mask <- invalid_coercion
+      #invalid_mask <- invalid_coercion
       allowed_specified_num <- FALSE
       allowed_for_report <- NULL
     }
+    
+    
+    invalid_freq_numeric <- list()
+    
+    ## (1) Raw values that failed numeric coercion
+    if (any(invalid_coercion, na.rm = TRUE)) {
+      invalid_freq_numeric$coercion <-
+        sort(table(raw_chr[invalid_coercion]), decreasing = TRUE)
+    }
+    
+    ## (2) Numeric values outside the allowed range
+    if (!is.null(out_of_range) && any(out_of_range, na.rm = TRUE)) {
+      invalid_freq_numeric$out_of_range <-
+        sort(table(coerced[out_of_range]), decreasing = TRUE)
+    }
+    
+    ## Normalise empty case
+    if (length(invalid_freq_numeric) == 0) {
+      invalid_freq_numeric <- list()
+    }
+    
     
     validation_log[[var]] <- make_validation_row(
       var = var,
       type = "numeric",
       allowed_specified = allowed_specified_num,
       allowed = if (allowed_specified_num) allowed_for_report else NULL,
-      data_vec = data[[var]],
-      raw_vec = raw_chr,
-      invalid_mask = invalid_mask,
+      n_missing = sum(is.na(coerced)),
+      n_invalid =
+        sum(invalid_coercion, na.rm = TRUE) +
+        if (!is.null(out_of_range)) sum(out_of_range, na.rm = TRUE) else 0L,
+      invalid_freq = invalid_freq_numeric,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -671,8 +699,9 @@ for (i in seq_len(nrow(dict))) {
       type = "integer",
       allowed_specified = FALSE,
       allowed = NULL,
-      data_vec = data[[var]],
-      invalid_mask = logical(0),
+      n_missing = sum(is.na(data[[var]])),
+      n_invalid = NA_integer_, # sum(invalid_mask, na.rm = TRUE),
+      invalid_freq = list(),
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -688,8 +717,9 @@ for (i in seq_len(nrow(dict))) {
       type = "date",
       allowed_specified = FALSE,
       allowed = NULL,
-      data_vec = data[[var]],
-      invalid_mask = logical(0),
+      n_missing = sum(is.na(data[[var]])),
+      n_invalid = NA_integer_, # sum(invalid_mask, na.rm = TRUE),
+      invalid_freq = list(),
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -706,8 +736,9 @@ for (i in seq_len(nrow(dict))) {
       type = "character",
       allowed_specified = FALSE,
       allowed = NULL,
-      data_vec = data[[var]],
-      invalid_mask = logical(0),
+      n_missing = sum(is.na(data[[var]])),
+      n_invalid = NA_integer_, # sum(invalid_mask, na.rm = TRUE),
+      invalid_freq = list(),
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -717,7 +748,31 @@ for (i in seq_len(nrow(dict))) {
       n_meet_cond_missing = n_meet_cond_missing
     )
   }
+  
+  # checking validation_log entries/construction
+  
+  # message(">>> Names in validation_log entry")
+  # print(names(validation_log[[var]]))
+  # 
+  # message(">>> Size of validation_log entry")
+  # print(object.size(validation_log[[var]]), units = "MB")
+  # 
+  # message(">>> Size of whole validation_log so far")
+  # print(object.size(validation_log), units = "MB")
+  
+  # message(">>> invalid_mask length and summary")
+  # mask <- validation_log[[var]]$invalid_mask
+  # if (is.null(mask)) {
+  #   message("invalid_mask is NULL")
+  # } else {
+  #   message("length(mask) = ", length(mask))
+  #   message("sum(mask) = ", sum(mask, na.rm = TRUE))
+  #   message("sum(!mask) = ", sum(!mask, na.rm = TRUE))
+  # }
+  
+  
 }
+
 
 validation_df <- dplyr::bind_rows(validation_log)
 ```
@@ -762,6 +817,43 @@ Note that, for categorical variables, percentages on plots are suppressed if
 - they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and
 - if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
 
+```{r}
+emit_reactable <- function(df, ...) {
+  child <- paste0(
+    "```{r echo=FALSE}\n",
+    "reactable::reactable(df, ...)\n",
+    "```\n"
+  )
+  out <- knitr::knit_child(text = child, envir = environment(), quiet = TRUE)
+  cat(out, sep = "\n")
+}
+
+
+
+freq_to_df <- function(freq, value_col = "Value", add_total = TRUE) {
+  if (is.null(freq) || length(freq) == 0) return(NULL)
+
+  df <- data.frame(
+    setNames(list(names(freq)), value_col),
+    Frequency = as.integer(freq),
+    check.names = FALSE
+  )
+
+  if (isTRUE(add_total)) {
+    df <- rbind(
+      df,
+      data.frame(
+        setNames(list("Total"), value_col),
+        Frequency = sum(df$Frequency, na.rm = TRUE),
+        check.names = FALSE
+      )
+    )
+  }
+
+  df
+}
+
+```
 
 ```{r results='asis', echo=FALSE, message=TRUE, fig.width=10, fig.height=6}
 
@@ -935,41 +1027,71 @@ for(sec in sections){
           dplyr::select(dplyr::all_of(c(var, grouping_vars)))
       }
     }
-
-
-
+    
+    
+    
     cat("\n\n## ",
         stringr::str_replace_all(label, "[\r\n]+", " ") |> stringr::str_squish(),
         "\n\n",
         sep = "")
-
-
+    
+    
     # validation summary and descriptive stats
-      v |>
-        dplyr::select(variable, type, colo, allowed_specified, n_invalid,
-                      n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
-        kable_narrow() |>
-        as.character() |>
-        cat()
-
+    v |>
+      dplyr::select(variable, type, colo, allowed_specified, n_invalid,
+                    n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
+      kable_narrow() |>
+      as.character() |>
+      cat()
+    
     if(v$type == "factor" && !v$allowed_specified){
       cat('\n<span style="color: red;">**WARNING:**</span> no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n')
     }
     
     
-    # check if there are invalid examples, and if so then print
-    ex <- v$invalid_examples
-    # if it's a list-column element, extract the inner vector
-    if (is.list(ex) && length(ex) == 1) ex <- ex[[1]]
-    ex <- ex |> as.character() |> trimws()
-    ex <- ex[!is.na(ex) & nzchar(ex)]
+    # Print invalid values (frequency‑sorted, scrollable)
     
-    if (length(ex) > 0) {
-      data.frame(example = ex) |>
-        kable_narrow(col.names = "Example invalid values") |>
-        as.character() |>
-        cat()
+    inv <- validation_log[[var]]$invalid_freq[[1]]
+    
+    print(str(inv))
+    
+    
+    
+    # inv is always a list (possibly empty)
+    if (!is.null(inv) && length(inv) > 0) {
+      
+      
+      ## Factor invalids live in inv$values
+      df_inv <- freq_to_df(inv$values, value_col = "Raw value")
+      if (!is.null(df_inv)) {
+        df_inv |>
+          kable_narrow(caption = paste0("Invalid responses")) |>
+          as.character() |>
+          cat()
+      }
+      
+      ## Numeric coercion failures live in inv$coercion
+      df_inv <- freq_to_df(inv$coercion, value_col = "Raw value")
+      if (!is.null(df_inv)) {
+        df_inv |>
+          kable_narrow(caption = paste0("Invalid numeric responses (could not be parsed)")) |>
+          as.character() |>
+          cat()
+      }
+      
+      ## Numeric out-of-range values live in inv$out_of_range
+      df_inv <- freq_to_df(inv$out_of_range, value_col = "Numeric value")
+      if (!is.null(df_inv)) {
+        df_inv |>
+          kable_narrow(caption = paste0("Invalid numeric responses (out of allowed range)")) |>
+          as.character() |>
+          cat()
+      }
+      
+      
     }
+    
+    
     
     # a table of values for factors, otherwise a skim() of the data
     if (is.factor(df_for_bar[[var]])) {
@@ -977,7 +1099,7 @@ for(sec in sections){
         janitor::adorn_totals() |>
         janitor::adorn_pct_formatting(digits = 1) |>
         as.data.frame() |>
-        rename_NA_first_col() |>
+        rename_NA_first_col("Missing/Invalid") |>
         (\(x) kable_narrow(x,
                            col.names = c("\u00A0", names(x)[-1]),
                            caption = "Distribution of responses"))() |>
@@ -992,7 +1114,6 @@ for(sec in sections){
     
     
     # if a character variable, just list some and be done with it (i.e. no plots etc)
-    #if (dict$`Final data type`[dict$`Variable name` == var] == "chr"){
     if ((dict |> dplyr::filter(`Variable name` == var) |> dplyr::pull(`Final data type`)) == "chr"){
       cat("Here are the responses and the corresponding grouping variables. Note that there are ",
           dim(df_for_bar)[1],

@@ -232,13 +232,15 @@ render_survey_summary <- function(data_path,
   if (!isTRUE(show)) {
     old_viewer <- getOption("viewer")
     on.exit(options(viewer = old_viewer), add = TRUE)
-    options(viewer = function(url) invisible())
+    options(viewer = function(url, ...) invisible())
   }
 
   # managing working directory for the .Rmd rendering
   old <- setwd(dirname(rmd))
   on.exit(setwd(old), add = TRUE)
 
+
+  # render the .Rmd
   out_path <- rmarkdown::render(
     input = rmd,
     output_file = output_file,
