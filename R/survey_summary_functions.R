@@ -885,7 +885,7 @@ OME_stacked_bar <- function(dat, response_var,
 
 
 
-#' Make a stacked bar chart summarising many survey questions
+#' Section-level summary plot for categorical questions
 #'
 #' Make a horizontal stacked bar chart to summarise several survey questions,
 #' with questions ordered according to the proportion of responses that fit a
@@ -957,25 +957,29 @@ OME_stacked_bar <- function(dat, response_var,
 #' )
 #'
 #' # Simplest use
-#' plot_many_questions(dat, labels_vec = labels)
+#' summary_plot_stacked_bar(dat)
 #'
 #' # Add question labels
 #' labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
-#' plot_many_questions(dat, labels_vec = labels)
+#' summary_plot_stacked_bar(dat, labels_vec = labels)
 #'
 #' # With custom wrapping if they are long
-#' labels_long <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "The third question asked as part of this series of three questions")
-#' plot_many_questions(dat, labels_vec = labels_long)
-#' plot_many_questions(dat, labels_vec = labels_long, question_label_width = 20)
+#' labels_long <- c(
+#'   Q1 = "Question 1",
+#'   Q2 = "Question 2",
+#'   Q3 = "The third question asked as part of this series of three questions"
+#' )
+#' summary_plot_stacked_bar(dat, labels_vec = labels_long)
+#' summary_plot_stacked_bar(dat, labels_vec = labels_long, question_label_width = 20)
 #'
 #' # Remove missing values
-#' plot_many_questions(dat, na.rm=FALSE)
+#' summary_plot_stacked_bar(dat, na.rm=FALSE)
 #'
-plot_many_questions <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=5,
-                                colo=NULL, order_values = NULL,
-                                titleText=NULL,
-                                fill_label_width=20,
-                                question_label_width=30){
+summary_plot_stacked_bar <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=5,
+                                     colo=NULL, order_values = NULL,
+                                     titleText=NULL,
+                                     fill_label_width=20,
+                                     question_label_width=30){
 
   # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
@@ -991,7 +995,7 @@ plot_many_questions <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=5,
 
   if (!all_factors | !same_levels){
     warning(paste0(
-      "The dataframe passed to plot_many_questions() should have all its variables (a) factors, (b) with the same levels\n",
+      "The dataframe passed to summary_plot_stacked_bar() should have all its variables (a) factors, (b) with the same levels\n",
       "Running with (a) ", all_factors, " and (b) ", same_levels, " ",
       "(note that if (a) is false then the check of (b) here is not meaningful)"))
   }
@@ -1031,6 +1035,27 @@ plot_many_questions <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=5,
                     group_labels = labels_vec)
   return(thePlot)
 }
+
+
+
+
+#' @title Deprecated: Make a stacked bar chart summarising many survey questions
+#' @description
+#' This function is deprecated.
+#' Use \code{\link{summary_plot_stacked_bar}} instead.
+#'
+#' @inheritParams summary_plot_stacked_bar
+#' @seealso summary_plot_stacked_bar
+#' @export
+plot_many_questions <- function(...) {
+  .Deprecated(
+    new = "summary_plot_stacked_bar",
+    package = "OMESurvey",
+    old = "plot_many_questions"
+  )
+  summary_plot_stacked_bar(...)
+}
+
 
 
 
@@ -1558,4 +1583,81 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
   df[[name_var]][na_row] <- missing_label
 
   df
+}
+
+
+
+
+#' ROME ggplot2 theme
+#'
+#' An OME ggplot2 theme (based on \code{ggplot2::theme_bw()}).
+#'
+#' !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
+#'
+#' @param base_size Numeric. Base font size for the theme. Defaults to 16.
+#'
+#' @return A \code{ggplot2} theme object that can be added to a ggplot with \code{+}.
+#'
+#' @examples
+#' if (requireNamespace("ggplot2", quietly = TRUE)) {
+#'   p <- ggplot2::ggplot(mtcars, ggplot2::aes(x = factor(cyl))) +
+#'     ggplot2::geom_bar() +
+#'     ggplot2::labs(title = "ROME theme demo")
+#'
+#'   # Add the theme to a single plot:
+#'   p + theme_OME()
+#'
+#'   # Set as the global default for the current session:
+#'   ggplot2::theme_set(theme_OME())
+#' }
+#'
+#' @export
+#' @importFrom ggplot2 %+replace%
+theme_OME <- function(base_size = 16) {
+  ggplot2::theme_bw(base_size = base_size) %+replace%
+    ggplot2::theme(
+      # title/subtitle
+      plot.title = ggplot2::element_text(
+        size = ggplot2::rel(1),
+        face = "bold",
+        hjust = 0,
+        color = "black",
+        margin = ggplot2::margin(t=0, r=0, b=5, l=0)
+      ),
+      plot.subtitle = ggplot2::element_text(
+        size = ggplot2::rel(0.7),
+        face = "plain",
+        hjust = -0.12,
+        color = "black"
+      ),
+
+      #panel (the plot area)
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.background = ggplot2::element_rect(fill = "transparent", color = NA),
+      panel.border = ggplot2::element_blank(),
+
+      #axis
+      axis.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
+      axis.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      axis.line  = ggplot2::element_line(color = "gray"),
+
+      #legend
+      legend.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
+      legend.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      legend.key   = ggplot2::element_rect(fill = "transparent", colour = NA),
+      legend.key.size = grid::unit(1.5, "lines"),
+      legend.position  = "bottom",
+      legend.box       = "vertical", # changed from horizontal
+      legend.direction = "horizontal",
+      legend.background = ggplot2::element_rect(fill = "transparent", colour = NA),
+
+      # strip (headings of facet elements)
+      strip.background = ggplot2::element_rect(fill = "#17252D", color = "#17252D"),
+      strip.text = ggplot2::element_text(
+        size = ggplot2::rel(0.85),
+        face = "plain",
+        color = "white",
+        margin = ggplot2::margin(t=5, r=0, b=5, l=0)
+      )
+    )
 }

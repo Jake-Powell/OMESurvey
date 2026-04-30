@@ -26,6 +26,7 @@ Imports:
     openxlsx,
     plotly,
     png,
+    purrr,
     reactable,
     readr,
     readxl,

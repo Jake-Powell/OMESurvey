@@ -928,9 +928,9 @@ for(sec in sections){
     fig_h <- (2 + 0.5 * length(vars))
 
     tryCatch({
-      # plot_many_questions should draw or return a ggplot
+      # summary_plot_stacked_bar should draw or return a ggplot
       res <-
-        OMESurvey::plot_many_questions(
+        OMESurvey::summary_plot_stacked_bar(
           df_plot,
           labels_vec,
           percCut=percCutHoriz,
@@ -1053,7 +1053,7 @@ for(sec in sections){
     
     inv <- validation_log[[var]]$invalid_freq[[1]]
     
-    print(str(inv))
+    #print(str(inv))
     
     
     
@@ -1065,7 +1065,7 @@ for(sec in sections){
       df_inv <- freq_to_df(inv$values, value_col = "Raw value")
       if (!is.null(df_inv)) {
         df_inv |>
-          kable_narrow(caption = paste0("Invalid responses")) |>
+          kable_narrow(caption = paste0("Non-allowed responses")) |>
           as.character() |>
           cat()
       }
@@ -1074,7 +1074,7 @@ for(sec in sections){
       df_inv <- freq_to_df(inv$coercion, value_col = "Raw value")
       if (!is.null(df_inv)) {
         df_inv |>
-          kable_narrow(caption = paste0("Invalid numeric responses (could not be parsed)")) |>
+          kable_narrow(caption = paste0("Non-allowed numeric responses (could not be parsed)")) |>
           as.character() |>
           cat()
       }
@@ -1083,7 +1083,7 @@ for(sec in sections){
       df_inv <- freq_to_df(inv$out_of_range, value_col = "Numeric value")
       if (!is.null(df_inv)) {
         df_inv |>
-          kable_narrow(caption = paste0("Invalid numeric responses (out of allowed range)")) |>
+          kable_narrow(caption = paste0("Non-allowed numeric responses (out of allowed range)")) |>
           as.character() |>
           cat()
       }
@@ -1099,7 +1099,7 @@ for(sec in sections){
         janitor::adorn_totals() |>
         janitor::adorn_pct_formatting(digits = 1) |>
         as.data.frame() |>
-        rename_NA_first_col("Missing/Invalid") |>
+        rename_NA_first_col("Non-allowed") |>
         (\(x) kable_narrow(x,
                            col.names = c("\u00A0", names(x)[-1]),
                            caption = "Distribution of responses"))() |>

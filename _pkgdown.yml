@@ -47,9 +47,10 @@ reference:
   - render_survey_summary
   - OME_stacked_bar
   - OME_boxplot
-  - plot_many_questions
+  - summary_plot_stacked_bar
   - centre_legend_below
   - suppress_specific_warning
   - frac_to_num
   - convert_colo
   - rename_NA_first_col
+  - theme_OME
