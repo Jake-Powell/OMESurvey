@@ -13,6 +13,7 @@ OME_stacked_bar_(
   percCut = NULL,
   colo = NULL,
   na.rm = FALSE,
+  NA_label = "Missing",
   show_counts = TRUE,
   horiz = FALSE,
   text_scale = 1,
@@ -51,6 +52,8 @@ When \code{na.rm = FALSE}, a grey colour is prepended for the \code{"Missing"} l
 
 \item{na.rm}{Logical. If \code{TRUE}, remove \code{NA} responses; if \code{FALSE} (default)
 convert them to \code{"Missing"} and treat as an additional response level.}
+
+\item{NA_label}{Character, default \code{"Missing"}. Label to use for \code{NA} responses.}
 
 \item{show_counts}{Logical; whether to display (n) counts for each bar.
 Defaults to TRUE. Needs care if used with faceting.}

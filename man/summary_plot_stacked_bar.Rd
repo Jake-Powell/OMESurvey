@@ -8,6 +8,7 @@ summary_plot_stacked_bar(
   dat,
   labels_vec = NULL,
   na.rm = FALSE,
+  NA_label = "Missing",
   percCut = 5,
   colo = NULL,
   order_values = NULL,
@@ -24,7 +25,9 @@ All variables should be factors and all with the same possible values.}
 Names are variable names and values are corresponding labels.}
 
 \item{na.rm}{Logical. If \code{TRUE}, remove \code{NA} responses; if \code{FALSE} (default)
-convert them to \code{"Missing"} and treat as an additional response level.}
+convert them to \code{NA_label} and treat as an additional response level.}
+
+\item{NA_label}{Character, default \code{"Missing"}. Label to use for \code{NA} responses.}
 
 \item{percCut}{numeric scalar (0-100). Cutoff below which percentages are not
 shown in bar segments. Default \code{5}.}

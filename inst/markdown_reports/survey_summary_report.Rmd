@@ -222,7 +222,7 @@ if (is.null(params$est_chars_path)){
                         `Final data type` = est_char_types[i],
                         `Allowed values` = est_char_values[i],
                         `Item statement` = est_char_statements[i],
-                        report_sec = "A: Grouping variables",
+                        report_sec = "Grouping variables",
                         grouping_var = "T",
                         condition = NA)
       } else if (grepl("^numeric-",est_char_types[i])) {
@@ -853,22 +853,122 @@ freq_to_df <- function(freq, value_col = "Value", add_total = TRUE) {
   df
 }
 
+
+
+
+parse_report_sec <- function(sec) {
+  s <- stringr::str_squish(as.character(sec))
+
+  # Special case: Grouping variables (no prefix, always first)
+  if (tolower(s) == "grouping variables") {
+    return(list(
+      display  = "Grouping variables",
+      letter   = NA_character_,
+      digit    = NA_integer_,
+      code     = "GV",       # filename-safe short code
+      sort_key = "0",        # always first
+      file_key = "GV"
+    ))
+  }
+
+  # General case:
+  # Allow "A: Title" OR "A1: Title" where digit is 1-9
+  m <- stringr::str_match(s, "^([A-Z])([1-9])?:\\s*(.+)$")
+  if (!is.na(m[1, 1])) {
+    letter <- m[1, 2]
+    digit  <- if (!is.na(m[1, 3])) as.integer(m[1, 3]) else NA_integer_
+    title  <- stringr::str_squish(m[1, 4])
+
+    code <- if (is.na(digit)) letter else paste0(letter, digit)
+
+    # sort: letter first, then digit (blank treated as 0, so "A:" comes before "A1:")
+    digit_sort <- if (is.na(digit)) 0L else digit
+
+    return(list(
+      display  = paste0(code, ": ", title),
+      letter   = letter,
+      digit    = digit,
+      code     = code,
+      sort_key = sprintf("1_%s_%02d", letter, digit_sort),
+      file_key = code
+    ))
+  }
+
+  stop(
+    "Invalid report_sec: '", s, "'. Allowed forms are:\n",
+    "  - 'Grouping variables'\n",
+    "  - 'X: Section title' where X is A–Z\n",
+    "  - 'Xy: Section title' where X is A–Z and y is 1–9"
+  )
+}
+
 ```
 
 ```{r results='asis', echo=FALSE, message=TRUE, fig.width=10, fig.height=6}
 
 # order sections and ensure variables are ordered within each section
-sections <-
+# sections <-
+#   validation_df |>
+#   dplyr::pull(report_sec) |>
+#   as.character() |>
+#   na.omit() |>
+#   unique() |>
+#   sort()
+
+
+sections_raw <-
   validation_df |>
   dplyr::pull(report_sec) |>
   as.character() |>
-  na.omit() |>
-  unique() |>
-  sort()
+  stats::na.omit() |>
+  unique()
+
+sec_meta <-
+  tibble::tibble(sec_raw = sections_raw) |>
+  dplyr::rowwise() |>
+  dplyr::mutate(info = list(parse_report_sec(sec_raw))) |>
+  dplyr::mutate(
+    sec_display  = info$display,
+    sec_letter   = info$letter,
+    sec_sort_key = info$sort_key,
+    sec_file_key = info$file_key
+  ) |>
+  dplyr::ungroup()
+
+
+
+# Validate: section codes must be unique
+# (e.g. "A", "A1", "B2", "GV" must not repeat)
+dups <- sec_meta |>
+  dplyr::count(sec_file_key, sort = TRUE) |>
+  dplyr::filter(n > 1)
+
+if (nrow(dups) > 0) {
+  stop(
+    "Duplicate section codes (file keys) found: ",
+    paste(dups$sec_file_key, collapse = ", "),
+    ". Each code (before the colon in the section title) must be unique."
+  )
+}
+
+
+# Order: Grouping variables first (sort_key "0"), then A, B, C...
+sec_meta <- sec_meta |>
+  dplyr::arrange(sec_sort_key)
+
+sections <- sec_meta$sec_display
+
+
+
 
 
 for(sec in sections){
   cat("\n\n# ", sec, "\n\n", sep = "")
+  
+  # catch potential file-naming issues
+  sec_file_key <- sec_meta$sec_file_key[match(sec, sec_meta$sec_display)]
+  if (is.na(sec_file_key)) stop("Could not determine file key for section: ", sec)
+
 
   vars_in_sec <-
     validation_df |>
@@ -936,7 +1036,8 @@ for(sec in sections){
           percCut=percCutHoriz,
           colo=colo,
           order_values=order_values,
-          titleText = title_text) |> #possibly add more here in due course
+          titleText = title_text,
+          NA_label = "Missing/Non-allowed") |> #possibly add more here in due course
         OMESurvey::centre_legend_below(rel_heights=c(1, 0.8/fig_h))
       
       if (inherits(res, "ggplot")) {
@@ -948,7 +1049,7 @@ for(sec in sections){
         # create a unique, stable filename (using section name)
         # (could be trouble if section names get long/complicated?)
         fname <- file.path(fig_dir, sprintf("sec_%s_plot_%s.png",
-                                            stringr::str_extract(sec, "^[^:]+"),
+                                            sec_file_key,
                                             "overall"))
         fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
         
@@ -1099,7 +1200,7 @@ for(sec in sections){
         janitor::adorn_totals() |>
         janitor::adorn_pct_formatting(digits = 1) |>
         as.data.frame() |>
-        rename_NA_first_col("Non-allowed") |>
+        rename_NA_first_col("Missing/Non-allowed") |>
         (\(x) kable_narrow(x,
                            col.names = c("\u00A0", names(x)[-1]),
                            caption = "Distribution of responses"))() |>
@@ -1156,7 +1257,7 @@ for(sec in sections){
       
       # create a unique, stable filename (using section/variable/plot indices)
       fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png",
-                                          stringr::str_extract(sec, "^[^:]+"), i, 0))
+                                          sec_file_key, i, 0))
       fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
       
       # save the plot at the computed size
@@ -1181,7 +1282,7 @@ for(sec in sections){
         
         # create a unique, stable filename (using section/variable/plot indices)
         fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png",
-                                            stringr::str_extract(sec, "^[^:]+"), i, j))
+                                            sec_file_key, i, j))
         fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
         
         # save the plot at the computed size
@@ -1285,7 +1386,8 @@ for(sec in sections){
           colo         = colo_arg,
           fillLabText  = NULL,
           propLabText  = NULL,
-          titleText    = plot_title
+          titleText    = plot_title,
+          NA_label     = "Missing/Non-allowed"
         )
       }
     }

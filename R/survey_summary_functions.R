@@ -297,6 +297,8 @@ render_survey_summary <- function(data_path,
 #' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
 #'   convert them to `"Missing"` and treat as an additional response level.
 #'
+#' @param NA_label Character, default `"Missing"`. Label to use for `NA` responses.
+#'
 #' @param show_counts Logical; whether to display (n) counts for each bar.
 #'  Defaults to TRUE. Needs care if used with faceting.
 #'
@@ -390,7 +392,8 @@ render_survey_summary <- function(data_path,
 #'
 OME_stacked_bar_ = function(dat, response_var,
                            group_var=NULL, facet_var=NULL,
-                           percCut=NULL, colo=NULL, na.rm=FALSE,
+                           percCut=NULL, colo=NULL,
+                           na.rm=FALSE, NA_label="Missing",
                            show_counts=TRUE,
                            horiz=FALSE, text_scale=1,
                            fillLabText=NULL, groupLabText=NULL,
@@ -510,9 +513,9 @@ OME_stacked_bar_ = function(dat, response_var,
     dat2 <- dat2 |>
       dplyr::mutate(
         var_name = var_name |>
-          forcats::fct_expand("Missing") |>
-          forcats::fct_na_value_to_level(level = "Missing") |>
-          forcats::fct_relevel("Missing", after = 0)
+          forcats::fct_expand(NA_label) |>
+          forcats::fct_na_value_to_level(level = NA_label) |>
+          forcats::fct_relevel(NA_label, after = 0)
       )
     if (is.null(colo)){
       colo <- (dat2 |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
@@ -896,7 +899,8 @@ OME_stacked_bar <- function(dat, response_var,
 #' @param labels_vec a named vector of labels to use for the questions on the plot.
 #'  Names are variable names and values are corresponding labels.
 #' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
-#'   convert them to `"Missing"` and treat as an additional response level.
+#'   convert them to `NA_label` and treat as an additional response level.
+#' @param NA_label Character, default `"Missing"`. Label to use for `NA` responses.
 #' @param percCut numeric scalar (0-100). Cutoff below which percentages are not
 #'  shown in bar segments. Default `5`.
 #' @param colo (optional but recommended) vector of colours to use for the fill scale
@@ -975,7 +979,9 @@ OME_stacked_bar <- function(dat, response_var,
 #' # Remove missing values
 #' summary_plot_stacked_bar(dat, na.rm=FALSE)
 #'
-summary_plot_stacked_bar <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=5,
+summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
+                                     na.rm=FALSE, NA_label="Missing",
+                                     percCut=5,
                                      colo=NULL, order_values = NULL,
                                      titleText=NULL,
                                      fill_label_width=20,
@@ -1029,6 +1035,7 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL, na.rm=FALSE, percCut=
                     groupLabText = NULL,
                     colo = colo,
                     na.rm = na.rm,
+                    NA_label = NA_label,
                     titleText = titleText,
                     fill_label_width = fill_label_width,
                     group_label_width = question_label_width,
