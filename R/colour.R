@@ -168,25 +168,26 @@ get_OME_colours <- function(n, type = 'contrast'){
     }
 
 
-    if(type %in% c('distinct','qualitative')){
-      if(n==1)return("#009BC1")
-      if(n==2)return(c("#009BC1", "#10263B"))
-      if(n==3)return(c("#009BC1", "#D7336C", "#10263B"))
-      if(n==4)return(c("#009BC1", "#DEB406", "#D7336C", "#10263B"))
-      if(n==5)return(c("#009BC1", "#A6AD34", "#DEB406", "#D7336C", "#10263B"))
-      if(n==6)return(c("#009BC1", "#85AA50", "#DEB406", "#D7336C", "#872D58", "#10263B"))
-      if(n==7)return(c("#009BC1", "#6FA763", "#DEB406", "#DA7339", "#D7336C", "#732C53", "#10263B"))
-      if(n==8)return(c("#009BC1", "#93AB44", "#DEB406", "#DB8928", "#D95D4A", "#D7336C", "#942E5B", "#10263B"))
-      if(n==9)return(c("#009BC1", "#49A382", "#93AB44", "#DEB406", "#DB8928", "#D95D4A", "#D7336C", "#942E5B", "#10263B"))
-      if(n==10)return(c("#009BC1", "#49A382", "#93AB44", "#DEB406", "#DB8928", "#D95D4A", "#D7336C", "#942E5B", "#522A4B", "#10263B"))
-      if(n > 10){
-        rbPal = grDevices::colorRampPalette(OME_distinct)
-        colours= rbPal(n)
-        return(colours)
-      }
-    }
+
   }
 
+  if(type %in% c('distinct','qualitative')){
+    if(n==1)return("#009BC1")
+    if(n==2)return(c("#009BC1", "#10263B"))
+    if(n==3)return(c("#009BC1", "#D7336C", "#10263B"))
+    if(n==4)return(c("#009BC1", "#DEB406", "#D7336C", "#10263B"))
+    if(n==5)return(c("#009BC1", "#A6AD34", "#DEB406", "#D7336C", "#10263B"))
+    if(n==6)return(c("#009BC1", "#85AA50", "#DEB406", "#D7336C", "#872D58", "#10263B"))
+    if(n==7)return(c("#009BC1", "#6FA763", "#DEB406", "#DA7339", "#D7336C", "#732C53", "#10263B"))
+    if(n==8)return(c("#009BC1", "#93AB44", "#DEB406", "#DB8928", "#D95D4A", "#D7336C", "#942E5B", "#10263B"))
+    if(n==9)return(c("#009BC1", "#49A382", "#93AB44", "#DEB406", "#DB8928", "#D95D4A", "#D7336C", "#942E5B", "#10263B"))
+    if(n==10)return(c("#009BC1", "#49A382", "#93AB44", "#DEB406", "#DB8928", "#D95D4A", "#D7336C", "#942E5B", "#522A4B", "#10263B"))
+    if(n > 10){
+      rbPal = grDevices::colorRampPalette(OME_distinct)
+      colours= rbPal(n)
+      return(colours)
+    }
+  }
   ##### BELOW IS THE COLOUR GRAVEYARD TO PALETTES THAT FAILED TO CAPTURE THE HEART OF THE TEAM
   # UoN_colours = c('#FFFFFF', #White
   #                 '#FAF6EF', #Portland stone
