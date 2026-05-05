@@ -159,7 +159,7 @@ get_OME_colours <- function(n, type = 'contrast'){
 
   if(type %in% c('contrast','divergent')){
     if(n==1) return(OME_contrast[2])
-    if(n==2) return(OME_contrast[1,3])
+    if(n==2) return(OME_contrast[c(1,3)])
     if(n == 3) return(OME_contrast)
     if(n > 3){
       rbPal = grDevices::colorRampPalette(OME_contrast, alpha = T)
