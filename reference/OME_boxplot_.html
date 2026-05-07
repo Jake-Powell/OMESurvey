@@ -60,6 +60,7 @@ designed for use when column names are supplied as <strong>strings</strong> or <
 <span>  <span class="va">value_var</span>,</span>
 <span>  group_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  show_counts <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  valueLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  groupLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  omitGroupLabels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -92,6 +93,12 @@ designed for use when column names are supplied as <strong>strings</strong> or <
 <dt id="arg-show-counts">show_counts<a class="anchor" aria-label="anchor" href="#arg-show-counts"></a></dt>
 <dd><p>Logical; whether to display (valid/total) counts on the
 right-hand axis. Defaults to TRUE.</p></dd>
+
+
+<dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
+<dd><p>Logical; whether to remove/ignore missing values.
+When <code>na.rm = TRUE</code>, count labels show the number of plotted (i.e. non-missing) observations;
+when <code>na.rm = FALSE</code>, labels show non‑missing and total number of observations.</p></dd>
 
 
 <dt id="arg-valuelabtext">valueLabText<a class="anchor" aria-label="anchor" href="#arg-valuelabtext"></a></dt>
@@ -138,7 +145,9 @@ uses the factor's existing levels.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
-<dd><p>Additional arguments passed to the underlying engine.</p></dd>
+<dd><p>Additional arguments passed from <code>OME_boxplot()</code> to
+<code>OME_boxplot_()</code>. Not used when calling <code>OME_boxplot_()</code>
+directly.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -148,7 +157,7 @@ uses the factor's existing levels.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Features include:</p><ul><li><p>optional subdivision into separate boxes,</p></li>
-<li><p>optional <code>(n/m)</code> style labels showing the number of non-NA responses per box,</p></li>
+<li><p>optional labels showing the number of non-NA responses per box,</p></li>
 <li><p>optional dashed line to visually separate some of the boxes.</p></li>
 </ul><p><code>OME_boxplot()</code> uses tidy evaluation;
 <code>OME_boxplot_()</code> uses standard evaluation and is safe for loops and

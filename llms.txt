@@ -190,6 +190,8 @@ check
   questions
 - [`summary_plot_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_stacked_bar.md)
   : Section-level summary plot for categorical questions
+- [`summary_plot_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_boxplot.md)
+  : Section-level summary plot for numeric questions
 - [`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)
   : Centre a ggplot legend beneath the plot using cowplot
 - [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)

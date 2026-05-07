@@ -17,7 +17,7 @@ summary_plot_stacked_bar(
   order_values = NULL,
   titleText = NULL,
   fill_label_width = 20,
-  question_label_width = 30
+  group_label_width = 30
 )
 ```
 
@@ -77,10 +77,10 @@ summary_plot_stacked_bar(
   [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md).
   Default is 20.
 
-- question_label_width:
+- group_label_width:
 
-  Optional integer. Width (in characters) used when wrapping axis labels
-  with
+  Optional integer. Width (in characters) used when wrapping vertical
+  (group/question) axis labels with
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is 30.
 
@@ -106,8 +106,8 @@ horizontal bar chart.
 
 Axis labels are wrapped using
 [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html)
-with a width controlled by `question_label_width`. Legend/fill labels
-are treated the same using `fill_label_width`.
+with a width controlled by `group_label_width`. Legend/fill labels are
+treated the same using `fill_label_width`.
 
 ## Note
 
@@ -151,7 +151,7 @@ labels_long <- c(
 )
 summary_plot_stacked_bar(dat, labels_vec = labels_long)
 
-summary_plot_stacked_bar(dat, labels_vec = labels_long, question_label_width = 20)
+summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
 
 
 # Remove missing values

@@ -65,7 +65,7 @@ particular pattern.</p>
 <span>  order_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fill_label_width <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  question_label_width <span class="op">=</span> <span class="fl">30</span></span>
+<span>  group_label_width <span class="op">=</span> <span class="fl">30</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -122,9 +122,9 @@ May be a character vector of response levels, or the special value
 fill labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Passed to <code><a href="OME_stacked_bar_.html">OME_stacked_bar()</a></code>. Default is 20.</p></dd>
 
 
-<dt id="arg-question-label-width">question_label_width<a class="anchor" aria-label="anchor" href="#arg-question-label-width"></a></dt>
+<dt id="arg-group-label-width">group_label_width<a class="anchor" aria-label="anchor" href="#arg-group-label-width"></a></dt>
 <dd><p>Optional integer. Width (in characters) used when wrapping
-axis labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Default is 30.</p></dd>
+vertical (group/question) axis labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>. Default is 30.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -142,7 +142,7 @@ of respondents whose answers fall into those levels.
 orders questions by the mean of the numeric codes of the response factor.
 (Intended for factors with low-high / sequential scales.)</p></li>
 </ul><p>Axis labels are wrapped using <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code> with a width controlled
-by <code>question_label_width</code>. Legend/fill labels are treated the same using <code>fill_label_width</code>.</p>
+by <code>group_label_width</code>. Legend/fill labels are treated the same using <code>fill_label_width</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="note">Note<a class="anchor" aria-label="anchor" href="#note"></a></h2>
@@ -186,7 +186,7 @@ after plotting. (This must be done after any tweaks to the ggplot theme, annotat
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu">summary_plot_stacked_bar</span><span class="op">(</span><span class="va">dat</span>, labels_vec <span class="op">=</span> <span class="va">labels_long</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="summary_plot_stacked_bar-3.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="fu">summary_plot_stacked_bar</span><span class="op">(</span><span class="va">dat</span>, labels_vec <span class="op">=</span> <span class="va">labels_long</span>, question_label_width <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">summary_plot_stacked_bar</span><span class="op">(</span><span class="va">dat</span>, labels_vec <span class="op">=</span> <span class="va">labels_long</span>, group_label_width <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="summary_plot_stacked_bar-4.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Remove missing values</span></span></span>

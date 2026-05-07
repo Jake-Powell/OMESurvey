@@ -13,6 +13,7 @@ OME_boxplot_(
   value_var,
   group_var = NULL,
   show_counts = TRUE,
+  na.rm = FALSE,
   valueLabText = NULL,
   groupLabText = NULL,
   omitGroupLabels = FALSE,
@@ -44,6 +45,13 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 
   Logical; whether to display (valid/total) counts on the right-hand
   axis. Defaults to TRUE.
+
+- na.rm:
+
+  Logical; whether to remove/ignore missing values. When `na.rm = TRUE`,
+  count labels show the number of plotted (i.e. non-missing)
+  observations; when `na.rm = FALSE`, labels show non‑missing and total
+  number of observations.
 
 - valueLabText:
 
@@ -95,7 +103,8 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 
 - ...:
 
-  Additional arguments passed to the underlying engine.
+  Additional arguments passed from `OME_boxplot()` to `OME_boxplot_()`.
+  Not used when calling `OME_boxplot_()` directly.
 
 ## Value
 
@@ -107,8 +116,7 @@ Features include:
 
 - optional subdivision into separate boxes,
 
-- optional `(n/m)` style labels showing the number of non-NA responses
-  per box,
+- optional labels showing the number of non-NA responses per box,
 
 - optional dashed line to visually separate some of the boxes.
 

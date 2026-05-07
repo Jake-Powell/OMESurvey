@@ -159,7 +159,9 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - ...:
 
-  Additional arguments passed to the underlying engine.
+  Additional arguments passed from `OME_stacked_bar()` to
+  `OME_stacked_bar_()`. Not used when calling `OME_stacked_bar_()`
+  directly.
 
 ## Value
 
