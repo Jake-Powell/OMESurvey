@@ -10,6 +10,7 @@ OME_boxplot_(
   value_var,
   group_var = NULL,
   show_counts = TRUE,
+  na.rm = FALSE,
   valueLabText = NULL,
   groupLabText = NULL,
   omitGroupLabels = FALSE,
@@ -31,6 +32,10 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 
 \item{show_counts}{Logical; whether to display (valid/total) counts on the
 right-hand axis. Defaults to TRUE.}
+
+\item{na.rm}{Logical; whether to remove/ignore missing values.
+When \code{na.rm = TRUE}, count labels show the number of plotted (i.e. non-missing) observations;
+when \code{na.rm = FALSE}, labels show non‑missing and total number of observations.}
 
 \item{valueLabText}{Optional title for the value variable axis. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{value_var} is used.}
@@ -61,7 +66,9 @@ labels for the grouping variable. Should be of the form
 \code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
 uses the factor's existing levels.}
 
-\item{...}{Additional arguments passed to the underlying engine.}
+\item{...}{Additional arguments passed from \code{OME_boxplot()} to
+\code{OME_boxplot_()}. Not used when calling \code{OME_boxplot_()}
+directly.}
 }
 \value{
 A ggplot object
@@ -75,7 +82,7 @@ designed for use when column names are supplied as \strong{strings} or \strong{s
 Features include:
 \itemize{
 \item optional subdivision into separate boxes,
-\item optional \code{(n/m)} style labels showing the number of non-NA responses per box,
+\item optional labels showing the number of non-NA responses per box,
 \item optional dashed line to visually separate some of the boxes.
 }
 

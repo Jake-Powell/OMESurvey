@@ -14,7 +14,7 @@ summary_plot_stacked_bar(
   order_values = NULL,
   titleText = NULL,
   fill_label_width = 20,
-  question_label_width = 30
+  group_label_width = 30
 )
 }
 \arguments{
@@ -49,8 +49,8 @@ May be a character vector of response levels, or the special value
 \item{fill_label_width}{Optional integer. Width (in characters) used when wrapping
 fill labels with \code{stringr::str_wrap()}. Passed to \code{OME_stacked_bar()}. Default is 20.}
 
-\item{question_label_width}{Optional integer. Width (in characters) used when wrapping
-axis labels with \code{stringr::str_wrap()}. Default is 30.}
+\item{group_label_width}{Optional integer. Width (in characters) used when wrapping
+vertical (group/question) axis labels with \code{stringr::str_wrap()}. Default is 30.}
 }
 \value{
 A \code{ggplot} object, a horizontal stacked bar chart summarising the survey questions.
@@ -74,7 +74,7 @@ orders questions by the mean of the numeric codes of the response factor.
 }
 
 Axis labels are wrapped using \code{stringr::str_wrap()} with a width controlled
-by \code{question_label_width}. Legend/fill labels are treated the same using \code{fill_label_width}.
+by \code{group_label_width}. Legend/fill labels are treated the same using \code{fill_label_width}.
 }
 \note{
 All variables in \code{dat} should have identical factor levels.
@@ -111,7 +111,7 @@ labels_long <- c(
   Q3 = "The third question asked as part of this series of three questions"
 )
 summary_plot_stacked_bar(dat, labels_vec = labels_long)
-summary_plot_stacked_bar(dat, labels_vec = labels_long, question_label_width = 20)
+summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
 
 # Remove missing values
 summary_plot_stacked_bar(dat, na.rm=FALSE)

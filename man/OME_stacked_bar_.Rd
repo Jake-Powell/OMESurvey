@@ -104,7 +104,9 @@ labels for the grouping variable. Should be of the form
 \code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
 uses the factor's existing levels.}
 
-\item{...}{Additional arguments passed to the underlying engine.}
+\item{...}{Additional arguments passed from \code{OME_stacked_bar()} to
+\code{OME_stacked_bar_()}. Not used when calling \code{OME_stacked_bar_()}
+directly.}
 }
 \value{
 A \code{ggplot} object.

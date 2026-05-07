@@ -344,7 +344,9 @@ render_survey_summary <- function(data_path,
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
 #'   uses the factor's existing levels.
 #'
-#' @param ... Additional arguments passed to the underlying engine.
+#' @param ... Additional arguments passed from \code{OME_stacked_bar()} to
+#'   \code{OME_stacked_bar_()}. Not used when calling \code{OME_stacked_bar_()}
+#'   directly.
 #'
 #' @returns A `ggplot` object.
 #'
@@ -916,8 +918,8 @@ OME_stacked_bar <- function(dat, response_var,
 #' @param titleText Optional text to use as plot title.
 #' @param fill_label_width Optional integer. Width (in characters) used when wrapping
 #'   fill labels with `stringr::str_wrap()`. Passed to `OME_stacked_bar()`. Default is 20.
-#' @param question_label_width Optional integer. Width (in characters) used when wrapping
-#'   axis labels with `stringr::str_wrap()`. Default is 30.
+#' @param group_label_width Optional integer. Width (in characters) used when wrapping
+#'   vertical (group/question) axis labels with `stringr::str_wrap()`. Default is 30.
 #'
 #' @returns
 #' A `ggplot` object, a horizontal stacked bar chart summarising the survey questions.
@@ -941,7 +943,7 @@ OME_stacked_bar <- function(dat, response_var,
 #'   (Intended for factors with low-high / sequential scales.)
 #'
 #' Axis labels are wrapped using `stringr::str_wrap()` with a width controlled
-#' by `question_label_width`. Legend/fill labels are treated the same using `fill_label_width`.
+#' by `group_label_width`. Legend/fill labels are treated the same using `fill_label_width`.
 #'
 #' @section Legend placement:
 #' By default, the legend is placed horizontally according to the standard
@@ -974,7 +976,7 @@ OME_stacked_bar <- function(dat, response_var,
 #'   Q3 = "The third question asked as part of this series of three questions"
 #' )
 #' summary_plot_stacked_bar(dat, labels_vec = labels_long)
-#' summary_plot_stacked_bar(dat, labels_vec = labels_long, question_label_width = 20)
+#' summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
 #'
 #' # Remove missing values
 #' summary_plot_stacked_bar(dat, na.rm=FALSE)
@@ -985,7 +987,7 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
                                      colo=NULL, order_values = NULL,
                                      titleText=NULL,
                                      fill_label_width=20,
-                                     question_label_width=30){
+                                     group_label_width=30){
 
   # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
@@ -1005,6 +1007,11 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
       "Running with (a) ", all_factors, " and (b) ", same_levels, " ",
       "(note that if (a) is false then the check of (b) here is not meaningful)"))
   }
+
+  if (!is.null(labels_vec) && !all(names(labels_vec) %in% names(dat))) {
+    warning("Some names in labels_vec do not match column names in dat.")
+  }
+
 
 
   # pivot the many questions/variables to long question&response form,
@@ -1038,7 +1045,7 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
                     NA_label = NA_label,
                     titleText = titleText,
                     fill_label_width = fill_label_width,
-                    group_label_width = question_label_width,
+                    group_label_width = group_label_width,
                     group_labels = labels_vec)
   return(thePlot)
 }
@@ -1074,7 +1081,7 @@ plot_many_questions <- function(...) {
 #'
 #' Features include:
 #' * optional subdivision into separate boxes,
-#' * optional `(n/m)` style labels showing the number of non-NA responses per box,
+#' * optional labels showing the number of non-NA responses per box,
 #' * optional dashed line to visually separate some of the boxes.
 
 #' @author Dave Sirl
@@ -1089,6 +1096,9 @@ plot_many_questions <- function(...) {
 #' @param group_var Optional grouping variable (factor).
 #' @param show_counts Logical; whether to display (valid/total) counts on the
 #'   right-hand axis. Defaults to TRUE.
+#' @param na.rm Logical; whether to remove/ignore missing values.
+#'   When `na.rm = TRUE`, count labels show the number of plotted (i.e. non-missing) observations;
+#'   when `na.rm = FALSE`, labels show non‑missing and total number of observations.
 #'
 #' @param valueLabText Optional title for the value variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `value_var` is used.
@@ -1111,7 +1121,9 @@ plot_many_questions <- function(...) {
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
 #'   uses the factor's existing levels.
 #'
-#' @param ... Additional arguments passed to the underlying engine.
+#' @param ... Additional arguments passed from \code{OME_boxplot()} to
+#'   \code{OME_boxplot_()}. Not used when calling \code{OME_boxplot_()}
+#'   directly.
 #'
 #' @details
 #' `OME_boxplot()` uses tidy evaluation;
@@ -1160,6 +1172,7 @@ OME_boxplot_ <- function(data,
                          value_var,
                          group_var = NULL,
                          show_counts = TRUE,
+                         na.rm = FALSE,
                          valueLabText = NULL,
                          groupLabText = NULL,
                          omitGroupLabels = FALSE,
@@ -1188,11 +1201,6 @@ OME_boxplot_ <- function(data,
     stop("value_var must be numeric.")
   }
 
-  # Ensure factor levels follow order of appearance  CHECK IF SIMILAR IS IN STACKED_BAR!!!!!!!
-  # data[[group_var]] <- factor(
-  #   data[[group_var]],
-  #   levels = unique(data[[group_var]])
-  # )
 
   group_levels <- levels(data[[group_var]])
 
@@ -1211,7 +1219,12 @@ OME_boxplot_ <- function(data,
         total  = dplyr::n(),
         .by = dplyr::all_of(group_var)
       ) |>
-      dplyr::mutate(label = sprintf("(%d/%d)", non_na, total))
+      dplyr::mutate(label = if (na.rm) {
+                              sprintf("(%d)", non_na)
+                            } else {
+                              sprintf("(%d/%d)", non_na, total)
+                            }
+      )
 
     idx <- match(group_levels, group_counts[[group_var]])
     right_labels <- stats::setNames(group_counts$label[idx], group_levels)
@@ -1373,6 +1386,139 @@ OME_boxplot <- function(data,
 }
 
 
+
+#' Section-level summary plot for numeric questions
+#'
+#' Make a horizontal boxplot to summarise several numeric survey questions,
+#' with questions ordered according to a summary statistic (by default the
+#' median of observed responses).
+#'
+#' @param dat A tibble/data.frame, each variable corresponding to a survey
+#' question. All variables should be numeric.
+#'
+#' @param labels_vec Optional named character vector of labels to use for the
+#' questions on the plot. Names must match the column names of \code{dat}, and
+#' values are the labels to display on the axis.
+#'
+#' @param na.rm Logical. Whether missing values should be removed/ignored for the
+#' purposes of plotting. Passed through to \code{OME_boxplot_()}.
+#' Defaults to \code{FALSE}. Note that missing values are always removed when
+#' computing the ordering statistic.
+#'
+#' @param order_fun Function used to order questions in the plot.
+#' This function should accept arguments \code{(x, na.rm = TRUE)} and return
+#' a single numeric value (e.g. \code{median}, \code{mean}).
+#' Defaults to \code{median}.
+#'
+#' @param titleText Optional text to use as the plot title.
+#'
+#' @param group_label_width Optional integer. Width (in characters) used when
+#' wrapping question labels on the axis. Passed to \code{OME_boxplot_()}.
+#' Default is 30.
+#'
+#' @param ... Additional arguments passed to \code{OME_boxplot_()}.
+#'
+#' @returns
+#' A \code{ggplot} object, a horizontal boxplot summarising the survey questions.
+#'
+#' @details
+#' The variables in \code{dat} are pivoted to long format, then ordered according
+#' to the value returned by \code{order_fun} applied to each question’s observed
+#' responses (with \code{na.rm = TRUE}).
+#'
+#' The original column order of \code{dat} is preserved as a stable tie-breaker
+#' when multiple questions have identical ordering statistics.
+#'
+#' Missing-value handling for ordering and for plotting are intentionally
+#' separated: missing responses are ignored for ordering purposes, but their
+#' treatment in the plot itself is controlled by \code{na.rm}.
+#'
+#' @export
+#'
+#' @examples
+#' # Minimal example with three numeric questions
+#' dat <- tibble::tibble(
+#'   Q1 = c(1, 2, 3, NA),
+#'   Q2 = c(5, 4, 3, 1),
+#'   Q3 = c(2, 2, 2, 3)
+#' )
+#'
+#' # Simplest use
+#' dat |> summary_plot_boxplot()
+#'
+#'
+#' # Add question labels
+#' labels <- c(
+#'   Q1 = "High-valued question",
+#'   Q2 = "Low-valued question",
+#'   Q3 = "Mid-valued question"
+#' )
+#' dat |> summary_plot_boxplot(labels_vec = labels)
+#'
+#' # With longer labels
+#' labels_long <- c(
+#'   Q1 = "Question where responses tend to be at the higher end of the scale",
+#'   Q2 = "Question where responses tend to be at the lower end of the scale",
+#'   Q3 = "Question where responses tend to be somewhere in the middle"
+#' )
+#' dat |> summary_plot_boxplot(labels_vec = labels_long)
+#'
+#' # Control label wrapping
+#' summary_plot_boxplot(
+#'   dat,
+#'   labels_vec = labels_long,
+#'   group_label_width = 20
+#' )
+#'
+#' # Remove missing values for plotting
+#' dat |> summary_plot_boxplot(na.rm = TRUE)
+summary_plot_boxplot <- function(dat, labels_vec = NULL,
+                                 na.rm = FALSE,
+                                 order_fun = median,
+                                 titleText = NULL,
+                                 group_label_width = 30,
+                                 ...) {
+
+  # check
+  if (!(dat |> purrr::map_lgl(is.numeric) |> all())) {
+    warning("The dataframe passed to summary_plot_boxplot() should have all its variables numeric.")
+  }
+
+  if (!is.null(labels_vec) && !all(names(labels_vec) %in% names(dat))) {
+    warning("Some names in labels_vec do not match column names in dat.")
+  }
+
+
+  # pivot to long form and reorder the factor `question`
+  dat_long <- dat |>
+    tidyr::pivot_longer(
+      dplyr::everything(),
+      names_to  = "question",
+      values_to = "value") |>
+    dplyr::mutate(
+      question = forcats::fct_inorder(question)) |>
+    dplyr::mutate(
+      order_stat = order_fun(value, na.rm = TRUE),
+      .by = question) |>
+    dplyr::mutate(
+      question = forcats::fct_reorder(question, order_stat)
+    )
+
+
+  # plot
+  p <- dat_long |>
+    OME_boxplot_(
+      value_var = "value",
+      group_var = "question",
+      titleText = titleText,
+      group_label_width = group_label_width,
+      group_labels = labels_vec,
+      na.rm = na.rm,
+      ...)
+
+  return(p)
+
+}
 
 
 
