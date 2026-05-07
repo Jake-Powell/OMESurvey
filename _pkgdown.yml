@@ -49,6 +49,7 @@ reference:
   - OME_boxplot
   - plot_many_questions
   - summary_plot_stacked_bar
+  - summary_plot_boxplot
   - centre_legend_below
   - suppress_specific_warning
   - frac_to_num
