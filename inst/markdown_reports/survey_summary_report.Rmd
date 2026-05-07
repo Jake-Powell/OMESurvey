@@ -853,6 +853,23 @@ freq_to_df <- function(freq, value_col = "Value", add_total = TRUE) {
   df
 }
 
+remove_common_prefix <- function(x) {
+  # find longest common prefix length
+  pref_len <- 0L
+  for (len in seq_len(min(nchar(x)))) {
+    if (all(substr(x, 1, len) == substr(x[1], 1, len))) {
+      pref_len <- len
+    } else break
+  }
+  # build results
+  if (pref_len == 0L) {
+    list(prefix = "", remainder = x)
+  } else {
+    prefix <- substr(x[1], 1, pref_len)
+    remainder <- substring(x, pref_len + 1)
+    list(prefix = prefix, remainder = remainder)
+  }
+}
 
 
 
@@ -976,8 +993,18 @@ for(sec in sections){
     dplyr::arrange(report_sec_ord)
 
   vars <- vars_in_sec$variable
+  #vars |> print()
+  
   if(length(vars) == 0) next
 
+  # vars_in_sec |>
+  #   dplyr::select(type, allowed_specified, allowed) |> print()
+  # 
+  # vars_in_sec |>
+  #   dplyr::select(type, allowed_specified, allowed) |>
+  #   dplyr::distinct() |> print()
+  
+  
   #if not relevant, make a note that there's no summary plot, otherwise do it
   if (length(vars) == 1 || (vars_in_sec |>
                             dplyr::select(type, allowed_specified, allowed) |>
@@ -986,90 +1013,97 @@ for(sec in sections){
       ) { # could use inferred factor values here (for establishment characteristics, for example)?
     cat("\n\n No section summary plot \n\n", sep = "")
   } else {
-
-    # THIS ASSUMES FACTOR - might need for numerical variables too?
-
+    
     # prepare df and labels for plotting
     df_plot <- data |> dplyr::select(any_of(vars))
-    labels_vec <- setNames(as.character(vars_in_sec$item_statement),
-                           vars_in_sec$variable)
-
-    remove_common_prefix <- function(x) {
-      # find longest common prefix length
-      pref_len <- 0L
-      for (len in seq_len(min(nchar(x)))) {
-        if (all(substr(x, 1, len) == substr(x[1], 1, len))) {
-          pref_len <- len
-        } else break
-      }
-      # build results
-      if (pref_len == 0L) {
-        list(prefix = "", remainder = x)
-      } else {
-        prefix <- substr(x[1], 1, pref_len)
-        remainder <- substring(x, pref_len + 1)
-        list(prefix = prefix, remainder = remainder)
-      }
-    }
-
+    labels_vec <-
+      as.character(vars_in_sec$item_statement) |>
+      setNames(vars_in_sec$variable)
+    
+    
     # get common prefix out of labels_vec to use as title
-    res <- remove_common_prefix(labels_vec)
-    title_text <- res$prefix
-    labels_vec <- res$remainder
-
-    # We know the variables have the same specification, so just use the colo of the first one
-    colo <- (vars_in_sec |> dplyr::pull(colo) |> utils::head(n=1))[[1]]
-
-    # if they need ordering then get that too
-    order_values <- (vars_in_sec |> dplyr::pull(order_values) |> utils::head(n=1))[[1]]
-
-
+    labels_prefix <- remove_common_prefix(labels_vec)
+    title_text <- labels_prefix$prefix
+    labels_vec <- labels_prefix$remainder
+    
+    
+    # determine section type
+    sec_type <- vars_in_sec$type[[1]]
+    sec_type |> print()
+    
     # compute dynamic height: 2 inches + 0.5 inch per variable
     fig_h <- (2 + 0.5 * length(vars))
-
+    
+    
+    
+    
+    
     tryCatch({
-      # summary_plot_stacked_bar should draw or return a ggplot
-      res <-
-        OMESurvey::summary_plot_stacked_bar(
+      
+      if (sec_type == "factor") {
+        
+        # use colo and ordering from the first variable
+        colo <- (vars_in_sec |> dplyr::pull(colo) |> utils::head(1))[[1]]
+        order_values <- (vars_in_sec |> dplyr::pull(order_values) |> utils::head(1))[[1]]
+        
+        # factor section summary plot
+        res <- OMESurvey::summary_plot_stacked_bar(
           df_plot,
           labels_vec,
-          percCut=percCutHoriz,
-          colo=colo,
-          order_values=order_values,
+          percCut = percCutHoriz,
+          colo = colo,
+          order_values = order_values,
           titleText = title_text,
-          NA_label = "Missing/Non-allowed") |> #possibly add more here in due course
-        OMESurvey::centre_legend_below(rel_heights=c(1, 0.8/fig_h))
+          NA_label = "Missing/Non-allowed"
+        ) |>
+          OMESurvey::centre_legend_below(rel_heights = c(1, 0.8 / fig_h))
+        
+      } else if (sec_type == "numeric") {
+        
+        # numeric section summary plot
+        res <- OMESurvey::summary_plot_boxplot(
+          df_plot,
+          labels_vec = labels_vec,
+          titleText = title_text
+        )
+        
+      } else {
+        res <- NULL
+      }
+      
       
       if (inherits(res, "ggplot")) {
         # ensure fig path exists
         fig_dir <- knitr::opts_chunk$get("fig.path")
         if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
         if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
-
+        
         # create a unique, stable filename (using section name)
-        # (could be trouble if section names get long/complicated?)
-        fname <- file.path(fig_dir, sprintf("sec_%s_plot_%s.png",
-                                            sec_file_key,
-                                            "overall"))
+        fname <- file.path(
+          fig_dir,
+          sprintf("sec_%s_plot_overall.png", sec_file_key)
+        )
         fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
         
-        # save the plot at the computed size
+        # save the plot and emit markdown image tag (for inside an as-is chunk)
         ggplot2::ggsave(fname, plot = res,
                         width = 8, height = fig_h,
                         units = "in", dpi = 300)
         
-        # emit markdown image tag (works inside results='asis')
         cat(sprintf("![](%s){width=100%%}\n\n", fname))
       }
       
       invisible(res)
-    }, error = function(e){
+      
+    }, error = function(e) {
       cat("\n**Error drawing section plot:** ", e$message, "\n\n", sep = "")
       invisible(NULL)
     })
   }
-
-
+  
+  
+  
+  
   # now emit per-variable summaries for this section
   for(i in seq_len(nrow(vars_in_sec))){
     v <- vars_in_sec[i, ] # the current row of vars_in_sec, in turn from validation_df. So has
@@ -1214,8 +1248,8 @@ for(sec in sections){
     }
     
     
-    # if a character variable, just list some and be done with it (i.e. no plots etc)
-    if ((dict |> dplyr::filter(`Variable name` == var) |> dplyr::pull(`Final data type`)) == "chr"){
+    # if a text variable, just list some and be done with it (i.e. no plots etc)
+    if ((dict |> dplyr::filter(`Variable name` == var) |> dplyr::pull(`Final data type`)) == "text"){
       cat("Here are the responses and the corresponding grouping variables. Note that there are ",
           dim(df_for_bar)[1],
           " responses. \n\n")
