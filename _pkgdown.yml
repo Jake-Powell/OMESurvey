@@ -47,6 +47,7 @@ reference:
   - render_survey_summary
   - OME_stacked_bar
   - OME_boxplot
+  - plot_many_questions
   - summary_plot_stacked_bar
   - centre_legend_below
   - suppress_specific_warning
