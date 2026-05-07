@@ -1,6 +1,7 @@
 # Preparation and initial survey analysis
 
 ``` r
+
 library(OMESurvey)
 ```
 
@@ -14,6 +15,7 @@ has the same structure as those we receive. We show the data for 5
 participants (transposed so the table is easier to see).
 
 ``` r
+
 data = OMESurvey::survey_example
 
 # Remove the themes and add spacing to imagine how the data will arrive)
@@ -41,6 +43,7 @@ The initial part of cleaning will involve:
   the same class ID).
 
 ``` r
+
 # Clean 1. 
 
 # A) Adding theme/group to column names.
@@ -86,6 +89,7 @@ The function returns a list informing if we have any issues of the type
 listed above.
 
 ``` r
+
 check = OMESurvey::check_survey(data)
 check
 #> $barcode
@@ -156,6 +160,7 @@ show the issue). The issue of ‘Neither’ being used instead of ‘Half the
 time’ is case specific and can be fixed for this individual report.
 
 ``` r
+
 # Run extra cleaning with issues found.
 for(i in 1:ncol(data)){
   data_clean[,i] = data_clean[,i] |> stringr::str_to_sentence() 
@@ -170,6 +175,7 @@ can filter the SharePoint search by the barcodes using the following
 text
 
 ``` r
+
 paste0(check$multiple_answers$barcodes, collapse = " OR ")
 #> [1] "1200700304 OR 1200700360 OR 1200700413 OR 1200700392 OR 1200700402 OR 1200700410 OR 1200800516 OR 1200700389 OR 1200700423 OR 1200900701 OR 1200800572 OR 1200800585 OR 1200800456 OR 1201000757 OR 1201000896 OR 1200800469 OR 1200800497 OR 1201000908 OR 1200700320"
 ```
@@ -187,6 +193,7 @@ Within **OMESurvey** the function
 performs the ID checks. An example is shown below.
 
 ``` r
+
 # Use a large extract of the data as the 'true' values
 true_df = data[1:100,]
 
@@ -226,6 +233,7 @@ need to run the function
 to create the report for whichever survey data we are analysing.
 
 ``` r
+
 # Create the missingness report.
 OMESurvey::create_missingness_report(survey_data = data_clean, 
                                      survey_name = 'example survey',

@@ -1,6 +1,7 @@
 # Create OME branded excel output
 
 ``` r
+
 library(OMESurvey)
 ```
 
@@ -10,6 +11,7 @@ excel outputs.*
 We need to load in some fake survey results.
 
 ``` r
+
 data = OMESurvey::survey_example
 # Clean 1. 
 # B) NAs
@@ -64,6 +66,7 @@ Show the results for Maths in Year 7:I am doing well in maths across
 class, school and sex.
 
 ``` r
+
 wb = OMESurvey::to_sheet_single_survey_question(data = data,
                                                 question_column = 5,
                                                 demographic_columns = 2:4,
@@ -75,6 +78,7 @@ If wanted you can use other survey questions as demographic columns to
 see the relationship between two questions.
 
 ``` r
+
 wb = OMESurvey::to_sheet_single_survey_question(data = data,
                                                 question_column = 5,
                                                 demographic_columns = 6:8,
@@ -91,6 +95,7 @@ theme. (Each theme must have the same allowable values, i.e. agree,
 disagree, etc)
 
 ``` r
+
 wb = OMESurvey::to_sheet_theme_summary(data = data, theme = 'Theme 1')
 openxlsx::saveWorkbook(wb, file = 'example3.xlsx')
 ```
@@ -105,6 +110,7 @@ contents sheet (using
 [`add_TOC_sheet()`](https://jake-powell.github.io/OMESurvey/reference/add_TOC_sheet.md)).
 
 ``` r
+
 question_columns = 5:15
 demographic_columns = 2:4
 wb <- openxlsx::createWorkbook()

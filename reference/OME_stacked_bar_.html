@@ -66,6 +66,7 @@ designed for use when column names are supplied as <strong>strings</strong> or <
 <span>  percCut <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  colo <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  NA_label <span class="op">=</span> <span class="st">"Missing"</span>,</span>
 <span>  show_counts <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  horiz <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  text_scale <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -121,6 +122,10 @@ When <code>na.rm = FALSE</code>, a grey colour is prepended for the <code>"Missi
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, remove <code>NA</code> responses; if <code>FALSE</code> (default)
 convert them to <code>"Missing"</code> and treat as an additional response level.</p></dd>
+
+
+<dt id="arg-na-label">NA_label<a class="anchor" aria-label="anchor" href="#arg-na-label"></a></dt>
+<dd><p>Character, default <code>"Missing"</code>. Label to use for <code>NA</code> responses.</p></dd>
 
 
 <dt id="arg-show-counts">show_counts<a class="anchor" aria-label="anchor" href="#arg-show-counts"></a></dt>

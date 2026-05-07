@@ -13,6 +13,7 @@ You can install the development version of OMESurvey from
 [GitHub](https://github.com/) with:
 
 ``` r
+
 # install.packages("devtools")
 devtools::install_github("Jake-Powell/OMESurvey")
 ```
@@ -22,6 +23,7 @@ devtools::install_github("Jake-Powell/OMESurvey")
 ### Plotting survey result
 
 ``` r
+
 library(OMESurvey)
 data = OMESurvey::survey_example
 
@@ -42,6 +44,7 @@ to search for unexpected responses (for non free text), issues with the
 barcode and locations of questions with multiple answers (“99”)
 
 ``` r
+
 check = OMESurvey::survey_example |>
   OMESurvey::convert_NA() |>
   OMESurvey::check_survey()

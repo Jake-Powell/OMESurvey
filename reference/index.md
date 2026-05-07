@@ -75,7 +75,10 @@
   [`OME_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot_.md)
   : Boxplot (horizontal), in an OME style.
 - [`plot_many_questions()`](https://jake-powell.github.io/OMESurvey/reference/plot_many_questions.md)
-  : Make a stacked bar chart summarising many survey questions
+  : Deprecated: Make a stacked bar chart summarising many survey
+  questions
+- [`summary_plot_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_stacked_bar.md)
+  : Section-level summary plot for categorical questions
 - [`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)
   : Centre a ggplot legend beneath the plot using cowplot
 - [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
@@ -86,3 +89,5 @@
   : Convert shorthand colour name to a colour vector
 - [`rename_NA_first_col()`](https://jake-powell.github.io/OMESurvey/reference/rename_NA_first_col.md)
   : Relabel NA values in the first column of a data frame
+- [`theme_OME()`](https://jake-powell.github.io/OMESurvey/reference/theme_OME.md)
+  : ROME ggplot2 theme

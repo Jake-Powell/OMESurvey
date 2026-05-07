@@ -16,6 +16,7 @@ OME_stacked_bar_(
   percCut = NULL,
   colo = NULL,
   na.rm = FALSE,
+  NA_label = "Missing",
   show_counts = TRUE,
   horiz = FALSE,
   text_scale = 1,
@@ -71,6 +72,10 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
   Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
   convert them to `"Missing"` and treat as an additional response level.
+
+- NA_label:
+
+  Character, default `"Missing"`. Label to use for `NA` responses.
 
 - show_counts:
 

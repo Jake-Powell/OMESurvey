@@ -1,6 +1,7 @@
 # Create survey figures
 
 ``` r
+
 library(OMESurvey)
 ```
 
@@ -8,6 +9,7 @@ library(OMESurvey)
 across different output types*
 
 ``` r
+
 data = OMESurvey::survey_example
 
 # Clean such that "N-A" values equal NA, fix any casing issues
@@ -31,16 +33,19 @@ can create a ggplot, a plotly figure or a formatted data frame.
 - data.frame
 
 ``` r
+
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot')
 ```
 
 ![](Create-survey-figures_files/figure-html/plot%20theme%20-%20ggplot-1.png)
 
 ``` r
+
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'plotly')
 ```
 
 ``` r
+
 df = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'data.frame')
 df |> DT::datatable(extensions = 'Buttons',
                   rownames = F,
@@ -66,6 +71,7 @@ For example if you want to swap the bar order but keep the same
 colourscheme.
 
 ``` r
+
 # Use custom survey_values with the order of the values reversed
 p = OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot',
                       survey_values = list(agree = c("Agree a lot", "Agree a little", "Neither",           "Disagree a little", "Disagree a lot") |> rev()))
@@ -85,6 +91,7 @@ not align with the survey values. Where the unexpected answers will be
 set to NA (for ggplot).
 
 ``` r
+
 data_issue = data
 data_issue$Theme_1__Question_1[1] = 'Ohh Dear...'
 
@@ -105,6 +112,7 @@ OMESurvey::plot_theme(data_issue, theme = 'Theme_1', kind = 'ggplot')
 Need to add a demographic column so extract school from the bar code.
 
 ``` r
+
 school = data$Barcode_ID |> as.character() |>  substr(3, 5)
 data$school = school
 school_column = ncol(data)
@@ -117,16 +125,19 @@ school_column = ncol(data)
 - data.frame
 
 ``` r
+
 OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'ggplot')
 ```
 
 ![](Create-survey-figures_files/figure-html/plot%20theme%20demo%20-%20ggplot-1.png)
 
 ``` r
+
 OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'plotly')
 ```
 
 ``` r
+
 # Get school information
 df = OMESurvey::plot_theme_by_demographic(data, theme = 'Theme_1', demographic_column = school_column,  kind = 'data.frame')
 
@@ -152,6 +163,7 @@ ggplot object. Thus, you cannot use ‘+’ to change the plot after adding
 the logo.
 
 ``` r
+
 # Add logo.
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::add_logo()
 ```
@@ -160,6 +172,7 @@ OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::ad
 
 ``` r
 
+
 # Add logo, speciify position.
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::add_logo(position = 'top right')
 ```
@@ -167,6 +180,7 @@ OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::ad
 ![](Create-survey-figures_files/figure-html/unnamed-chunk-3-2.png)
 
 ``` r
+
 
 # Add logo, speciify position and sizing arguement.
 OMESurvey::plot_theme(data, theme = 'Theme_1', kind = 'ggplot') |> OMESurvey::add_logo(position = 'top left',logo_sizing = c(0.3, 0.5))
@@ -187,6 +201,7 @@ to create bar charts of a single column within survey data.
 - data.frame
 
 ``` r
+
 OMESurvey::plot_bar(data, column = 5, kind = 'ggplot')
 #> Warning: The `size` argument of `element_line()` is deprecated as of ggplot2 3.4.0.
 #> ℹ Please use the `linewidth` argument instead.
@@ -200,10 +215,12 @@ OMESurvey::plot_bar(data, column = 5, kind = 'ggplot')
 ![](Create-survey-figures_files/figure-html/plot%20bar%20-%20ggplot-1.png)
 
 ``` r
+
 OMESurvey::plot_bar(data, column = 5, kind = 'plotly')
 ```
 
 ``` r
+
 df = OMESurvey::plot_bar(data, column = 5, kind = 'data.frame')
 df |> DT::datatable(extensions = 'Buttons',
                   rownames = F,
@@ -222,6 +239,7 @@ Moreover, for ggplot outputs we can include numbers on the plot y
 setting `showValue = TRUE`.
 
 ``` r
+
 OMESurvey::plot_bar(data, column = 5, kind = 'ggplot', showValue = TRUE, useNA = 'always')
 #> Scale for y is already present.
 #> Adding another scale for y, which will replace the existing scale.
