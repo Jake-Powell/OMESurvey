@@ -364,33 +364,82 @@ parse_allowed <- function(x){
   vals
 }
 
+
+
+
 parse_allowed_range <- function(x) {
-  if (is.na(x) || !nzchar(x)) return(NULL)
+
+  if (is.na(x)) return(NULL)
+
   s <- trimws(as.character(x))
+  if (!nzchar(s)) return(NULL)
 
-  # 1) bracketed form: [0,100], (0,100], etc.
-  m1 <- regexec("^\\s*([\\[\\(])\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*,\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*([\\]\\)])\\s*$", s)
-  mm1 <- regmatches(s, m1)[[1]]
-  if (length(mm1) > 0) {
-    lower <- as.numeric(mm1[3])
-    upper <- as.numeric(mm1[4])
-    lower_incl <- mm1[2] == "["
-    upper_incl <- mm1[5] == "]"
-    return(list(lower = lower, upper = upper, lower_incl = lower_incl, upper_incl = upper_incl))
+  parse_inf <- function(z) {
+    z <- trimws(z)
+    if (grepl("^(\\+?inf|∞)$", z, ignore.case = TRUE)) return(Inf)
+    if (grepl("^(-inf|-∞)$", z, ignore.case = TRUE)) return(-Inf)
+    suppressWarnings(as.numeric(z))
   }
 
-  # 2) dash form: 0-100  (treat as inclusive [0,100])
-  m2 <- regexec("^\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*-\\s*([-+]?[0-9]*\\.?[0-9]+)\\s*$", s)
-  mm2 <- regmatches(s, m2)[[1]]
-  if (length(mm2) > 0) {
-    lower <- as.numeric(mm2[2])
-    upper <- as.numeric(mm2[3])
-    return(list(lower = lower, upper = upper, lower_incl = TRUE, upper_incl = TRUE))
+  ## 1) Bracketed interval: [a,b), (a,Inf], etc.
+  if (nchar(s) >= 5 && substr(s, 1, 1) %in% c("[", "(") &&
+      substr(s, nchar(s), nchar(s)) %in% c("]", ")")) {
+
+    lower_incl <- substr(s, 1, 1) == "["
+    upper_incl <- substr(s, nchar(s), nchar(s)) == "]"
+
+    inner <- substr(s, 2, nchar(s) - 1)
+    parts <- strsplit(inner, ",", fixed = TRUE)[[1]]
+
+    if (length(parts) == 2) {
+      return(list(
+        lower = parse_inf(parts[1]),
+        upper = parse_inf(parts[2]),
+        lower_incl = lower_incl,
+        upper_incl = upper_incl
+      ))
+    }
   }
 
-  # not a recognised single-range spec
+  ## 2) Dash form: a-b (inclusive)
+  if (grepl("-", s, fixed = TRUE)) {
+    parts <- strsplit(s, "-", fixed = TRUE)[[1]]
+    if (length(parts) == 2) {
+      return(list(
+        lower = parse_inf(parts[1]),
+        upper = parse_inf(parts[2]),
+        lower_incl = TRUE,
+        upper_incl = TRUE
+      ))
+    }
+  }
+
+  ## 3) Relational forms: >5, >=0, <10, <=100
+  if (grepl("^(>=|>|<=|<)", s)) {
+    op <- sub("^\\s*(>=|>|<=|<).*$", "\\1", s)
+    val <- parse_inf(sub("^\\s*(>=|>|<=|<)", "", s))
+
+    if (op %in% c(">", ">=")) {
+      return(list(
+        lower = val,
+        upper = Inf,
+        lower_incl = op == ">=",
+        upper_incl = FALSE
+      ))
+    } else {
+      return(list(
+        lower = -Inf,
+        upper = val,
+        lower_incl = FALSE,
+        upper_incl = op == "<="
+      ))
+    }
+  }
+
   NULL
 }
+
+
 ```
 
 
@@ -954,17 +1003,32 @@ sec_meta <-
 
 
 
+
 # Validate: section codes must be unique
 # (e.g. "A", "A1", "B2", "GV" must not repeat)
+
 dups <- sec_meta |>
-  dplyr::count(sec_file_key, sort = TRUE) |>
-  dplyr::filter(n > 1)
+  dplyr::group_by(sec_file_key) |>
+  dplyr::filter(dplyr::n() > 1) |>
+  dplyr::summarise(
+    sections = paste(sprintf('"%s"', sec_display), collapse = ", "),
+    .groups = "drop"
+  )
 
 if (nrow(dups) > 0) {
+  msg <- paste(
+    sprintf(
+      'Key "%s" is used by sections: %s',
+      dups$sec_file_key,
+      dups$sections
+    ),
+    collapse = "\n"
+  )
+
   stop(
-    "Duplicate section codes (file keys) found: ",
-    paste(dups$sec_file_key, collapse = ", "),
-    ". Each code (before the colon in the section title) must be unique."
+    "Duplicate section codes (file keys) found:\n\n",
+    msg,
+    "\n\nEach code (before the colon in the section title) must be unique."
   )
 }
 
@@ -1173,7 +1237,7 @@ for(sec in sections){
     
     # validation summary and descriptive stats
     v |>
-      dplyr::select(variable, type, colo, allowed_specified, n_invalid,
+      dplyr::select(variable, type, colo, allowed_specified, allowed, n_invalid,
                     n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
       kable_narrow() |>
       as.character() |>
