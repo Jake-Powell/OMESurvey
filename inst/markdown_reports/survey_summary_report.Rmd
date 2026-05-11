@@ -66,26 +66,15 @@ dict <- readxl::read_excel(params$dict_path,
                    sheet = params$dict_sheet)
 
 # check that dictionary has required columns
-required_vars <- c("Variable name", "Final data type", "Allowed values",
-                   "Item statement", "report_sec")
-                   #"grouping_var", "condition")
+required_vars <- c("variable_name", "data_type", "allowed_values",
+                   "item_statement", "report_sec",
+                   "grouping_var", "condition")
 missing <- setdiff(required_vars, names(dict))
 
 if (length(missing) > 0) {
   stop("The following required variables are missing from the data dictionary: ",
-       paste(missing, collapse = ", "))
-}
-
-if (!("grouping_var" %in% names(dict))){
-  dict <-
-    dict |>
-    dplyr::mutate(grouping_var = NA)
-}
-
-if (!("condition" %in% names(dict))){
-  dict <-
-    dict |>
-    dplyr::mutate(condition = NA)
+       paste(missing, collapse = ", "),
+       "\n Note that 'grouping_var' and 'condition' are required columns, though they may be otherwise empty.")
 }
 
 ```
@@ -94,14 +83,14 @@ Check variables present in one source and not the other. We probably expect some
 
 First, those in the dictionary but not in the data:
 ```{r}
-base::setdiff(dict |> dplyr::pull(`Variable name`),
+base::setdiff(dict |> dplyr::pull(variable_name),
               data |> base::names())
 ```
 
 And those in the data but not the dictionary:
 ```{r}
 base::setdiff(data |> base::names(),
-              dict |> dplyr::pull(`Variable name`))
+              dict |> dplyr::pull(variable_name))
 ```
 
 Filter the dictionary to keep only variables which are assigned a section (i.e. that we want to include in the summary)
@@ -127,7 +116,7 @@ if (params$verbose) {
 Now that the above warnings/lists are set up, check again for variables in the dictionary (now slimmed down to only the variables that have been assigned a report section) that aren't in the data file. If there are any then warn and remove from the dictionary. This is needed as the dictionary is the basis of all later processing/summarising and we won't be able to do that if the variable isn't in the data!)
 ```{r results='asis'}
 vars_not_in_data <-
-  base::setdiff(dict |> dplyr::pull(`Variable name`),
+  base::setdiff(dict |> dplyr::pull(variable_name),
                 data |> base::names())
 
 if (length(vars_not_in_data) == 0) {
@@ -136,7 +125,7 @@ if (length(vars_not_in_data) == 0) {
   #remove from dictionary
   dict <-
     dict |>
-    dplyr::filter(!(`Variable name` %in% vars_not_in_data))
+    dplyr::filter(!(variable_name %in% vars_not_in_data))
 
   # warn
   cat('\n\n<span style="color: red;">**WARNING:**</span> The following variables are given a section in the dictionary but cannot be found in the data: \n\n')
@@ -218,10 +207,10 @@ if (is.null(params$est_chars_path)){
       if (grepl("^factor-",est_char_types[i])){
       dict <-
         dict |>
-        tibble::add_row(`Variable name` = est_char_vars[i],
-                        `Final data type` = est_char_types[i],
-                        `Allowed values` = est_char_values[i],
-                        `Item statement` = est_char_statements[i],
+        tibble::add_row(variable_name = est_char_vars[i],
+                        data_type = est_char_types[i],
+                        allowed_values = est_char_values[i],
+                        item_statement = est_char_statements[i],
                         report_sec = "Grouping variables",
                         grouping_var = "T",
                         condition = NA)
@@ -276,10 +265,10 @@ if (is.null(params$est_chars_path)){
         # Add dictionary row with correct allowed values (semicolon-delimited)
         dict <- dict |>
           tibble::add_row(
-            `Variable name` = est_char_vars[i],
-            `Final data type` = "factor-lo-hi",
-            `Allowed values` = paste(final_labels, collapse = ";"),
-            `Item statement` = est_char_statements[i],
+            variable_name = est_char_vars[i],
+            data_type = "factor-lo-hi",
+            allowed_values = paste(final_labels, collapse = ";"),
+            item_statement = est_char_statements[i],
             report_sec = "A: Grouping variables",
             grouping_var = "T",
             condition = NA
@@ -527,18 +516,18 @@ make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
 }
 
 validation_log <- vector("list", nrow(dict))
-names(validation_log) <- dict$`Variable name`
+names(validation_log) <- dict$variable_name
 
 for (i in seq_len(nrow(dict))) {
-  var <- dict$`Variable name`[i]
+  var <- dict$variable_name[i]
   
   # debug step
   # message(">>> Starting variable: ", var)
   # flush.console()
 
   
-  dtype <- tolower(dict$`Final data type`[i])
-  allowed_raw <- dict$`Allowed values`[i]
+  dtype <- tolower(dict$data_type[i])
+  allowed_raw <- dict$allowed_values[i]
   allowed <- parse_allowed(allowed_raw)           # returns NULL or character vector
   # only consider allowed values meaningful for factor-like types
   is_allowed_type <- grepl("factor|numerical", dtype, ignore.case = TRUE)
@@ -546,7 +535,7 @@ for (i in seq_len(nrow(dict))) {
   if (!is_allowed_type) allowed <- NULL  # drop allowed for non-factors to avoid confusion
   report_sec <- dict$report_sec[i]
   report_sec_ord <- dict$report_sec_ord[i]
-  item_label <- dict$`Item statement`[i]  # remove line breaks here ?!?
+  item_label <- dict$item_statement[i]  # remove line breaks here ?!?
   
   raw <- data[[var]]
   raw_chr <- as.character(raw)
@@ -1179,7 +1168,7 @@ for(sec in sections){
     grouping_vars <-
       dict |>
       dplyr::filter(grouping_var == TRUE) |>
-      dplyr::pull(`Variable name`) |>
+      dplyr::pull(variable_name) |>
       setdiff(var)   # ensure the target var is not duplicated
 
     # ensure grouping_vars exist in data (safe select)
@@ -1189,7 +1178,7 @@ for(sec in sections){
     # extract condition for this variable
     cond <-
       dict |>
-      dplyr::filter(`Variable name` == vars[i]) |>
+      dplyr::filter(variable_name == vars[i]) |>
       dplyr::pull(condition)
 
     # parse condition safely with tryCatch and friendly error message
@@ -1313,7 +1302,7 @@ for(sec in sections){
     
     
     # if a text variable, just list some and be done with it (i.e. no plots etc)
-    if ((dict |> dplyr::filter(`Variable name` == var) |> dplyr::pull(`Final data type`)) == "text"){
+    if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "text"){
       cat("Here are the responses and the corresponding grouping variables. Note that there are ",
           dim(df_for_bar)[1],
           " responses. \n\n")
@@ -1333,8 +1322,8 @@ for(sec in sections){
     }
 
     # if a numerical variable, do some boxplotting
-    #if (dict$`Final data type`[dict$`Variable name` == var] == "numeric"){
-    if ((dict |> dplyr::filter(`Variable name` == var) |> dplyr::pull(`Final data type`)) == "numeric"){
+    #if (dict$data_type[dict$variable_name == var] == "numeric"){
+    if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "numeric"){
       num_var <- names(df_for_bar)[1]
       group_vars <- names(df_for_bar)[-1]
       
