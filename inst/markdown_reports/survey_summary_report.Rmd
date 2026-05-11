@@ -843,6 +843,8 @@ if (params$verbose){
 
 ## Substantive reporting starts here
 
+
+
 Subsequent sectioning & content is as coded in the data dictionary document.
 
 ```{r}
@@ -854,6 +856,192 @@ Note that, for categorical variables, percentages on plots are suppressed if
 
 - they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and
 - if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
+
+
+
+# Missingness
+
+A short summary of section-by-section complete missingness.
+
+- Here missing means NA or any of the -999, -888, -777 codes
+- A section missing means that all questions in that section have no substantive response.
+
+
+```{r}
+
+
+# ------------------------------------------------------------------
+# Section-level non-response summary
+# A response is missing if it is NA OR one of the sentinel codes
+# ------------------------------------------------------------------
+
+missing_codes <- c(-999, -888, -777)
+
+# Map sections to variables (excluding Grouping variables)
+sec_vars <-
+  validation_df |>
+  dplyr::filter(
+    !is.na(report_sec),
+    report_sec != "Grouping variables"
+  ) |>
+  dplyr::arrange(report_sec, report_sec_ord) |>
+  dplyr::summarise(
+    vars = list(variable),
+    .by = report_sec
+  )
+
+data_miss_flags <- data
+n_resp <- nrow(data)
+
+# ---- Base section-level flags: all_missing_sec_i ----
+for (i in seq_len(nrow(sec_vars))) {
+  
+  v_all <- sec_vars$vars[[i]]
+  v_present <- v_all[v_all %in% names(data)]
+  nm <- paste0("all_missing_sec_", i)
+  
+  if (length(v_present) == 0) {
+    # Section exists conceptually but has no variables in data
+    data_miss_flags[[nm]] <- rep(FALSE, n_resp)
+    next
+  }
+  
+  m <- as.matrix(
+    as.data.frame(
+      lapply(
+        data[v_present],
+        function(x) is.na(x) | (x %in% missing_codes)
+      )
+    )
+  )
+  
+  data_miss_flags[[nm]] <- rowSums(!m) == 0
+}
+
+# ---- Cumulative flags: all_missing_sec_i_on (ALWAYS created) ----
+sec_cols <- paste0("all_missing_sec_", seq_len(nrow(sec_vars)))
+
+for (i in seq_along(sec_cols)) {
+  data_miss_flags[[paste0(sec_cols[i], "_on")]] <-
+    Reduce(`&`, data_miss_flags[sec_cols[i:length(sec_cols)]])
+}
+
+
+
+# ---- Aggregate summary ----
+
+miss_summary <-
+  data_miss_flags |>
+  dplyr::summarise(
+    dplyr::across(
+      dplyr::matches("^all_missing_sec_\\d+$"),
+      ~ sum(.x),
+      .names = "{.col}"
+    ),
+    dplyr::across(
+      dplyr::matches("^all_missing_sec_\\d+_on$"),
+      ~ sum(.x),
+      .names = "{.col}"
+    )
+  ) |>
+  tidyr::pivot_longer(
+    tidyselect::everything(),
+    names_to = "key",
+    values_to = "num"
+  ) |>
+  dplyr::mutate(
+    type = dplyr::if_else(
+      grepl("_on$", key),
+      "This section and after",
+      "This section only"
+    ),
+    sec_index = readr::parse_number(key),
+    sec = sec_vars$report_sec[sec_index],
+    prop = num / n_resp
+  )
+
+```
+
+```{r}
+
+# ---- Table ----
+
+
+miss_table <-
+  miss_summary |>
+  dplyr::select(sec, type, num, prop) |>
+  tidyr::pivot_wider(
+    names_from = type,
+    values_from = c(num, prop)
+  )
+
+
+
+miss_table |>
+  dplyr::mutate(
+    `This section only – Proportion`
+      = formatC(`prop_This section only`, digits = 3, format = "f"),
+    `This section and after – Proportion`
+      = formatC(`prop_This section and after`, digits = 3, format = "f")
+  ) |>
+  dplyr::select(
+    Section = sec,
+    `This section – N` = `num_This section only`,
+    `This section – Proportion` = `This section only – Proportion`,
+    `This section and after – N` = `num_This section and after`,
+    `This section and after – Proportion` = `This section and after – Proportion`
+  ) |>
+  dplyr::bind_rows(
+    tibble::tibble(
+      Section = "Total",
+      `This section – N` = n_resp,
+      `This section – Proportion` = "--",
+      `This section and after – N` = n_resp,
+      `This section and after – Proportion` = "--"
+    )
+  ) |>
+  kable_narrow()
+```
+
+```{r fig.height=6, fig.width=8}
+
+# ---- Plot ----
+
+
+miss_summary |>
+  ggplot2::ggplot(
+    ggplot2::aes(
+      x = sec,
+      y = prop,
+      colour = type,
+      group = type
+    )
+  ) +
+  ggplot2::geom_point() +
+  ggplot2::geom_line() +
+  ggplot2::labs(
+    x = NULL,
+    y = "Proportion of respondents",
+    colour = NULL,
+    title = "Section-level complete non-response"
+  ) +
+  OMESurvey::theme_OME() +
+  ggplot2::theme(
+    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+    legend.position = "right",
+    legend.direction = "vertical"
+  ) +
+  ggplot2::scale_colour_discrete(
+    labels = c(
+      "This section only" = "This section\nonly",
+      "This section and after" = "This section\nand after"
+    )
+  )
+
+```
+
+
+
 
 ```{r}
 emit_reactable <- function(df, ...) {
@@ -1103,7 +1291,7 @@ for(sec in sections){
         n_cat <- nlevels(df_plot[[1]])
         fill_label_width <-
           if (n_cat <= 5) 20 else max(8, floor(100 / n_cat))
-
+        
         res <- OMESurvey::summary_plot_stacked_bar(
           df_plot,
           labels_vec,
@@ -1339,10 +1527,46 @@ for(sec in sections){
     
     # if a text variable, just list some and be done with it (i.e. no plots etc)
     if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "text"){
-      cat("Here are the responses and the corresponding grouping variables. Note that there are ",
-          dim(df_for_bar)[1],
-          " responses. \n\n")
-    
+      
+      
+      missing_codes <- c("-999", "-888", "-777")
+      
+      is_missing_text <- function(x) {
+        is.na(x) | x %in% missing_codes
+      }
+      
+      
+      x <- df_for_bar[[var]]
+      
+      miss_tbl <-
+        tibble::tibble(value = x) |>
+        dplyr::filter(is_missing_text(value)) |>
+        dplyr::mutate(
+          value = dplyr::coalesce(value, "NA")
+        ) |>
+        dplyr::count(value, name = "Frequency") |>
+        dplyr::arrange(dplyr::desc(Frequency))
+      
+      if (nrow(miss_tbl) > 0) {
+        miss_tbl |>
+          kable_narrow(
+            caption = "Missing / non-response values"
+          ) |>
+          as.character() |>
+          cat()
+      }
+      
+      
+      df_for_bar <-
+        df_for_bar |>
+        dplyr::filter(!is_missing_text(.data[[var]]))
+      
+      cat("Here are the responses (missing/non-response values excluded) and the grouping variables. There are ",
+          nrow(df_for_bar),
+          " responses here, from ",
+          nrow(data),
+          " responses overall. \n\n")
+      
       # set up and print an interactive table of responses
       col_width <- setNames(list(reactable::colDef(width = 400)), names(df_for_bar)[1])
       
