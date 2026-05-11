@@ -489,11 +489,13 @@ Now a loop doing the coercion and validating of all the variables to be summaris
 # helper to build a single validation row
 make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
                                 allowed_specified, allowed,
-                                n_missing, n_invalid, invalid_freq,
+                                n_missing, n_non_allowed, non_allowed_freq,
                                 report_sec, report_sec_ord, item_label,
                                 condition = NA_character_, n_fail_cond = NA_integer_,
                                 n_meet_cond = NA_integer_,
-                                n_meet_cond_missing = NA_integer_) {
+                                n_meet_cond_missing = NA_integer_,
+                                n_meet_cond_non_allowed = NA_integer_
+                                ) {
 
   list(
     variable = var,
@@ -503,12 +505,13 @@ make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
     allowed_specified = allowed_specified,
     allowed = if (allowed_specified) paste(allowed, collapse = ";") else NA_character_,
     n_missing = n_missing,
-    n_invalid = n_invalid,
-    invalid_freq = list(invalid_freq),
+    n_non_allowed = n_non_allowed,
+    non_allowed_freq = list(non_allowed_freq),
     condition = condition,
     n_fail_cond = n_fail_cond,
     n_meet_cond = n_meet_cond,
     n_meet_cond_missing = n_meet_cond_missing,
+    n_meet_cond_non_allowed = n_meet_cond_non_allowed,
     report_sec = report_sec,
     report_sec_ord = report_sec_ord,
     item_statement = item_label
@@ -543,12 +546,17 @@ for (i in seq_len(nrow(dict))) {
   
   data[[var]] <- coerce_col(raw, dtype, levels = allowed)
   
+  non_allowed_mask <- rep(FALSE, nrow(data))
+  
   ## parse and evaluate condition (if present) so we can record it and count failures
   cond_str <- if ("condition" %in% names(dict)) dict$condition[i] else NA_character_
   cond_expr <- NULL
+  cond_mask <- NULL
+  
   n_fail_cond <- NA_integer_
   n_meet_cond <- NA_integer_
   n_meet_cond_missing <- NA_integer_
+  n_meet_cond_non_allowed <- NA_integer_
   
   if (!is.na(cond_str) && nzchar(cond_str)) {
     cond_expr <- tryCatch(
@@ -571,19 +579,19 @@ for (i in seq_len(nrow(dict))) {
       
       # if evaluation produced a logical vector of the right length, count condition failures/meetings and missing-under-condition
       if (!is.null(cond_mask) && is.logical(cond_mask) && length(cond_mask) == nrow(data)) {
-        # count rows that explicitly fail/meet the condition (FALSE), ignoring NA condition results
+        
+        # count rows that explicitly fail/meet the condition
         n_fail_cond <- sum(!cond_mask & !is.na(cond_mask))
         n_meet_cond <- sum(cond_mask & !is.na(cond_mask))
-        # count rows that pass the condition (TRUE) but have NA for the variable
-        # use na.rm in sum to ignore NA produced by the logical &; cond_mask TRUE & is.na(data[[var]]) yields NA where cond_mask is NA
-        n_meet_cond_missing <- sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+        
       } else {
         if (!is.null(cond_mask)) {
-          cat("\n**Condition for variable", var, "did not evaluate to a logical vector of length", nrow(data), ". n_fail_cond, n_meet_cond & n_meet_cond_missing set to NA.**\n\n", sep = " ")
+          cat("\n**Condition for variable", var, "did not evaluate to a logical vector of length", nrow(data), ". n_fail_cond, n_meet_cond,  n_meet_cond_missing & n_meet_cond_non_allowed set to NA.**\n\n", sep = " ")
         }
         n_fail_cond <- NA_integer_
         n_meet_cond <- NA_integer_
         n_meet_cond_missing <- NA_integer_
+        n_meet_cond_non_allowed <- NA_integer_
       }
     }
   }
@@ -593,18 +601,31 @@ for (i in seq_len(nrow(dict))) {
   #  factors processing...
   if (grepl("^factor-", stringr::str_squish(dtype), ignore.case = TRUE)) {
     
-    # they use allowed; compute invalid_mask from raw_chr
+    # they use allowed; compute non_allowed_mask from raw_chr
     if (allowed_specified) {
-      invalid_mask <- !is.na(raw_chr) & !(raw_chr %in% allowed)
+      non_allowed_mask <- !is.na(raw_chr) & !(raw_chr %in% allowed)
     } else {
-      invalid_mask <- rep(FALSE, length(raw_chr))
+      non_allowed_mask <- rep(FALSE, length(raw_chr))
     }
     
-    # then make a frequency table of invalid responses
-    invalid_freq <- list()
-    if (any(invalid_mask, na.rm = TRUE)) {
-      invalid_freq$values <-
-        sort(table(raw_chr[invalid_mask]), decreasing = TRUE)
+    
+    if (!is.null(cond_mask) &&
+        is.logical(cond_mask) &&
+        length(cond_mask) == nrow(data)) {
+      
+      n_meet_cond_missing <-
+        sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+      
+      n_meet_cond_non_allowed <-
+        sum(cond_mask & non_allowed_mask, na.rm = TRUE)
+      
+    }
+    
+    # then make a frequency table of non-allowed responses
+    non_allowed_freq <- list()
+    if (any(non_allowed_mask, na.rm = TRUE)) {
+      non_allowed_freq$values <-
+        sort(table(raw_chr[non_allowed_mask]), decreasing = TRUE)
     }
     
 
@@ -635,15 +656,16 @@ for (i in seq_len(nrow(dict))) {
       allowed_specified = allowed_specified,
       allowed = allowed,
       n_missing = sum(is.na(data[[var]])),
-      n_invalid = sum(invalid_mask, na.rm = TRUE),
-      invalid_freq = invalid_freq,
+      n_non_allowed = sum(non_allowed_mask, na.rm = TRUE),
+      non_allowed_freq = non_allowed_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
       condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
       n_fail_cond = n_fail_cond,
       n_meet_cond = n_meet_cond,
-      n_meet_cond_missing = n_meet_cond_missing
+      n_meet_cond_missing = n_meet_cond_missing,
+      n_meet_cond_non_allowed = n_meet_cond_non_allowed
     )
     
     # numeric use allowed too
@@ -656,8 +678,8 @@ for (i in seq_len(nrow(dict))) {
     
     out_of_range <- NULL
     
-    # invalid if original non-missing but coercion produced NA (bad numeric text)
-    invalid_coercion <- !is.na(raw_chr) & is.na(coerced)
+    # non-allowed if original non-missing but coercion produced NA (bad numeric text)
+    non_allowed_coercion <- !is.na(raw_chr) & is.na(coerced)
     
     if (!is.null(range_spec)) {
       # compute out-of-range mask for non-NA coerced values
@@ -675,7 +697,26 @@ for (i in seq_len(nrow(dict))) {
         }
       out_of_range <- (!is.na(coerced)) & (out_low | out_high)
       
-      #invalid_mask <- invalid_coercion | out_of_range
+      
+      non_allowed_mask <-
+        non_allowed_coercion |
+        (!is.null(out_of_range) & out_of_range)
+      
+      
+      if (!is.null(cond_mask) &&
+          is.logical(cond_mask) &&
+          length(cond_mask) == nrow(data)) {
+        
+        n_meet_cond_missing <-
+          sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+        
+        n_meet_cond_non_allowed <-
+          sum(cond_mask & non_allowed_mask, na.rm = TRUE)
+        
+      }
+      
+      
+      #non_allowed_mask <- non_allowed_coercion | out_of_range
       allowed_specified_num <- TRUE
       allowed_for_report <- paste0(
         if (range_spec$lower_incl) "[" else "(",
@@ -684,30 +725,35 @@ for (i in seq_len(nrow(dict))) {
       )
       
     } else {
-      # no numeric range specified: only mark coercion failures as invalid
-      #invalid_mask <- invalid_coercion
+      # no numeric range specified: only mark coercion failures as non-allowed
+      #non_allowed_mask <- non_allowed_coercion
       allowed_specified_num <- FALSE
       allowed_for_report <- NULL
     }
     
     
-    invalid_freq_numeric <- list()
+    non_allowed_mask <-
+      non_allowed_coercion |
+      (!is.null(out_of_range) & out_of_range)
+    
+    
+    non_allowed_freq_numeric <- list()
     
     ## (1) Raw values that failed numeric coercion
-    if (any(invalid_coercion, na.rm = TRUE)) {
-      invalid_freq_numeric$coercion <-
-        sort(table(raw_chr[invalid_coercion]), decreasing = TRUE)
+    if (any(non_allowed_coercion, na.rm = TRUE)) {
+      non_allowed_freq_numeric$coercion <-
+        sort(table(raw_chr[non_allowed_coercion]), decreasing = TRUE)
     }
     
     ## (2) Numeric values outside the allowed range
     if (!is.null(out_of_range) && any(out_of_range, na.rm = TRUE)) {
-      invalid_freq_numeric$out_of_range <-
+      non_allowed_freq_numeric$out_of_range <-
         sort(table(coerced[out_of_range]), decreasing = TRUE)
     }
     
     ## Normalise empty case
-    if (length(invalid_freq_numeric) == 0) {
-      invalid_freq_numeric <- list()
+    if (length(non_allowed_freq_numeric) == 0) {
+      non_allowed_freq_numeric <- list()
     }
     
     
@@ -717,17 +763,18 @@ for (i in seq_len(nrow(dict))) {
       allowed_specified = allowed_specified_num,
       allowed = if (allowed_specified_num) allowed_for_report else NULL,
       n_missing = sum(is.na(coerced)),
-      n_invalid =
-        sum(invalid_coercion, na.rm = TRUE) +
+      n_non_allowed =
+        sum(non_allowed_coercion, na.rm = TRUE) +
         if (!is.null(out_of_range)) sum(out_of_range, na.rm = TRUE) else 0L,
-      invalid_freq = invalid_freq_numeric,
+      non_allowed_freq = non_allowed_freq_numeric,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
       condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
       n_fail_cond = n_fail_cond,
       n_meet_cond = n_meet_cond,
-      n_meet_cond_missing = n_meet_cond_missing
+      n_meet_cond_missing = n_meet_cond_missing,
+      n_meet_cond_non_allowed = n_meet_cond_non_allowed
     )
     
     
@@ -738,15 +785,16 @@ for (i in seq_len(nrow(dict))) {
       allowed_specified = FALSE,
       allowed = NULL,
       n_missing = sum(is.na(data[[var]])),
-      n_invalid = NA_integer_, # sum(invalid_mask, na.rm = TRUE),
-      invalid_freq = list(),
+      n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+      non_allowed_freq = list(),
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
       condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
       n_fail_cond = n_fail_cond,
       n_meet_cond = n_meet_cond,
-      n_meet_cond_missing = n_meet_cond_missing
+      n_meet_cond_missing = n_meet_cond_missing,
+      n_meet_cond_non_allowed = n_meet_cond_non_allowed
     )
     
   } else if (grepl("date", dtype, ignore.case = TRUE)) {
@@ -756,34 +804,71 @@ for (i in seq_len(nrow(dict))) {
       allowed_specified = FALSE,
       allowed = NULL,
       n_missing = sum(is.na(data[[var]])),
-      n_invalid = NA_integer_, # sum(invalid_mask, na.rm = TRUE),
-      invalid_freq = list(),
+      n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+      non_allowed_freq = list(),
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
       condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
       n_fail_cond = n_fail_cond,
       n_meet_cond = n_meet_cond,
-      n_meet_cond_missing = n_meet_cond_missing
+      n_meet_cond_missing = n_meet_cond_missing,
+      n_meet_cond_non_allowed = n_meet_cond_non_allowed
     )
     
   } else {
     # character / fallback
+    
+    
+    non_allowed_mask <-
+      !is.na(data[[var]]) &
+      data[[var]] %in% c("-999", "-888", "-777")
+    
+    if (!is.null(cond_mask) &&
+        is.logical(cond_mask) &&
+        length(cond_mask) == nrow(data)) {
+      
+      n_meet_cond_missing <-
+        sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+      
+      n_meet_cond_non_allowed <-
+        sum(cond_mask & non_allowed_mask, na.rm = TRUE)
+    }
+    
+    
+    # Build non-allowed frequency table for text variables (conditional)
+    non_allowed_freq <- list()
+    
+    if (!is.null(cond_mask) &&
+        is.logical(cond_mask) &&
+        length(cond_mask) == nrow(data)) {
+      
+      bad_vals <- data[[var]][cond_mask & non_allowed_mask]
+      
+      if (length(bad_vals) > 0) {
+        non_allowed_freq$values <-
+          sort(table(bad_vals), decreasing = TRUE)
+      }
+    }
+    
+    
+    
     validation_log[[var]] <- make_validation_row(
       var = var,
       type = "character",
       allowed_specified = FALSE,
       allowed = NULL,
       n_missing = sum(is.na(data[[var]])),
-      n_invalid = NA_integer_, # sum(invalid_mask, na.rm = TRUE),
-      invalid_freq = list(),
+      n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+      non_allowed_freq = non_allowed_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
       condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
       n_fail_cond = n_fail_cond,
       n_meet_cond = n_meet_cond,
-      n_meet_cond_missing = n_meet_cond_missing
+      n_meet_cond_missing = n_meet_cond_missing,
+      n_meet_cond_non_allowed = n_meet_cond_non_allowed
     )
   }
   
@@ -798,10 +883,10 @@ for (i in seq_len(nrow(dict))) {
   # message(">>> Size of whole validation_log so far")
   # print(object.size(validation_log), units = "MB")
   
-  # message(">>> invalid_mask length and summary")
-  # mask <- validation_log[[var]]$invalid_mask
+  # message(">>> non_allowed_mask length and summary")
+  # mask <- validation_log[[var]]$non_allowed_mask
   # if (is.null(mask)) {
-  #   message("invalid_mask is NULL")
+  #   message("non_allowed_mask is NULL")
   # } else {
   #   message("length(mask) = ", length(mask))
   #   message("sum(mask) = ", sum(mask, na.rm = TRUE))
@@ -857,13 +942,17 @@ Note that, for categorical variables, percentages on plots are suppressed if
 - they are less than `r percCutHoriz`% on the horizontal-barred beginning-of-section summary plots and
 - if less than `r percCutVert`% on the vertical-barred question and question-by-variable plots that are within subsections.
 
+Also
+
+- “Missing” counts include only truly missing (NA) values.
+- “Non‑allowed” counts include values that are present but violate data dictionary or type constraints.
 
 
 # Missingness
 
 A short summary of section-by-section complete missingness.
 
-- Here missing means NA or any of the -999, -888, -777 codes
+- In this section, missing includes explicit non‑response codes (−999/−888/−777). In the validation summaries, these are treated separately (as "non-allowed").
 - A section missing means that all questions in that section have no substantive response.
 
 
@@ -1437,8 +1526,10 @@ for(sec in sections){
     
     # validation summary and descriptive stats
     v |>
-      dplyr::select(variable, type, colo, allowed_specified, allowed, n_invalid,
-                    n_missing, condition, n_fail_cond, n_meet_cond, n_meet_cond_missing) |>
+      dplyr::select(variable, type, colo,
+                    allowed_specified, allowed, n_non_allowed, n_missing,
+                    condition, n_fail_cond, n_meet_cond,
+                    n_meet_cond_non_allowed, n_meet_cond_missing) |>
       kable_narrow() |>
       as.character() |>
       cat()
@@ -1451,9 +1542,9 @@ for(sec in sections){
     }
     
     
-    # Print invalid values (frequency‑sorted, scrollable)
+    # Print non-allowed values
     
-    inv <- validation_log[[var]]$invalid_freq[[1]]
+    inv <- validation_log[[var]]$non_allowed_freq[[1]]
     
     #print(str(inv))
     
@@ -1494,7 +1585,7 @@ for(sec in sections){
     }
     
     
-    if (v$type == "numeric" && !is.null(range_spec) && v$n_invalid > 0) {
+    if (v$type == "numeric" && !is.null(range_spec) && v$n_non_allowed > 0) {
       cat(
         "\n*Note:* Numeric values outside the allowed range specified in the data ",
         "dictionary are included in the summaries above ",
@@ -1528,38 +1619,8 @@ for(sec in sections){
     # if a text variable, just list some and be done with it (i.e. no plots etc)
     if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "text"){
       
+  
       
-      missing_codes <- c("-999", "-888", "-777")
-      
-      is_missing_text <- function(x) {
-        is.na(x) | x %in% missing_codes
-      }
-      
-      
-      x <- df_for_bar[[var]]
-      
-      miss_tbl <-
-        tibble::tibble(value = x) |>
-        dplyr::filter(is_missing_text(value)) |>
-        dplyr::mutate(
-          value = dplyr::coalesce(value, "NA")
-        ) |>
-        dplyr::count(value, name = "Frequency") |>
-        dplyr::arrange(dplyr::desc(Frequency))
-      
-      if (nrow(miss_tbl) > 0) {
-        miss_tbl |>
-          kable_narrow(
-            caption = "Missing / non-response values"
-          ) |>
-          as.character() |>
-          cat()
-      }
-      
-      
-      df_for_bar <-
-        df_for_bar |>
-        dplyr::filter(!is_missing_text(.data[[var]]))
       
       cat("Here are the responses (missing/non-response values excluded) and the grouping variables. There are ",
           nrow(df_for_bar),
