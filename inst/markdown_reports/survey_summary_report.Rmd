@@ -1523,7 +1523,8 @@ for(sec in sections){
         "\n\n",
         sep = "")
     
-    
+    cat("\n\n Validation info and details of non-allowed responses \n\n")
+
     # validation summary and descriptive stats
     v |>
       dplyr::select(variable, type, colo,
@@ -1609,6 +1610,8 @@ for(sec in sections){
         as.character() |>
         cat()
     } else {
+      cat("\n\n Now restrict attention to values filtered by the condition, if applicable. \n\n")
+      
       skimr::skim(df_for_bar[[var]]) |>
         kable_narrow() |>
         as.character() |>
@@ -1622,11 +1625,11 @@ for(sec in sections){
   
       
       
-      cat("Here are the responses (missing/non-response values excluded) and the grouping variables. There are ",
+      cat("Here are the responses and the grouping variables. There are ",
           nrow(df_for_bar),
           " responses here, from ",
           nrow(data),
-          " responses overall. \n\n")
+          " responses overall. \n\n (Missing/non-response values excluded)\n\n")
       
       # set up and print an interactive table of responses
       col_width <- setNames(list(reactable::colDef(width = 400)), names(df_for_bar)[1])
