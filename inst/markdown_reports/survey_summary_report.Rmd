@@ -58,8 +58,8 @@ data <- switch(data_ext,
   "csv"  = readr::read_csv(params$data_path, show_col_types = FALSE),
   "xlsx" = readxl::read_excel(params$data_path, guess_max = 1e6),
   "xls"  = readxl::read_excel(params$data_path, guess_max = 1e6),
-  stop("Unsupported file type: ", ext)
-) # if changing see also file type checking in render_survey_summary()
+  stop("Unsupported data file type: ", ext)
+) # if changing see also file type checking in render_survey_summary() function
 
 
 dict <- readxl::read_excel(params$dict_path,
@@ -1063,7 +1063,7 @@ for(sec in sections){
                             dplyr::select(type, allowed_specified, allowed) |>
                             dplyr::distinct() |>
                             nrow()) != 1
-      ) { # could use inferred factor values here (for establishment characteristics, for example)?
+      ) {
     cat("\n\n No section summary plot \n\n", sep = "")
   } else {
     
@@ -1082,7 +1082,7 @@ for(sec in sections){
     
     # determine section type
     sec_type <- vars_in_sec$type[[1]]
-    sec_type |> print()
+    #sec_type |> print()
     
     # compute dynamic height: 2 inches + 0.5 inch per variable
     fig_h <- (2 + 0.5 * length(vars))
@@ -1100,6 +1100,10 @@ for(sec in sections){
         order_values <- (vars_in_sec |> dplyr::pull(order_values) |> utils::head(1))[[1]]
         
         # factor section summary plot
+        n_cat <- nlevels(df_plot[[1]])
+        fill_label_width <-
+          if (n_cat <= 5) 20 else max(8, floor(100 / n_cat))
+
         res <- OMESurvey::summary_plot_stacked_bar(
           df_plot,
           labels_vec,
@@ -1107,7 +1111,8 @@ for(sec in sections){
           colo = colo,
           order_values = order_values,
           titleText = title_text,
-          NA_label = "Missing/Non-allowed"
+          NA_label = "Missing / Non-allowed",
+          fill_label_width = fill_label_width
         ) |>
           OMESurvey::centre_legend_below(rel_heights = c(1, 0.8 / fig_h))
         
@@ -1118,7 +1123,7 @@ for(sec in sections){
           df_plot,
           labels_vec = labels_vec,
           titleText = title_text
-        )
+          )
         
       } else {
         res <- NULL
@@ -1217,6 +1222,24 @@ for(sec in sections){
     }
     
     
+    # Tweak df_for_bar to mask out-of-range numeric values to NA for plotting/summaries only
+    if (v$type == "numeric" && !is.null(range_spec)) {
+      df_for_bar <- df_for_bar |>
+        dplyr::mutate(
+          "{var}" := dplyr::if_else(
+            !is.na(.data[[var]]) &
+              (
+                (.data[[var]] <  range_spec$lower) |
+                  (.data[[var]] >  range_spec$upper) |
+                  (!range_spec$lower_incl & .data[[var]] == range_spec$lower) |
+                  (!range_spec$upper_incl & .data[[var]] == range_spec$upper)
+              ),
+            NA_real_,
+            .data[[var]]
+          )
+        )
+    }
+
     
     cat("\n\n## ",
         stringr::str_replace_all(label, "[\r\n]+", " ") |> stringr::str_squish(),
@@ -1231,6 +1254,9 @@ for(sec in sections){
       kable_narrow() |>
       as.character() |>
       cat()
+    
+    
+    
     
     if(v$type == "factor" && !v$allowed_specified){
       cat('\n<span style="color: red;">**WARNING:**</span> no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n')
@@ -1280,6 +1306,16 @@ for(sec in sections){
     }
     
     
+    if (v$type == "numeric" && !is.null(range_spec) && v$n_invalid > 0) {
+      cat(
+        "\n*Note:* Numeric values outside the allowed range specified in the data ",
+        "dictionary are included in the summaries above ",
+        "but excluded from the summary statistics and plots below\n\n",
+        sep = ""
+      )
+    }
+    
+    
     
     # a table of values for factors, otherwise a skim() of the data
     if (is.factor(df_for_bar[[var]])) {
@@ -1287,7 +1323,7 @@ for(sec in sections){
         janitor::adorn_totals() |>
         janitor::adorn_pct_formatting(digits = 1) |>
         as.data.frame() |>
-        rename_NA_first_col("Missing/Non-allowed") |>
+        rename_NA_first_col("Missing / Non-allowed") |>
         (\(x) kable_narrow(x,
                            col.names = c("\u00A0", names(x)[-1]),
                            caption = "Distribution of responses"))() |>
@@ -1474,7 +1510,7 @@ for(sec in sections){
           fillLabText  = NULL,
           propLabText  = NULL,
           titleText    = plot_title,
-          NA_label     = "Missing/Non-allowed"
+          NA_label     = "Missing / Non-allowed"
         )
       }
     }
