@@ -10,6 +10,13 @@ instead.
 plot_many_questions(...)
 ```
 
+## Arguments
+
+- ...:
+
+  Additional arguments passed to
+  [`summary_plot_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_stacked_bar.md).
+
 ## See also
 
 summary_plot_stacked_bar

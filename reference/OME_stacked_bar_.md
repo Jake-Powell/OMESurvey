@@ -192,11 +192,7 @@ Future/possible extensions include
 - edit show_counts argument to allow optional (m/n) formatting of labels
   (where m = \# non-missing values and n = \# values)
 
-- adding a count_scope = c("facet","global") argument so (n) labelling
-  groups over facets (seems unlikely to be very helpful?)
-
-- much deeper fiddling to let (n) labelling work with multi-column
-  faceting.
+- Letting (n) labelling work with faceting.
 
 ## Author
 
