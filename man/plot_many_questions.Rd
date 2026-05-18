@@ -6,6 +6,9 @@
 \usage{
 plot_many_questions(...)
 }
+\arguments{
+\item{...}{Additional arguments passed to \code{summary_plot_stacked_bar()}.}
+}
 \description{
 This function is deprecated.
 Use \code{\link{summary_plot_stacked_bar}} instead.

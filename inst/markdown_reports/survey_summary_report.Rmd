@@ -1577,9 +1577,26 @@ for(sec in sections){
     # validation summary and descriptive stats
     v |>
       dplyr::select(variable, type, colo,
-                    allowed_specified, allowed, n_non_allowed, n_missing,
-                    condition, n_fail_cond, n_meet_cond,
-                    n_meet_cond_non_allowed, n_meet_cond_missing) |>
+                    allowed) |>
+      kable_narrow() |>
+      as.character() |>
+      cat()
+
+    v |>
+      dplyr::select(`Allowed values specified?` = allowed_specified,
+                    `Non-allowed (n)` = n_non_allowed,
+                    `Missing (n)` = n_missing,
+                    `Branching condition` = condition,
+                    `Fail condition (n)` = n_fail_cond,
+                    `Meet condition (n)` =  n_meet_cond,
+                    `Meet condition & non-allowed (n)` = n_meet_cond_non_allowed,
+                    `Meet condition & missing (n)` = n_meet_cond_missing) |>
+      dplyr::mutate(dplyr::across(tidyselect::everything(), as.character)) |>
+      tidyr::pivot_longer(
+        everything(),
+        names_to = "Metric",
+        values_to = "Value"
+      ) |>
       kable_narrow() |>
       as.character() |>
       cat()

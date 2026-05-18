@@ -31,7 +31,7 @@ render_survey_summary(
 
 \item{dict_path, dict_sheet}{path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.}
 
-\item{output_dir}{(optional) directory to save the output file to. Defaults to current working directory. Ignored if \code{output_file} is not specified.}
+\item{output_dir}{(optional) directory to save the output file to. Defaults to current working directory.}
 
 \item{output_file}{name of output html file (needs to end with ".html", defaults to "\if{html}{\out{<name of data file>}}_summary.html")}
 
@@ -84,8 +84,8 @@ render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
   dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
-  output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
-  output_file = "y12_summary.html",
+  output_dir = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/",
+  output_file = "y12_pupil_survey_summary.html",
   output_title = "Y12 student survey summary",
   output_author = "D Sirl",
 )
@@ -95,8 +95,8 @@ render_survey_summary(
   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
   dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
   dict_sheet = "pupil_survey_Y12",
-  output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
-  output_file = "y12_summary.html",
+  output_dir = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/",
+  output_file = "y12_pupil_survey_summary.html",
   output_title = "Y12 student survey summary",
   output_author = "D Sirl",
   est_chars_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx",

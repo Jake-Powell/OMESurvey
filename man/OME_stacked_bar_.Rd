@@ -137,9 +137,7 @@ Future/possible extensions include
 \itemize{
 \item edit show_counts argument to allow optional (m/n) formatting of labels
 (where m = # non-missing values and n = # values)
-\item adding a count_scope = c("facet","global") argument so (n) labelling groups
-over facets (seems unlikely to be very helpful?)
-\item much deeper fiddling to let (n) labelling work with multi-column faceting.
+\item Letting (n) labelling work with faceting.
 }
 }
 \examples{

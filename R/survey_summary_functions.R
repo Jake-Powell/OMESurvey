@@ -44,8 +44,8 @@
 #'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
 #'   dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
 #'   dict_sheet = "pupil_survey_Y12",
-#'   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
-#'   output_file = "y12_summary.html",
+#'   output_dir = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/",
+#'   output_file = "y12_pupil_survey_summary.html",
 #'   output_title = "Y12 student survey summary",
 #'   output_author = "D Sirl",
 #' )
@@ -55,8 +55,8 @@
 #'   data_path = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/20251029-OME-Year-12-Student-Survey-2024-25-pseudonymised.xlsx",
 #'   dict_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME - Cohort Studies - SAG documents/20250507_data dictionary_master copy.xlsx",
 #'   dict_sheet = "pupil_survey_Y12",
-#'   output_dir = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/Documents/survey-first-analysis/",
-#'   output_file = "y12_summary.html",
+#'   output_dir = "C:/Users/pmzdjs/The University of Nottingham/OME - Higher Cohort - Documents/Advanced_years 12 & 13/4. Analysis/Student survey/Cycle 1 2024-25/",
+#'   output_file = "y12_pupil_survey_summary.html",
 #'   output_title = "Y12 student survey summary",
 #'   output_author = "D Sirl",
 #'   est_chars_path = "C:/Users/pmzdjs/OneDrive - The University of Nottingham/OME Research Data - Partner Establishment Characteristics/Partner Establishment Characteristics Pseudonymised Data/2026-01-29-partner_characteristics_june_2025_data.xlsx",
@@ -1811,3 +1811,84 @@ theme_OME <- function(base_size = 16) {
       )
     )
 }
+
+
+
+#' OME fill colour scale
+#'
+#' Convenience wrapper around \code{ggplot2::scale_fill_manual()} using
+#' the standard OME colour palette.
+#'
+#' @param type Character string specifying which palette to use.
+#' Passed to \code{get_OME_colours()}. Default is \code{"distinct"}.
+#' @param ... Additional arguments passed to \code{scale_fill_manual()}.
+#'
+#' @return A ggplot2 scale for fill colours.
+#' @export
+scale_fill_OME <- function(type = "distinct", ...) {
+  ggplot2::scale_fill_manual(
+    values = OMESurvey::get_OME_colours(type = type),
+    ...
+  )
+}
+
+
+
+#' OME fill colour scale
+#'
+#' Convenience wrapper around \code{ggplot2::scale_fill_manual()} using
+#' the standard OME colour palette.
+#'
+#' @param type Character string specifying which palette to use.
+#' Passed to \code{\link{get_OME_colours}}; see that function for available options.
+#' Default is \code{"distinct"}.
+#' @param ... Additional arguments passed to \code{scale_fill_manual()}.
+#'
+#' @return A ggplot2 scale for fill colours.
+#' @export
+scale_fill_OME <- function(type = "distinct", ...) {
+  ggplot2::discrete_scale(
+    aesthetics = "fill",
+    scale_name = "OME",
+    palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
+    ...
+  )
+}
+
+
+
+
+
+#' OME colour scale
+#'
+#' Convenience wrapper around \code{ggplot2::scale_colour_manual()} using
+#' the standard OME colour palette.
+#'
+#' @param type Character string specifying which palette to use.
+#' Passed to \code{\link{get_OME_colours}}; see that function for available options.
+#' Default is \code{"distinct"}.
+#' @param ... Additional arguments passed to \code{scale_colour_manual()}.
+#'
+#' @return A ggplot2 scale for colours.
+#' @export
+#' @examples
+#' # Scatterplot coloured by number of cylinders using OME palette
+#' ggplot(mtcars, aes(x = wt, y = mpg, colour = factor(cyl))) +
+#'   geom_point(size = 3) +
+#'   scale_colour_OME() +
+#'   theme_OME() +
+#'   labs(
+#'     x = "Weight",
+#'     y = "Miles per gallon",
+#'     colour = "Cylinders",
+#'     title = "Fuel efficiency vs weight, coloured by cylinders"
+#'   )
+scale_colour_OME <- function(type = "distinct", ...) {
+  ggplot2::discrete_scale(
+    aesthetics = "colour",
+    scale_name = "OME",
+    palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
+    ...
+  )
+}
+
