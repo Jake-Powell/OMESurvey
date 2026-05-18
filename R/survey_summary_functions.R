@@ -11,7 +11,7 @@
 #' @param data_path path to the survey data (assumed to be xls/xlsx/csv).
 #' @param dict_path,dict_sheet path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.
 #' @param output_file name of output html file (needs to end with ".html", defaults to "<name of data file>_summary.html")
-#' @param output_dir (optional) directory to save the output file to. Defaults to current working directory. Ignored if `output_file` is not specified.
+#' @param output_dir (optional) directory to save the output file to. Defaults to current working directory.
 #' @param output_title (optional) text string to use as title for html report output
 #' @param output_author (optional) text string to use as author for html report output
 #' @param output_date (optional) text string to use as date for html report output
@@ -276,9 +276,7 @@ render_survey_summary <- function(data_path,
 #' @note Future/possible extensions include
 #'   * edit show_counts argument to allow optional (m/n) formatting of labels
 #'       (where m = # non-missing values and n = # values)
-#'   * adding a count_scope = c("facet","global") argument so (n) labelling groups
-#'        over facets (seems unlikely to be very helpful?)
-#'   * much deeper fiddling to let (n) labelling work with multi-column faceting.
+#'   * Letting (n) labelling work with faceting.
 #'
 #' @param dat A data frame.
 #' @param response_var Bare column name giving the response categories (used for fill).
@@ -486,11 +484,9 @@ OME_stacked_bar_ = function(dat, response_var,
   has_facet <- length(unique(dat2$var_facet)) > 1
 
 
-  if (show_counts && has_facet && !(facet_layout %in% "1col")) {
-    warning(
-      "Faceting detected: secondary axis count labels may misalign.\n",
-      "Use `facet_layout = \"1col\"` for reliable display/alignment of the (n) counts."
-    )
+
+  if (show_counts && has_facet) {
+    warning("Faceting detected: count labels are not supported with facets; suppressing them.")
   }
 
 
@@ -618,7 +614,7 @@ OME_stacked_bar_ = function(dat, response_var,
   # --- Secondary axis labeller (counts) --------------------------------
 
 
-  if (exists("show_counts") && show_counts) {
+  if (exists("show_counts") && show_counts && !has_facet) {
 
     if (has_facet) {
       # Per facet counts
@@ -1059,6 +1055,7 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
 #' Use \code{\link{summary_plot_stacked_bar}} instead.
 #'
 #' @inheritParams summary_plot_stacked_bar
+#' @param ... Additional arguments passed to \code{summary_plot_stacked_bar()}.
 #' @seealso summary_plot_stacked_bar
 #' @export
 plot_many_questions <- function(...) {
