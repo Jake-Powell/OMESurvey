@@ -490,6 +490,7 @@ Now a loop doing the coercion and validating of all the variables to be summaris
 make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
                                 allowed_specified, allowed,
                                 n_missing, n_non_allowed, non_allowed_freq,
+                                fail_cond_freq,
                                 report_sec, report_sec_ord, item_label,
                                 condition = NA_character_, n_fail_cond = NA_integer_,
                                 n_meet_cond = NA_integer_,
@@ -507,6 +508,7 @@ make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
     n_missing = n_missing,
     n_non_allowed = n_non_allowed,
     non_allowed_freq = list(non_allowed_freq),
+    fail_cond_freq = list(fail_cond_freq),
     condition = condition,
     n_fail_cond = n_fail_cond,
     n_meet_cond = n_meet_cond,
@@ -547,6 +549,7 @@ for (i in seq_len(nrow(dict))) {
   data[[var]] <- coerce_col(raw, dtype, levels = allowed)
   
   non_allowed_mask <- rep(FALSE, nrow(data))
+  fail_cond_freq <- list()
   
   ## parse and evaluate condition (if present) so we can record it and count failures
   cond_str <- if ("condition" %in% names(dict)) dict$condition[i] else NA_character_
@@ -596,6 +599,16 @@ for (i in seq_len(nrow(dict))) {
     }
   }
   
+  # make fail_mask (for condition)  
+  fail_mask <- NULL
+  
+  if (!is.null(cond_mask) &&
+      is.logical(cond_mask) &&
+      length(cond_mask) == nrow(data)) {
+    
+    fail_mask <- !cond_mask & !is.na(cond_mask)
+  }
+  
   
   
   #  factors processing...
@@ -628,7 +641,19 @@ for (i in seq_len(nrow(dict))) {
         sort(table(raw_chr[non_allowed_mask]), decreasing = TRUE)
     }
     
-
+    
+    # frequency table where condition NOT met
+    if (!is.null(fail_mask)) {
+      
+      vals_fail <- raw_chr[fail_mask]
+      
+      if (length(vals_fail) > 0) {
+        fail_cond_freq$values <-
+          sort(table(vals_fail), decreasing = TRUE)
+      }
+    }
+    
+    
     
     # they also need to have colour scheme determined
     # and, for neg-pos ones, levels noted to use for ordering questions in section-level overall plots
@@ -658,6 +683,7 @@ for (i in seq_len(nrow(dict))) {
       n_missing = sum(is.na(data[[var]])),
       n_non_allowed = sum(non_allowed_mask, na.rm = TRUE),
       non_allowed_freq = non_allowed_freq,
+      fail_cond_freq = fail_cond_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -757,6 +783,20 @@ for (i in seq_len(nrow(dict))) {
     }
     
     
+    # frequency table where condition NOT met
+    fail_cond_freq <- list()
+    
+    if (!is.null(fail_mask)) {
+      
+      vals_fail <- raw_chr[fail_mask]
+      
+      if (length(vals_fail) > 0) {
+        fail_cond_freq$values <-
+          sort(table(vals_fail), decreasing = TRUE)
+      }
+    }
+    
+    
     validation_log[[var]] <- make_validation_row(
       var = var,
       type = "numeric",
@@ -767,6 +807,7 @@ for (i in seq_len(nrow(dict))) {
         sum(non_allowed_coercion, na.rm = TRUE) +
         if (!is.null(out_of_range)) sum(out_of_range, na.rm = TRUE) else 0L,
       non_allowed_freq = non_allowed_freq_numeric,
+      fail_cond_freq = fail_cond_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -786,7 +827,8 @@ for (i in seq_len(nrow(dict))) {
       allowed = NULL,
       n_missing = sum(is.na(data[[var]])),
       n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
-      non_allowed_freq = list(),
+      non_allowed_freq = non_allowed_freq,
+      fail_cond_freq = fail_cond_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -806,6 +848,7 @@ for (i in seq_len(nrow(dict))) {
       n_missing = sum(is.na(data[[var]])),
       n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
       non_allowed_freq = list(),
+      fail_cond_freq = fail_cond_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -852,6 +895,19 @@ for (i in seq_len(nrow(dict))) {
     }
     
     
+    # frequency table where condition NOT met
+    fail_cond_freq <- list()
+    
+    if (!is.null(fail_mask)) {
+      
+      vals_fail <- data[[var]][fail_mask]
+      
+      if (length(vals_fail) > 0) {
+        fail_cond_freq$values <-
+          sort(table(vals_fail), decreasing = TRUE)
+      }
+    }
+    
     
     validation_log[[var]] <- make_validation_row(
       var = var,
@@ -861,6 +917,7 @@ for (i in seq_len(nrow(dict))) {
       n_missing = sum(is.na(data[[var]])),
       n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
       non_allowed_freq = non_allowed_freq,
+      fail_cond_freq = fail_cond_freq,
       report_sec = report_sec,
       report_sec_ord = report_sec_ord,
       item_label = item_label,
@@ -1239,14 +1296,6 @@ parse_report_sec <- function(sec) {
 ```{r results='asis', echo=FALSE, message=TRUE, fig.width=10, fig.height=6}
 
 # order sections and ensure variables are ordered within each section
-# sections <-
-#   validation_df |>
-#   dplyr::pull(report_sec) |>
-#   as.character() |>
-#   na.omit() |>
-#   unique() |>
-#   sort()
-
 
 sections_raw <-
   validation_df |>
@@ -1290,7 +1339,7 @@ if (nrow(dups) > 0) {
     ),
     collapse = "\n"
   )
-
+  
   stop(
     "Duplicate section codes (file keys) found:\n\n",
     msg,
@@ -1315,18 +1364,18 @@ for(sec in sections){
   # catch potential file-naming issues
   sec_file_key <- sec_meta$sec_file_key[match(sec, sec_meta$sec_display)]
   if (is.na(sec_file_key)) stop("Could not determine file key for section: ", sec)
-
-
+  
+  
   vars_in_sec <-
     validation_df |>
     dplyr::filter(report_sec == sec) |>
     dplyr::arrange(report_sec_ord)
-
+  
   vars <- vars_in_sec$variable
   #vars |> print()
   
   if(length(vars) == 0) next
-
+  
   # vars_in_sec |>
   #   dplyr::select(type, allowed_specified, allowed) |> print()
   # 
@@ -1340,7 +1389,7 @@ for(sec in sections){
                             dplyr::select(type, allowed_specified, allowed) |>
                             dplyr::distinct() |>
                             nrow()) != 1
-      ) {
+  ) {
     cat("\n\n No section summary plot \n\n", sep = "")
   } else {
     
@@ -1400,7 +1449,7 @@ for(sec in sections){
           df_plot,
           labels_vec = labels_vec,
           titleText = title_text
-          )
+        )
         
       } else {
         res <- NULL
@@ -1444,25 +1493,25 @@ for(sec in sections){
     v <- vars_in_sec[i, ] # the current row of vars_in_sec, in turn from validation_df. So has
     var <- v$variable
     label <- ifelse(is.na(v$item_statement) || v$item_statement == "", var, v$item_statement)
-
-
+    
+    
     # select grouping variables for this report; excluding the variable itself if appropriate
     grouping_vars <-
       dict |>
       dplyr::filter(grouping_var == TRUE) |>
       dplyr::pull(variable_name) |>
       setdiff(var)   # ensure the target var is not duplicated
-
+    
     # ensure grouping_vars exist in data (safe select)
     grouping_vars <- grouping_vars[grouping_vars %in% names(data)]
-
-
+    
+    
     # extract condition for this variable
     cond <-
       dict |>
       dplyr::filter(variable_name == vars[i]) |>
       dplyr::pull(condition)
-
+    
     # parse condition safely with tryCatch and friendly error message
     cond_expr <- NULL
     if (!is.na(cond) && nzchar(cond)) {
@@ -1474,34 +1523,34 @@ for(sec in sections){
         }
       )
     }
-
-
-    # Build df for bar charts: variable of interest, then grouping vars.
+    
+    
+    # Build df for plotting: variable of interest, then grouping vars.
     # Respecting the condition if present
     if (length(grouping_vars) == 0) {
       if (!is.null(cond_expr)) {
-        df_for_bar <- data |>
+        df_for_plots <- data |>
           dplyr::filter(!!cond_expr) |>
           dplyr::select(dplyr::all_of(var))
       } else {
-        df_for_bar <- data |>
+        df_for_plots <- data |>
           dplyr::select(dplyr::all_of(var))
       }
     } else {
       if (!is.null(cond_expr)) {
-        df_for_bar <- data |>
+        df_for_plots <- data |>
           dplyr::filter(!!cond_expr) |>
           dplyr::select(dplyr::all_of(c(var, grouping_vars)))
       } else {
-        df_for_bar <- data |>
+        df_for_plots <- data |>
           dplyr::select(dplyr::all_of(c(var, grouping_vars)))
       }
     }
     
     
-    # Tweak df_for_bar to mask out-of-range numeric values to NA for plotting/summaries only
+    # Tweak df_for_plots to mask out-of-range numeric values to NA for plotting/summaries only
     if (v$type == "numeric" && !is.null(range_spec)) {
-      df_for_bar <- df_for_bar |>
+      df_for_plots <- df_for_plots |>
         dplyr::mutate(
           "{var}" := dplyr::if_else(
             !is.na(.data[[var]]) &
@@ -1516,15 +1565,15 @@ for(sec in sections){
           )
         )
     }
-
+    
     
     cat("\n\n## ",
         stringr::str_replace_all(label, "[\r\n]+", " ") |> stringr::str_squish(),
         "\n\n",
         sep = "")
     
-    cat("\n\n Validation info and details of non-allowed responses \n\n")
-
+    cat("\n\n **Validation info and details of non-allowed responses (all responses)** \n\n")
+    
     # validation summary and descriptive stats
     v |>
       dplyr::select(variable, type, colo,
@@ -1546,6 +1595,7 @@ for(sec in sections){
     # Print non-allowed values
     
     inv <- validation_log[[var]]$non_allowed_freq[[1]]
+    inv_fail <- validation_log[[var]]$fail_cond_freq[[1]]
     
     #print(str(inv))
     
@@ -1559,7 +1609,7 @@ for(sec in sections){
       df_inv <- freq_to_df(inv$values, value_col = "Raw value")
       if (!is.null(df_inv)) {
         df_inv |>
-          kable_narrow(caption = paste0("Non-allowed responses")) |>
+          kable_narrow(caption = paste0("Non-allowed responses (condition satisfied)")) |>
           as.character() |>
           cat()
       }
@@ -1586,6 +1636,22 @@ for(sec in sections){
     }
     
     
+    
+    # print responses where condition NOT satisfied
+    if (!is.null(inv_fail) && length(inv_fail) > 0) {
+      
+      df_fail <- freq_to_df(inv_fail$values, value_col = "Raw value")
+      
+      if (!is.null(df_fail)) {
+        df_fail |>
+          kable_narrow(caption = "Responses where condition NOT satisfied") |>
+          as.character() |>
+          cat()
+      }
+    }
+    
+    
+    
     if (v$type == "numeric" && !is.null(range_spec) && v$n_non_allowed > 0) {
       cat(
         "\n*Note:* Numeric values outside the allowed range specified in the data ",
@@ -1597,9 +1663,17 @@ for(sec in sections){
     
     
     
+    
+    if (!is.null(cond_expr)) {
+      cat("\n\n **Summaries and plots below are restricted to cases where the condition is satisfied.** \n\n")
+    }
+    
+    
+    
+    
     # a table of values for factors, otherwise a skim() of the data
-    if (is.factor(df_for_bar[[var]])) {
-      tab <- janitor::tabyl(df_for_bar[[var]]) |>
+    if (is.factor(df_for_plots[[var]])) {
+      tab <- janitor::tabyl(df_for_plots[[var]]) |>
         janitor::adorn_totals() |>
         janitor::adorn_pct_formatting(digits = 1) |>
         as.data.frame() |>
@@ -1610,9 +1684,8 @@ for(sec in sections){
         as.character() |>
         cat()
     } else {
-      cat("\n\n Now restrict attention to values filtered by the condition, if applicable. \n\n")
       
-      skimr::skim(df_for_bar[[var]]) |>
+      skimr::skim(df_for_plots[[var]]) |>
         kable_narrow() |>
         as.character() |>
         cat()
@@ -1622,21 +1695,21 @@ for(sec in sections){
     # if a text variable, just list some and be done with it (i.e. no plots etc)
     if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "text"){
       
-  
+      
       
       
       cat("Here are the responses and the grouping variables. There are ",
-          nrow(df_for_bar),
+          nrow(df_for_plots),
           " responses here, from ",
           nrow(data),
-          " responses overall. \n\n (Missing/non-response values excluded)\n\n")
+          " responses overall. \n\n")
       
       # set up and print an interactive table of responses
-      col_width <- setNames(list(reactable::colDef(width = 400)), names(df_for_bar)[1])
+      col_width <- setNames(list(reactable::colDef(width = 400)), names(df_for_plots)[1])
       
       child <- paste0(
         "```{r echo=FALSE, progress=FALSE}\n",
-        "reactable::reactable(df_for_bar, wrap=TRUE, columns = col_width, showPageSizeOptions = TRUE, pageSizeOptions = c(10,25,50,100), defaultPageSize = 10, fullWidth = FALSE, striped=TRUE, compact=TRUE, filterable=TRUE, resizable = TRUE)\n",
+        "reactable::reactable(df_for_plots, wrap=TRUE, columns = col_width, showPageSizeOptions = TRUE, pageSizeOptions = c(10,25,50,100), defaultPageSize = 10, fullWidth = FALSE, striped=TRUE, compact=TRUE, filterable=TRUE, resizable = TRUE)\n",
         "```\n"
       )
       out <- knitr::knit_child(text = child, envir = environment(), quiet=TRUE)
@@ -1644,23 +1717,23 @@ for(sec in sections){
       
       next
     }
-
+    
     # if a numerical variable, do some boxplotting
     #if (dict$data_type[dict$variable_name == var] == "numeric"){
     if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "numeric"){
-      num_var <- names(df_for_bar)[1]
-      group_vars <- names(df_for_bar)[-1]
+      num_var <- names(df_for_plots)[1]
+      group_vars <- names(df_for_plots)[-1]
       
       #first the overall plot
-      df_for_bar$overall_group <- factor("Overall")
+      df_for_plots$overall_group <- factor("Overall")
       p_overall <- OMESurvey::OME_boxplot_(
-        data = df_for_bar,
+        data = df_for_plots,
         value_var = num_var,
         group_var = "overall_group",
         omitGroupLabels = TRUE,
         title = label
       )
-
+      
       # ensure fig path exists
       fig_dir <- knitr::opts_chunk$get("fig.path")
       if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
@@ -1684,12 +1757,12 @@ for(sec in sections){
         g <- group_vars[j]
         # j is the numeric index, g is the name
         p <- OMESurvey::OME_boxplot_(
-          data = df_for_bar,
+          data = df_for_plots,
           value_var = num_var,
           group_var = g,
           title = paste0(label, "\n by ", g)
         )
-
+        
         
         # create a unique, stable filename (using section/variable/plot indices)
         fname <- file.path(fig_dir, sprintf("sec_%s_var_%02d_plot%02d.png",
@@ -1698,7 +1771,7 @@ for(sec in sections){
         
         # save the plot at the computed size
         ggplot2::ggsave(fname, plot = p,
-                        width = 8, height = 1 + 0.3*nlevels(df_for_bar[[g]]),
+                        width = 8, height = 1 + 0.3*nlevels(df_for_plots[[g]]),
                         units = "in", dpi = 300)
         
         # emit markdown image tag (works inside results='asis')
@@ -1708,8 +1781,8 @@ for(sec in sections){
       
       next
     }
-
-
+    
+    
     colo_arg <- v$colo[[1]]
     
     # wrapper function for OME_stacked_bar() that just forwards all arguments; but wraps in a try/catch (with nice error-printing)
@@ -1733,7 +1806,7 @@ for(sec in sections){
           ...
         )
         
-
+        
         # if ggplot save and add to document
         if (inherits(res, "ggplot")) {
           fig_dir <- knitr::opts_chunk$get("fig.path")
@@ -1770,13 +1843,13 @@ for(sec in sections){
     }
     
     # use this wrapper function with data and grouping vars as appropriate
-    nvars <- ncol(df_for_bar)
+    nvars <- ncol(df_for_plots)
     
     if (is.null(nvars) || nvars == 0) {
       cat("No bar plots to do here.")
     } else {
       for (j in seq.int(1, nvars)) {
-        sub_df <- df_for_bar[, unique(c(1, j)), drop = FALSE]
+        sub_df <- df_for_plots[, unique(c(1, j)), drop = FALSE]
         #print(names(sub_df))
         
         plot_title <-
@@ -1788,7 +1861,7 @@ for(sec in sections){
         # Build symbols for tidy-eval
         resp_name <- names(sub_df)[1]
         grp_name  <- if (ncol(sub_df) > 1) names(sub_df)[2] else NULL
-
+        
         OME_stacked_bar_tryCatch(
           dat          = sub_df,
           response_var = resp_name,
