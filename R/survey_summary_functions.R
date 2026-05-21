@@ -1814,55 +1814,14 @@ theme_OME <- function(base_size = 16) {
 
 
 
-#' OME fill colour scale
+
+
+
+#' OME colour scales for ggplot2
 #'
-#' Convenience wrapper around \code{ggplot2::scale_fill_manual()} using
-#' the standard OME colour palette.
-#'
-#' @param type Character string specifying which palette to use.
-#' Passed to \code{get_OME_colours()}. Default is \code{"distinct"}.
-#' @param ... Additional arguments passed to \code{scale_fill_manual()}.
-#'
-#' @return A ggplot2 scale for fill colours.
-#' @export
-scale_fill_OME <- function(type = "distinct", ...) {
-  ggplot2::scale_fill_manual(
-    values = OMESurvey::get_OME_colours(type = type),
-    ...
-  )
-}
-
-
-
-#' OME fill colour scale
-#'
-#' Convenience wrapper around \code{ggplot2::scale_fill_manual()} using
-#' the standard OME colour palette.
-#'
-#' @param type Character string specifying which palette to use.
-#' Passed to \code{\link{get_OME_colours}}; see that function for available options.
-#' Default is \code{"distinct"}.
-#' @param ... Additional arguments passed to \code{scale_fill_manual()}.
-#'
-#' @return A ggplot2 scale for fill colours.
-#' @export
-scale_fill_OME <- function(type = "distinct", ...) {
-  ggplot2::discrete_scale(
-    aesthetics = "fill",
-    scale_name = "OME",
-    palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
-    ...
-  )
-}
-
-
-
-
-
-#' OME colour scale
-#'
-#' Convenience wrapper around \code{ggplot2::scale_colour_manual()} using
-#' the standard OME colour palette.
+#' Provides OME palettes for use with colour and fill aesthetics.
+#' (Convenience wrapper around \code{ggplot2::scale_colour_manual()} using
+#' the standard OME colour palette.)
 #'
 #' @param type Character string specifying which palette to use.
 #' Passed to \code{\link{get_OME_colours}}; see that function for available options.
@@ -1870,19 +1829,52 @@ scale_fill_OME <- function(type = "distinct", ...) {
 #' @param ... Additional arguments passed to \code{scale_colour_manual()}.
 #'
 #' @return A ggplot2 scale for colours.
-#' @export
 #' @examples
-#' # Scatterplot coloured by number of cylinders using OME palette
-#' ggplot(mtcars, aes(x = wt, y = mpg, colour = factor(cyl))) +
-#'   geom_point(size = 3) +
+#' library(ggplot2)
+#' library(dplyr)
+#'
+#' # Examples here use scale_colour_OME(); scale_fill_OME() is exactly analagous.
+#'
+#' # Prepare example dataset with labelled factors
+#' mtcars_small <- mtcars |>
+#'   mutate(
+#'     am = factor(am, levels = c(0, 1), labels = c("Auto", "Man")),
+#'     cyl = factor(cyl, levels = c(4, 6, 8))
+#'   )
+#'
+#' # Scatterplot using OME palette & theme for colour aesthetic
+#' # (Not OME-like data and illustration would be better if the factor had more than two levels,
+#' #  but hopefully illustrates use of scale_colour_OME() when colouring by a factor)
+#' mtcars_small |>
+#'   ggplot(aes(x = wt, y = mpg, colour = am)) +
+#'   geom_point() +
 #'   scale_colour_OME() +
 #'   theme_OME() +
 #'   labs(
-#'     x = "Weight",
+#'     x = "Weight (/1,000 lb)",
+#'     y = "Miles per gallon",
+#'     colour = "Transmission",
+#'     title = "Fuel efficiency vs weight,\ncoloured by transmission type"
+#'   )
+#'
+#' # Use a sequential palette for an ordered factor ("divergent" is available too)
+#' mtcars_small |>
+#'   ggplot(aes(x = wt, y = mpg, colour = cyl)) +
+#'   geom_point() +
+#'   scale_colour_OME(type = "sequential") +
+#'   theme_OME() +
+#'   labs(
+#'     x = "Weight (/1,000 lb)",
 #'     y = "Miles per gallon",
 #'     colour = "Cylinders",
-#'     title = "Fuel efficiency vs weight, coloured by cylinders"
+#'     title = "Fuel efficiency vs weight,\ncoloured by cylinders"
 #'   )
+#' @name scale_colour_OME
+NULL
+
+
+#' @rdname scale_colour_OME
+#' @export
 scale_colour_OME <- function(type = "distinct", ...) {
   ggplot2::discrete_scale(
     aesthetics = "colour",
@@ -1892,3 +1884,14 @@ scale_colour_OME <- function(type = "distinct", ...) {
   )
 }
 
+
+#' @rdname scale_colour_OME
+#' @export
+scale_fill_OME <- function(type = "distinct", ...) {
+  ggplot2::discrete_scale(
+    aesthetics = "fill",
+    scale_name = "OME",
+    palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
+    ...
+  )
+}
