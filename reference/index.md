@@ -93,7 +93,6 @@
   : Relabel NA values in the first column of a data frame
 - [`theme_OME()`](https://jake-powell.github.io/OMESurvey/reference/theme_OME.md)
   : ROME ggplot2 theme
-- [`scale_fill_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_fill_OME.md)
-  : OME fill colour scale
 - [`scale_colour_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
-  : OME colour scale
+  [`scale_fill_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
+  : OME colour scales for ggplot2
