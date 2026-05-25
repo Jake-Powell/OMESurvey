@@ -57,8 +57,9 @@ report_notice <- function(..., level = c("WARNING", "NOTE")) {
     "\n\n"
   )
 }
+```
 
-
+```{r results='asis'}
 if (!requireNamespace("cowplot", quietly=TRUE)){
   cat(report_notice("Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit a bit from  install.packages('cowplot') and then re-running."))
 }
@@ -69,7 +70,7 @@ Load data and dictionary
 
 (The file paths and tab name of the data dictionary to use will be passed in as parameters when this gets turned into a function.)
 
-```{r}
+```{r results='asis'}
 data_ext <- tolower(tools::file_ext(params$data_path))
 
 data <- switch(data_ext,
@@ -146,17 +147,47 @@ if (nrow(dup_vars) > 0) {
 
 Check variables present in one source and not the other. We probably expect some variables to appear here, but not too many. Here is the opportunity to check that the variable names the do appear here are ok.
 
-First, those in the dictionary but not in the data:
-```{r}
-base::setdiff(dict |> dplyr::pull(variable_name),
-              data |> base::names())
+```{r results='asis'}
+vars_not_in_data <- base::setdiff(
+  dict |> dplyr::pull(variable_name),
+  names(data)
+)
+
+if (length(vars_not_in_data) > 0) {
+  cat(report_notice(
+    "Variables in the dictionary but not found in the data: ",
+    paste(vars_not_in_data, collapse = ", "),
+    level = "NOTE"
+  ))
+} else {
+  cat(report_notice(
+    "All variables specified in the dictionary are present in the data.",
+    level = "NOTE"
+  ))
+}
 ```
 
-And those in the data but not the dictionary:
-```{r}
-base::setdiff(data |> base::names(),
-              dict |> dplyr::pull(variable_name))
+
+```{r results='asis'}
+vars_not_in_dict <- base::setdiff(
+  names(data),
+  dict |> dplyr::pull(variable_name)
+)
+
+if (length(vars_not_in_dict) > 0) {
+  cat(report_notice(
+    "Variables in the data but not found in the dictionary: ",
+    paste(vars_not_in_dict, collapse = ", "),
+    level = "NOTE"
+  ))
+} else {
+  cat(report_notice(
+    "All variables in the data are accounted for in the dictionary.",
+    level = "NOTE"
+  ))
+}
 ```
+
 
 Filter the dictionary to keep only variables which are assigned a section (i.e. that we want to include in the summary)
 ```{r}
@@ -329,6 +360,12 @@ if (is.null(params$est_chars_path)){
         # Construct the factor labels
         final_labels <- paste0(label_prefix, seq_len(label_max_num))
         
+        final_labels[c(1, label_max_num)] <-
+          paste0(
+            final_labels[c(1, label_max_num)],
+            c("\n(Lowest)", "\n(Highest)")
+          )
+        
         # Add dictionary row with correct allowed values (semicolon-delimited)
         dict <- dict |>
           tibble::add_row(
@@ -336,7 +373,7 @@ if (is.null(params$est_chars_path)){
             data_type = "factor-lo-hi",
             allowed_values = paste(final_labels, collapse = ";"),
             item_statement = est_char_statements[i],
-            report_sec = "A: Grouping variables",
+            report_sec = "Grouping variables",
             grouping_var = "T",
             condition = NA
           )
@@ -589,7 +626,10 @@ make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
 
 validation_log <- vector("list", nrow(dict))
 names(validation_log) <- dict$variable_name
+```
 
+Main validation/coercion
+```{r results='asis'}
 for (i in seq_len(nrow(dict))) {
   var <- dict$variable_name[i]
   
@@ -619,17 +659,24 @@ for (i in seq_len(nrow(dict))) {
   non_allowed_mask <- rep(FALSE, nrow(data))
   fail_cond_freq <- list()
   
-  ## parse and evaluate condition (if present) so we can record it and count failures
+  ## parse and evaluate condition (if present)
+  
   cond_str <- if ("condition" %in% names(dict)) dict$condition[i] else NA_character_
   cond_expr <- NULL
   cond_mask <- NULL
+  
+  has_valid_cond <- FALSE
+  meet_mask <- NULL
+  fail_mask <- NULL
   
   n_fail_cond <- NA_integer_
   n_meet_cond <- NA_integer_
   n_meet_cond_missing <- NA_integer_
   n_meet_cond_non_allowed <- NA_integer_
   
+  # parse and evaluate condition
   if (!is.na(cond_str) && nzchar(cond_str)) {
+    
     cond_expr <- tryCatch(
       rlang::parse_expr(cond_str),
       error = function(e) {
@@ -639,7 +686,7 @@ for (i in seq_len(nrow(dict))) {
     )
     
     if (!is.null(cond_expr)) {
-      # evaluate condition in the context of the data frame; protect against errors
+      
       cond_mask <- tryCatch(
         rlang::eval_tidy(cond_expr, data = data),
         error = function(e) {
@@ -647,41 +694,73 @@ for (i in seq_len(nrow(dict))) {
           NULL
         }
       )
-      
-      # if evaluation produced a logical vector of the right length, count condition failures/meetings and missing-under-condition
-      if (!is.null(cond_mask) && is.logical(cond_mask) && length(cond_mask) == nrow(data)) {
-        
-        # count rows that explicitly fail/meet the condition
-        n_fail_cond <- sum(!cond_mask & !is.na(cond_mask))
-        n_meet_cond <- sum(cond_mask & !is.na(cond_mask))
-        
-      } else {
-        if (!is.null(cond_mask)) {
-          cat(report_notice(
-            "Condition for variable ", var,
-            " did not evaluate to a logical vector of length ",
-            nrow(data),
-            ". Condition will be ignored."
-          ))
-        }
-        n_fail_cond <- NA_integer_
-        n_meet_cond <- NA_integer_
-        n_meet_cond_missing <- NA_integer_
-        n_meet_cond_non_allowed <- NA_integer_
-      }
     }
+    
+    
+# cat("\nDEBUG: cond_mask class:", paste(class(cond_mask), collapse = ", "), "\n")
+# cat("DEBUG: cond_mask typeof:", typeof(cond_mask), "\n")
+# cat("DEBUG: length(cond_mask):", length(cond_mask), "\n")
+# cat("DEBUG: nrow(data):", nrow(data), "\n")
+# cat("DEBUG: first 10 values of cond_mask:\n")
+# print(head(cond_mask, 10))
+# 
+# cat("DEBUG: is.logical(cond_mask):", is.logical(cond_mask), "\n")
+# 
+# 
+# cat("DEBUG: is.logical(as.logical(cond_mask)):", is.logical(as.logical(cond_mask)), "\n")
+# cat("DEBUG: first 10 values after coercion:\n")
+# print(head(as.logical(cond_mask), 10))
+# 
+# 
+# cat("DEBUG: table(cond_mask, useNA='always'):\n")
+# print(table(cond_mask, useNA = "always"))
+
+
   }
   
-  # make fail_mask (for condition)  
-  fail_mask <- NULL
-  
+  # validate mask and define meet/fail masks
   if (!is.null(cond_mask) &&
       is.logical(cond_mask) &&
       length(cond_mask) == nrow(data)) {
     
-    fail_mask <- !cond_mask & !is.na(cond_mask)
+    has_valid_cond <- TRUE
+    # meet_mask TRUE iff cond_mask is TRUE, but use %in% so NA becomes FALSE
+    # fail_mask is the complement (TRUE when cond_mask is FALSE or NA)
+    meet_mask <- cond_mask %in% TRUE
+    fail_mask <- !meet_mask
+    
+  } else {
+    
+    if (!is.null(cond_mask)) {
+      cat(report_notice(
+        "Condition for variable ", var,
+        " did not evaluate to a logical vector of length ",
+        nrow(data),
+        ". Condition will be ignored."
+      ))
+    }
+    
+    has_valid_cond <- FALSE
+    meet_mask <- rep(TRUE, nrow(data))
+    fail_mask <- NULL
   }
   
+  # cat("DEBUG: has_valid_cond:", has_valid_cond, "\n")
+  # 
+  # cat("DEBUG: first 10 values of meet_mask:\n")
+  # print(head(meet_mask, 10))
+  # cat("DEBUG: first 10 values of fail_mask:\n")
+  # print(head(fail_mask, 10))
+
+  
+  # compute condition counts
+  if (has_valid_cond) {
+    n_meet_cond <- sum(meet_mask)
+    n_fail_cond <- sum(fail_mask)
+  } else {
+    n_meet_cond <- NA_integer_
+    n_fail_cond <- NA_integer_
+  }
   
   
   #  factors processing...
@@ -695,23 +774,28 @@ for (i in seq_len(nrow(dict))) {
     }
     
     
-    if (!is.null(cond_mask) &&
-        is.logical(cond_mask) &&
-        length(cond_mask) == nrow(data)) {
+    if (has_valid_cond) {
       
       n_meet_cond_missing <-
-        sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+        sum(meet_mask & is.na(raw))
       
       n_meet_cond_non_allowed <-
-        sum(cond_mask & non_allowed_mask, na.rm = TRUE)
+        sum(meet_mask & non_allowed_mask)
       
     }
     
     # then make a frequency table of non-allowed responses
     non_allowed_freq <- list()
-    if (any(non_allowed_mask, na.rm = TRUE)) {
+    
+    bad_vals <- if (has_valid_cond) {
+      raw_chr[meet_mask & non_allowed_mask]
+    } else {
+      raw_chr[non_allowed_mask]
+    }
+    
+    if (length(bad_vals) > 0) {
       non_allowed_freq$values <-
-        sort(table(raw_chr[non_allowed_mask]), decreasing = TRUE)
+        sort(table(bad_vals), decreasing = TRUE)
     }
     
     
@@ -732,19 +816,25 @@ for (i in seq_len(nrow(dict))) {
     # and, for neg-pos ones, levels noted to use for ordering questions in section-level overall plots
     switch(stringr::str_remove(dtype, "^factor-"),
            `neg-pos`={
-             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="contrast"))
+             colo <- OMESurvey::get_OME_colours(length(allowed), type="contrast")
              order_values <- list(allowed[seq(from=ceiling(length(allowed)/2)+1, to=length(allowed))])
            },
            `lo-hi`={
-             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="complementary"))
+             colo <- OMESurvey::get_OME_colours(length(allowed), type="complementary")
              order_values <- list("mean(as.numeric())")
            },
            unordered={
-             colo <- list(OMESurvey::get_OME_colours(length(allowed), type="distinct"))
+             colo <- OMESurvey::get_OME_colours(length(allowed), type="distinct")
              order_values <- list(NA)
            },
            stop("Unknown factor type (in colour scheme determination)")
     )
+    
+    names(colo) <- allowed
+    colo <- list(colo)
+    
+    # cat("\nDEBUG FINAL COUNTS: meet =", n_meet_cond, " fail =", n_fail_cond, "\n")
+    
     
     validation_log[[var]] <- make_validation_row(
       var = var,
@@ -753,7 +843,7 @@ for (i in seq_len(nrow(dict))) {
       order_values = order_values,
       allowed_specified = allowed_specified,
       allowed = allowed,
-      n_missing = sum(is.na(data[[var]])),
+      n_missing = sum(is.na(raw)),
       n_non_allowed = sum(non_allowed_mask, na.rm = TRUE),
       non_allowed_freq = non_allowed_freq,
       fail_cond_freq = fail_cond_freq,
@@ -767,7 +857,7 @@ for (i in seq_len(nrow(dict))) {
       n_meet_cond_non_allowed = n_meet_cond_non_allowed
     )
     
-    # numeric use allowed too
+    # numeric processing
   } else if (grepl("^numeric$|double", dtype, ignore.case = TRUE)) {
     # detect a range spec like [0,100] or (0,100] or 0-100
     range_spec <- parse_allowed_range(allowed_raw)
@@ -802,15 +892,13 @@ for (i in seq_len(nrow(dict))) {
         (!is.null(out_of_range) & out_of_range)
       
       
-      if (!is.null(cond_mask) &&
-          is.logical(cond_mask) &&
-          length(cond_mask) == nrow(data)) {
+      if (has_valid_cond) {
         
         n_meet_cond_missing <-
-          sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
+          sum(meet_mask & is.na(raw))
         
         n_meet_cond_non_allowed <-
-          sum(cond_mask & non_allowed_mask, na.rm = TRUE)
+          sum(meet_mask & non_allowed_mask)
         
       }
       
@@ -841,13 +929,13 @@ for (i in seq_len(nrow(dict))) {
     ## (1) Raw values that failed numeric coercion
     if (any(non_allowed_coercion, na.rm = TRUE)) {
       non_allowed_freq_numeric$coercion <-
-        sort(table(raw_chr[non_allowed_coercion]), decreasing = TRUE)
+        sort(table(raw_chr[meet_mask & non_allowed_coercion]), decreasing = TRUE)
     }
     
     ## (2) Numeric values outside the allowed range
     if (!is.null(out_of_range) && any(out_of_range, na.rm = TRUE)) {
       non_allowed_freq_numeric$out_of_range <-
-        sort(table(coerced[out_of_range]), decreasing = TRUE)
+        sort(table(coerced[meet_mask & out_of_range]), decreasing = TRUE)
     }
     
     ## Normalise empty case
@@ -875,7 +963,7 @@ for (i in seq_len(nrow(dict))) {
       type = "numeric",
       allowed_specified = allowed_specified_num,
       allowed = if (allowed_specified_num) allowed_for_report else NULL,
-      n_missing = sum(is.na(coerced)),
+      n_missing = sum(is.na(raw)),
       n_non_allowed =
         sum(non_allowed_coercion, na.rm = TRUE) +
         if (!is.null(out_of_range)) sum(out_of_range, na.rm = TRUE) else 0L,
@@ -892,25 +980,25 @@ for (i in seq_len(nrow(dict))) {
     )
     
     
-  } else if (grepl("integer", dtype, ignore.case = TRUE)) {
-    validation_log[[var]] <- make_validation_row(
-      var = var,
-      type = "integer",
-      allowed_specified = FALSE,
-      allowed = NULL,
-      n_missing = sum(is.na(data[[var]])),
-      n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
-      non_allowed_freq = non_allowed_freq,
-      fail_cond_freq = fail_cond_freq,
-      report_sec = report_sec,
-      report_sec_ord = report_sec_ord,
-      item_label = item_label,
-      condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
-      n_fail_cond = n_fail_cond,
-      n_meet_cond = n_meet_cond,
-      n_meet_cond_missing = n_meet_cond_missing,
-      n_meet_cond_non_allowed = n_meet_cond_non_allowed
-    )
+  # } else if (grepl("integer", dtype, ignore.case = TRUE)) {
+  #   validation_log[[var]] <- make_validation_row(
+  #     var = var,
+  #     type = "integer",
+  #     allowed_specified = FALSE,
+  #     allowed = NULL,
+  #     n_missing = sum(is.na(raw)),
+  #     n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+  #     non_allowed_freq = non_allowed_freq,
+  #     fail_cond_freq = fail_cond_freq,
+  #     report_sec = report_sec,
+  #     report_sec_ord = report_sec_ord,
+  #     item_label = item_label,
+  #     condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+  #     n_fail_cond = n_fail_cond,
+  #     n_meet_cond = n_meet_cond,
+  #     n_meet_cond_missing = n_meet_cond_missing,
+  #     n_meet_cond_non_allowed = n_meet_cond_non_allowed
+  #   )
     
   } else if (grepl("date", dtype, ignore.case = TRUE)) {
     validation_log[[var]] <- make_validation_row(
@@ -918,7 +1006,7 @@ for (i in seq_len(nrow(dict))) {
       type = "date",
       allowed_specified = FALSE,
       allowed = NULL,
-      n_missing = sum(is.na(data[[var]])),
+      n_missing = sum(is.na(raw)),
       n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
       non_allowed_freq = list(),
       fail_cond_freq = fail_cond_freq,
@@ -944,25 +1032,17 @@ for (i in seq_len(nrow(dict))) {
       data[[var]] %in% nonresponse_codes
     
     # compute condition stats
-    if (!is.null(cond_mask) &&
-        is.logical(cond_mask) &&
-        length(cond_mask) == nrow(data)) {
-      
-      n_meet_cond_missing <-
-        sum(cond_mask & is.na(data[[var]]), na.rm = TRUE)
-      
-      n_meet_cond_non_allowed <-
-        sum(cond_mask & non_allowed_mask, na.rm = TRUE)
+    if (has_valid_cond) {
+      n_meet_cond_missing <- sum(meet_mask & is.na(raw))
+      n_meet_cond_non_allowed <- sum(meet_mask & non_allowed_mask)
     }
     
     
     # Build non-allowed frequency table for text variables (conditional)
     non_allowed_freq <- list()
     
-    if (!is.null(cond_mask) &&
-        is.logical(cond_mask) &&
-        length(cond_mask) == nrow(data)) {
-      bad_vals <- data[[var]][cond_mask & non_allowed_mask]
+    if (has_valid_cond) {
+      bad_vals <- data[[var]][meet_mask & non_allowed_mask]
     } else {
       bad_vals <- data[[var]][non_allowed_mask]
     }
@@ -992,7 +1072,7 @@ for (i in seq_len(nrow(dict))) {
       type = "character",
       allowed_specified = FALSE,
       allowed = NULL,
-      n_missing = sum(is.na(data[[var]])),
+      n_missing = sum(is.na(raw)),
       n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
       non_allowed_freq = non_allowed_freq,
       fail_cond_freq = fail_cond_freq,
@@ -1481,7 +1561,10 @@ for(sec in sections){
                             dplyr::distinct() |>
                             nrow()) != 1
   ) {
-    cat("\n\n No section summary plot \n\n", sep = "")
+    cat(report_notice(
+      "No section summary plot for this section.",
+      level = "NOTE"
+    ))
   } else {
     
     # prepare df and labels for plotting
@@ -1667,7 +1750,7 @@ for(sec in sections){
         "\n\n",
         sep = "")
     
-    cat("\n\n **Validation info and details of non-allowed responses (all responses)** \n\n")
+    cat("\n\n **Validation info and details of non-allowed responses** \n\n")
     
     # validation summary and descriptive stats
     v |>
@@ -1766,20 +1849,19 @@ for(sec in sections){
     
     
     
-    if (v$type == "numeric" && !is.null(range_spec) && v$n_non_allowed > 0) {
-      cat(
-        "\n*Note:* Numeric values outside the allowed range specified in the data ",
-        "dictionary are included in the summaries above ",
-        "but excluded from the summary statistics and plots below\n\n",
-        sep = ""
-      )
-    }
+    # if (v$type == "numeric" && !is.null(range_spec) && v$n_non_allowed > 0) {
+    #   cat(report_notice(
+    #     "Numeric values outside the allowed range are included in validation ",
+    #     "counts but excluded from summaries and plots.",
+    #     level = "NOTE"
+    #   ))
+    # }
     
     
     
     
     if (!is.null(cond_expr)) {
-      cat("\n\n **Summaries and plots below are restricted to cases where the condition is satisfied.** \n\n")
+      cat("\n\n **Summaries and plots below are restricted to allowed values where the condition is satisfied.** \n\n")
     }
     
     
@@ -1965,36 +2047,33 @@ for(sec in sections){
     # use this wrapper function with data and grouping vars as appropriate
     nvars <- ncol(df_for_plots)
     
-    if (is.null(nvars) || nvars == 0) {
-      cat("No bar plots to do here.")
-    } else {
-      for (j in seq.int(1, nvars)) {
-        sub_df <- df_for_plots[, unique(c(1, j)), drop = FALSE]
-        #print(names(sub_df))
-        
-        plot_title <-
-          paste0(
-            label,
-            if (j > 1) paste0("\n by ", names(sub_df)[2])
-          )
-        
-        # Build symbols for tidy-eval
-        resp_name <- names(sub_df)[1]
-        grp_name  <- if (ncol(sub_df) > 1) names(sub_df)[2] else NULL
-        
-        OME_stacked_bar_tryCatch(
-          dat          = sub_df,
-          response_var = resp_name,
-          group_var    = grp_name,
-          percCut      = percCutVert,
-          colo         = colo_arg,
-          fillLabText  = NULL,
-          propLabText  = NULL,
-          titleText    = plot_title,
-          NA_label     = "Missing / Non-allowed"
+    for (j in seq_len(nvars)) {
+      sub_df <- df_for_plots[, unique(c(1, j)), drop = FALSE]
+      #print(names(sub_df))
+      
+      plot_title <-
+        paste0(
+          label,
+          if (j > 1) paste0("\n by ", names(sub_df)[2])
         )
-      }
+      
+      # Build symbols for tidy-eval
+      resp_name <- names(sub_df)[1]
+      grp_name  <- if (ncol(sub_df) > 1) names(sub_df)[2] else NULL
+      
+      OME_stacked_bar_tryCatch(
+        dat          = sub_df,
+        response_var = resp_name,
+        group_var    = grp_name,
+        percCut      = percCutVert,
+        colo         = colo_arg,
+        fillLabText  = NULL,
+        propLabText  = NULL,
+        titleText    = plot_title,
+        NA_label     = "Missing / Non-allowed"
+      )
     }
+    
     
   } # end per-variable loop
 } # end section loop

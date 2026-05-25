@@ -578,7 +578,7 @@ OME_stacked_bar_ = function(dat, response_var,
     if (is.null(colo)){
       colo <- (dat2 |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
     }
-    colo = c("grey",colo)
+    colo = c(setNames("grey", NA_label), colo)
   }
 
   # print("here!")
