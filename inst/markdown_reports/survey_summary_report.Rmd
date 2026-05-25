@@ -41,8 +41,26 @@ kable_narrow <- function(x, ..., full_width = FALSE, position = "center") {
     kableExtra::kable_styling(full_width = full_width, position = position)
 }
 
+
+report_notice <- function(..., level = c("WARNING", "NOTE")) {
+  level <- match.arg(level)
+
+  colour <- switch(level,
+    WARNING = "red",
+    NOTE = "black"
+  )
+
+  paste0(
+    "\n\n",
+    '<span style="color: ', colour, ';"><b>', level, ':</b></span> ',
+    paste0(..., collapse = ""),
+    "\n\n"
+  )
+}
+
+
 if (!requireNamespace("cowplot", quietly=TRUE)){
-  message("Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit a bit from this: install.packages('cowplot').")
+  cat(report_notice("Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit a bit from  install.packages('cowplot') and then re-running."))
 }
 ```
 
@@ -56,14 +74,14 @@ data_ext <- tolower(tools::file_ext(params$data_path))
 
 data <- switch(data_ext,
   "csv"  = readr::read_csv(params$data_path, show_col_types = FALSE),
-  "xlsx" = readxl::read_excel(params$data_path, guess_max = 1e6),
-  "xls"  = readxl::read_excel(params$data_path, guess_max = 1e6),
+  "xlsx" = OMESurvey::safe_read_excel(params$data_path, guess_max = 1e6),
+  "xls"  = OMESurvey::safe_read_excel(params$data_path, guess_max = 1e6),
   stop("Unsupported data file type: ", ext)
 ) # if changing see also file type checking in render_survey_summary() function
 
 
-dict <- readxl::read_excel(params$dict_path,
-                   sheet = params$dict_sheet)
+dict <- OMESurvey::safe_read_excel(params$dict_path,
+                                   sheet = params$dict_sheet)
 
 # check that dictionary has required columns
 required_vars <- c("variable_name", "data_type", "allowed_values",
@@ -76,6 +94,53 @@ if (length(missing) > 0) {
        paste(missing, collapse = ", "),
        "\n Note that 'grouping_var' and 'condition' are required columns, though they may be otherwise empty.")
 }
+
+
+
+
+# check for duplicated variable names in dictionary
+dup_vars <- dict |>
+  dplyr::count(variable_name) |>
+  dplyr::filter(n > 1)
+
+if (nrow(dup_vars) > 0) {
+
+  # identify duplicates assigned to report sections
+  dup_with_sec <- dict |>
+    dplyr::filter(variable_name %in% dup_vars$variable_name & !is.na(report_sec)) |>
+    dplyr::distinct(variable_name)
+
+  # identify duplicates used as grouping variables
+  dup_grouping <- dict |>
+    dplyr::filter(variable_name %in% dup_vars$variable_name & grouping_var == TRUE) |>
+    dplyr::distinct(variable_name)
+
+  # always warn about duplicates
+  cat(report_notice(
+    "Duplicate variable_name entries found in the data dictionary: ",
+    paste(dup_vars$variable_name, collapse = ", ")
+  ))
+  
+  # error if duplicates affect report sections
+  if (nrow(dup_with_sec) > 0) {
+    stop(
+      "Duplicate variable_name entries assigned to report sections: ",
+      paste(dup_with_sec$variable_name, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # error if duplicates affect grouping variables
+  if (nrow(dup_grouping) > 0) {
+    stop(
+      "Duplicate variable_name entries used as grouping variables: ",
+      paste(dup_grouping$variable_name, collapse = ", "),
+      call. = FALSE
+    )
+  }
+}
+
+
 
 ```
 
@@ -119,19 +184,19 @@ vars_not_in_data <-
   base::setdiff(dict |> dplyr::pull(variable_name),
                 data |> base::names())
 
-if (length(vars_not_in_data) == 0) {
-  cat("**Good news**. All variables assigned a section in the data dictionary found in the data.")
-} else {
+if (length(vars_not_in_data) != 0) {
   #remove from dictionary
   dict <-
     dict |>
     dplyr::filter(!(variable_name %in% vars_not_in_data))
 
   # warn
-  cat('\n\n<span style="color: red;">**WARNING:**</span> The following variables are given a section in the dictionary but cannot be found in the data: \n\n')
-           #txt <- paste0(" - ", vars_not_in_data)
-  #cat(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
-  }
+  cat(report_notice(
+    "The following variables are given a section in the dictionary but cannot be found in the data: ",
+    paste(vars_not_in_data, collapse = ", "),
+    "They are being ignored for the rest of this report."
+  ))
+}
 ```
 
 ```{r}
@@ -145,7 +210,10 @@ Now deal with any grouping variables from the establishment characteristics. Loa
 
 ```{r results='asis'}
 if (is.null(params$est_chars_path)){
-  cat("**No establishment characteristics.**")
+  cat(report_notice(
+    "No establishment characteristics provided.",
+    level = "NOTE"
+  ))
 }else{
   # first check that the establishment ID variable EST_ID is present in the survey data
   num_EST_ID <- sum("EST_ID" == names(data))
@@ -155,7 +223,7 @@ if (is.null(params$est_chars_path)){
   
   # load establishment characteristics file
   est_chars <-
-    readxl::read_excel(
+    OMESurvey::safe_read_excel(
       params$est_chars_path,
       sheet = params$est_chars_sheet)
 
@@ -179,12 +247,11 @@ if (is.null(params$est_chars_path)){
     base::setdiff(est_char_vars,
                   est_chars |> base::names())
 
-  if (length(char_vars_not_in_data) == 0) {
-    cat("Good news: All establishment characteristics found in the establishment characteristics data.")
-  } else {
-    cat('\n\n<span style="color: red;">**WARNING:**</span> The following establishment characteristics are requested to be included as grouping variables but cannot be found in the establishment characteristics data: \n\n')
-    txt <- paste0(" - ", char_vars_not_in_data)
-    cat(paste0("```\n", paste(txt, collapse = "\n"), "\n```"))
+  if (length(char_vars_not_in_data) != 0) {
+    cat(report_notice(
+      "The following establishment characteristics are requested to be included as grouping variables but cannot be found in the establishment characteristics data: ",
+      paste(char_vars_not_in_data, collapse = ", ")
+    ))
   }
 
   # variables we will add to the dictionary
@@ -219,7 +286,7 @@ if (is.null(params$est_chars_path)){
       # first look up x-iles from the establishment characteristics spreadsheet
         if (!exists("est_stats")){
           est_stats <-
-            readxl::read_excel(
+            OMESurvey::safe_read_excel(
               params$est_chars_path,
               sheet = switch (params$est_chars_sheet,
                               partner_characteristics_sec = "stats_sec",
@@ -530,6 +597,7 @@ for (i in seq_len(nrow(dict))) {
   # message(">>> Starting variable: ", var)
   # flush.console()
 
+  tryCatch({
   
   dtype <- tolower(dict$data_type[i])
   allowed_raw <- dict$allowed_values[i]
@@ -565,7 +633,7 @@ for (i in seq_len(nrow(dict))) {
     cond_expr <- tryCatch(
       rlang::parse_expr(cond_str),
       error = function(e) {
-        cat("\n**Error parsing condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+        stop("\n**Error parsing condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
         NULL
       }
     )
@@ -575,7 +643,7 @@ for (i in seq_len(nrow(dict))) {
       cond_mask <- tryCatch(
         rlang::eval_tidy(cond_expr, data = data),
         error = function(e) {
-          cat("\n**Error evaluating condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+          stop("\n**Error evaluating condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
           NULL
         }
       )
@@ -589,7 +657,12 @@ for (i in seq_len(nrow(dict))) {
         
       } else {
         if (!is.null(cond_mask)) {
-          cat("\n**Condition for variable", var, "did not evaluate to a logical vector of length", nrow(data), ". n_fail_cond, n_meet_cond,  n_meet_cond_missing & n_meet_cond_non_allowed set to NA.**\n\n", sep = " ")
+          cat(report_notice(
+            "Condition for variable ", var,
+            " did not evaluate to a logical vector of length ",
+            nrow(data),
+            ". Condition will be ignored."
+          ))
         }
         n_fail_cond <- NA_integer_
         n_meet_cond <- NA_integer_
@@ -863,10 +936,14 @@ for (i in seq_len(nrow(dict))) {
     # character / fallback
     
     
+    
+    nonresponse_codes <- c("-999", "-888", "-777")
+    
     non_allowed_mask <-
       !is.na(data[[var]]) &
-      data[[var]] %in% c("-999", "-888", "-777")
+      data[[var]] %in% nonresponse_codes
     
+    # compute condition stats
     if (!is.null(cond_mask) &&
         is.logical(cond_mask) &&
         length(cond_mask) == nrow(data)) {
@@ -885,13 +962,14 @@ for (i in seq_len(nrow(dict))) {
     if (!is.null(cond_mask) &&
         is.logical(cond_mask) &&
         length(cond_mask) == nrow(data)) {
-      
       bad_vals <- data[[var]][cond_mask & non_allowed_mask]
-      
-      if (length(bad_vals) > 0) {
-        non_allowed_freq$values <-
-          sort(table(bad_vals), decreasing = TRUE)
-      }
+    } else {
+      bad_vals <- data[[var]][non_allowed_mask]
+    }
+    
+    if (length(bad_vals) > 0) {
+      non_allowed_freq$values <-
+        sort(table(bad_vals), decreasing = TRUE)
     }
     
     
@@ -951,6 +1029,19 @@ for (i in seq_len(nrow(dict))) {
   # }
   
   
+  }, error = function(e) {
+    
+    stop(
+      paste0(
+        "\nError while processing variable '", var, "':\n",
+        e$message
+      ),
+      call. = FALSE
+    )
+    
+  })
+
+
 }
 
 
@@ -1262,7 +1353,7 @@ parse_report_sec <- function(sec) {
 
   # General case:
   # Allow "A: Title" OR "A1: Title" where digit is 1-9
-  m <- stringr::str_match(s, "^([A-Z])([1-9])?:\\s*(.+)$")
+  m <- stringr::str_match(s, "^([A-Z])([1-9][0-9]?)?:\\s*(.+)$")
   if (!is.na(m[1, 1])) {
     letter <- m[1, 2]
     digit  <- if (!is.na(m[1, 3])) as.integer(m[1, 3]) else NA_integer_
@@ -1287,7 +1378,7 @@ parse_report_sec <- function(sec) {
     "Invalid report_sec: '", s, "'. Allowed forms are:\n",
     "  - 'Grouping variables'\n",
     "  - 'X: Section title' where X is A–Z\n",
-    "  - 'Xy: Section title' where X is A–Z and y is 1–9"
+    "  - 'Xy: Section title' where X is A–Z and y is an integer 1–99 (no leading zero)"
   )
 }
 
@@ -1480,7 +1571,9 @@ for(sec in sections){
       invisible(res)
       
     }, error = function(e) {
-      cat("\n**Error drawing section plot:** ", e$message, "\n\n", sep = "")
+      cat(report_notice(
+        "Error drawing section plot: ", e$message
+      ))
       invisible(NULL)
     })
   }
@@ -1518,7 +1611,9 @@ for(sec in sections){
       cond_expr <- tryCatch(
         rlang::parse_expr(cond),
         error = function(e) {
-          cat("\n**Error parsing filter condition:** ", e$message, "\n\n", sep = "")
+          cat(report_notice(
+            "Error parsing filter condition: ", e$message
+          ))
           NULL
         }
       )
@@ -1605,7 +1700,9 @@ for(sec in sections){
     
     
     if(v$type == "factor" && !v$allowed_specified){
-      cat('\n<span style="color: red;">**WARNING:**</span> no allowed_values specified in the dictionary for this variable. Levels were inferred from the data.\n\n')
+      cat(report_notice(
+        "No allowed_values specified in the dictionary for this variable. Levels were inferred from the data."
+      ))
     }
     
     
@@ -1714,12 +1811,16 @@ for(sec in sections){
       
       
       
+      # Treat sentinel values as missing and drop them
+      missing_codes_chr <- c("-999", "-888", "-777")
+      
+      df_for_plots <- df_for_plots |>
+        dplyr::filter(!(.data[[var]] %in% missing_codes_chr))
+      
       
       cat("Here are the responses and the grouping variables. There are ",
           nrow(df_for_plots),
-          " responses here, from ",
-          nrow(data),
-          " responses overall. \n\n")
+          " responses here, excluding the -999 etc sentinel codes. \n\n")
       
       # set up and print an interactive table of responses
       col_width <- setNames(list(reactable::colDef(width = 400)), names(df_for_plots)[1])
@@ -1854,7 +1955,9 @@ for(sec in sections){
         #print(sys.calls())
         #NULL
         
-        cat("\n**Error drawing variable plot:** ", e$message, "\n\n", sep = "")
+        cat(report_notice(
+          "Error drawing variable plot: ", e$message
+        ))
         invisible(NULL)
       })
     }

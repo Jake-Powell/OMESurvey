@@ -1,3 +1,63 @@
+
+
+#' Safely read Excel files, including when open or locked
+#'
+#' A wrapper around \code{readxl::read_excel()} that attempts to read an Excel
+#' file directly, and if that fails (e.g. because the file is open or locked in
+#' Excel on Windows), falls back to copying the file to a temporary location and
+#' reading from the copy.
+#'
+#' This improves robustness in workflows where Excel files may be open during
+#' execution, such as interactive data preparation or reporting pipelines.
+#'
+#' @param path A character string giving the path to the Excel file.
+#' @param sheet Sheet to read from. Passed to \code{readxl::read_excel()}.
+#' @param ... Additional arguments passed to \code{readxl::read_excel()}.
+#'
+#' @return A tibble containing the data read from the Excel file.
+#'
+#' @details
+#' On some systems (notably Windows), Excel may lock files in a way that prevents
+#' them being read by other processes. This function attempts a direct read first,
+#' and only falls back to copying the file if that fails.
+#'
+#' If both the direct read and the copy fail, an error is thrown.
+#'
+#' @examples
+#' \dontrun{
+#' # Read normally
+#' df <- safe_read_excel("data.xlsx")
+#' df <- safe_read_excel("data.xlsx", sheet = 2)
+#' }
+#'
+#' @export
+safe_read_excel <- function(path, sheet = NULL, ...) {
+
+  # try direct read first
+  out <- try(readxl::read_excel(path, sheet = sheet, ...), silent = TRUE)
+  if (!inherits(out, "try-error")) return(out)
+
+  # try copy fallback
+  tmp <- tempfile(fileext = paste0(".", tools::file_ext(path)))
+  ok <- file.copy(path, tmp, overwrite = TRUE)
+
+  if (ok) {
+    return(readxl::read_excel(tmp, sheet = sheet, ...))
+  }
+
+  # LAST fallback: give a more helpful error
+  stop(
+    "Could not read file:\n",
+    path,
+    "\n\nThe file is likely open in Excel with an exclusive lock.\n",
+    "Please close the file and try again."
+  )
+}
+
+
+
+
+
 #' Produce html document summarising a single survey
 #'
 #' Produce a summary html document of all responses in an OME survey,
@@ -125,22 +185,22 @@ render_survey_summary <- function(data_path,
     stop("Unsupported data file type: ", ext)
   }
 
-  is_file_openable <- function(path) {
-    con <- try(file(path, open = "rb"), silent = TRUE)
-    if (inherits(con, "try-error")) {
-      return(FALSE)
-    }
-    close(con)
-    TRUE
-  }
-
-
-  if (!is_file_openable(data_path)) {
-    stop("Data file is locked or cannot be opened")
-  }
-  if (!is_file_openable(dict_path)) {
-    stop("Data dictionary file is locked or cannot be opened")
-  }
+  # is_file_openable <- function(path) {
+  #   con <- try(file(path, open = "rb"), silent = TRUE)
+  #   if (inherits(con, "try-error")) {
+  #     return(FALSE)
+  #   }
+  #   close(con)
+  #   TRUE
+  # }
+  #
+  #
+  # if (!is_file_openable(data_path)) {
+  #   stop("Data file is locked or cannot be opened")
+  # }
+  # if (!is_file_openable(dict_path)) {
+  #   stop("Data dictionary file is locked or cannot be opened")
+  # }
 
 
   # same for est_chars_path
@@ -149,9 +209,9 @@ render_survey_summary <- function(data_path,
       stop("File not found: ", est_chars_path)
     }
 
-    if(!is_file_openable(est_chars_path)){
-      stop("Establishment characteristics file is locked or cannot be opened")
-    }
+    # if(!is_file_openable(est_chars_path)){
+    #   stop("Establishment characteristics file is locked or cannot be opened")
+    # }
   }
 
 
