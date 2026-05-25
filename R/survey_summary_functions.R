@@ -1955,3 +1955,1320 @@ scale_fill_OME <- function(type = "distinct", ...) {
     ...
   )
 }
+
+
+
+
+
+
+
+
+
+#' Read and assemble survey data and dictionary inputs
+#'
+#' Reads the survey data, data dictionary, and optionally establishment
+#' characteristics files, and prepares them for downstream processing.
+#' This includes merging establishment characteristics onto the main data
+#' (if provided) and augmenting the dictionary with any additional variables.
+#'
+#' This function performs only **input and structural preparation**:
+#' file reading, basic checks, and dataset merging. It does **not**
+#' perform validation or coercion of data values; those are handled by
+#' \code{\link{survey_data_prepare}}.
+#'
+#' @param data_path Character string. Path to the survey data file
+#'   (csv, xls, or xlsx).
+#' @param dict_path Character string. Path to the data dictionary file
+#'   (xls or xlsx).
+#' @param dict_sheet Character string. Name of the sheet within the
+#'   data dictionary file to use.
+#'
+#' @param est_chars_path Optional character string. Path to the
+#'   establishment characteristics file (xls or xlsx). If \code{NULL}
+#'   (default) no additional data are merged.
+#' @param est_chars_sheet Optional character string. Name of the sheet
+#'   within the establishment characteristics file to use. Required if
+#'   \code{est_chars_path} is supplied.
+#' @param est_char_vars Optional character vector. Names of establishment
+#'   characteristics variables to include.
+#' @param est_char_types Optional character vector. Data types for
+#'   establishment characteristics variables (same format as dictionary).
+#' @param est_char_values Optional character vector. Allowed values for
+#'   establishment characteristics variables (as in the dictionary).
+#' @param est_char_statements Optional character vector. Descriptive
+#'   statements/labels for establishment characteristics variables.
+#'
+#' @return A list with components:
+#' \describe{
+#'   \item{data}{A tibble containing the survey data, merged with
+#'   establishment characteristics if supplied.}
+#'   \item{dict}{A tibble containing the data dictionary, augmented
+#'   with any establishment characteristics entries if supplied.}
+#'   \item{messages}{A list of message objects describing any issues
+#'   encountered during reading or merging (e.g. missing files,
+#'   duplicate keys, unmatched joins).}
+#' }
+#'
+#' @details
+#' This function serves as the **input stage** of the survey processing
+#' pipeline:
+#'
+#' \preformatted{
+#' survey_read_inputs() → survey_data_prepare() → reporting
+#' }
+#'
+#' Responsibilities include:
+#' \itemize{
+#'   \item Reading data and dictionary files
+#'   \item Reading establishment characteristics data (if supplied)
+#'   \item Merging establishment characteristics onto the main dataset
+#'   \item Appending establishment characteristic variables to the dictionary
+#'   \item Collecting messages about input or merge issues
+#' }
+#'
+#' No validation or coercion of variable values is performed here.
+#'
+#' @seealso \code{\link{survey_data_prepare}}
+#'
+#' @export
+survey_read_inputs <- function(
+    data_path,
+    dict_path,
+    dict_sheet,
+    est_chars_path = NULL,
+    est_chars_sheet = NULL,
+    est_char_vars = NULL,
+    est_char_types = NULL,
+    est_char_values = NULL,
+    est_char_statements = NULL
+) {
+  # initialise messages
+  messages <- list()
+
+  # load data & dict
+  data_ext <- tolower(tools::file_ext(data_path))
+  data <- switch(data_ext,
+                 "csv"  = readr::read_csv(data_path, show_col_types = FALSE),
+                 "xlsx" = OMESurvey::safe_read_excel(data_path, guess_max = 1e6),
+                 "xls"  = OMESurvey::safe_read_excel(data_path, guess_max = 1e6),
+                 stop("Unsupported data file type: ", data_ext)
+  ) # if changing see also file type checking in render_survey_summary() function
+
+
+  dict <- OMESurvey::safe_read_excel(dict_path,
+                                     sheet = dict_sheet)
+
+
+  # check that dictionary has required columns
+  required_vars <- c("variable_name", "data_type", "allowed_values",
+                     "item_statement", "report_sec",
+                     "grouping_var", "condition")
+  missing <- setdiff(required_vars, names(dict))
+
+  if (length(missing) > 0) {
+    stop("The following required variables are missing from the data dictionary: ",
+         paste(missing, collapse = ", "),
+         "\n Note that 'grouping_var' and 'condition' are required columns, though they may be otherwise empty.")
+  }
+
+
+
+
+
+  # check for duplicated variable names in dictionary
+  dup_vars <- dict |>
+    dplyr::count(variable_name) |>
+    dplyr::filter(n > 1)
+
+  if (nrow(dup_vars) > 0) {
+
+    # identify duplicates assigned to report sections
+    dup_with_sec <- dict |>
+      dplyr::filter(variable_name %in% dup_vars$variable_name & !is.na(report_sec)) |>
+      dplyr::distinct(variable_name)
+
+    # identify duplicates used as grouping variables
+    dup_grouping <- dict |>
+      dplyr::filter(variable_name %in% dup_vars$variable_name & grouping_var == TRUE) |>
+      dplyr::distinct(variable_name)
+
+    # warn about duplicates
+    messages <- add_message(messages, paste0(
+      "Duplicate variable_name entries found in the data dictionary: ",
+      paste(dup_vars$variable_name, collapse = ", ")
+    ),
+    level = "WARNING"
+    )
+
+    # error if duplicates affect report sections
+    if (nrow(dup_with_sec) > 0) {
+      stop(
+        "Duplicate variable_name entries assigned to report sections: ",
+        paste(dup_with_sec$variable_name, collapse = ", "),
+        call. = FALSE
+      )
+    }
+
+    # error if duplicates affect grouping variables
+    if (nrow(dup_grouping) > 0) {
+      stop(
+        "Duplicate variable_name entries used as grouping variables: ",
+        paste(dup_grouping$variable_name, collapse = ", "),
+        call. = FALSE
+      )
+    }
+  }
+
+  # check for variables in dict but not data
+  vars_not_in_data <- base::setdiff(
+    dict |> dplyr::pull(variable_name),
+    names(data)
+  )
+
+  if (length(vars_not_in_data) > 0) {
+    messages <- add_message(messages, paste0(
+      "Variables in the dictionary but not found in the data: ",
+      paste(vars_not_in_data, collapse = ", ")
+    ),
+    level = "NOTE"
+    )
+  } else {
+    messages <- add_message(messages, paste0(
+      "All variables specified in the dictionary are present in the data."
+    ),
+    level = "NOTE"
+    )
+  }
+
+  # check for variables in data but not dict
+  vars_not_in_dict <- base::setdiff(
+    names(data),
+    dict |> dplyr::pull(variable_name)
+  )
+
+  if (length(vars_not_in_dict) > 0) {
+    messages <- add_message(messages, paste0(
+      "Variables in the data but not found in the dictionary: ",
+      paste(vars_not_in_dict, collapse = ", ")
+    ),
+    level = "NOTE"
+    )
+  } else {
+    messages <- add_message(messages, paste0(
+      "All variables in the data are accounted for in the dictionary."
+    ),
+    level = "NOTE"
+    )
+  }
+
+
+  # filter dict to variables in a report section
+  dict <-
+    dict |>
+    dplyr::filter(!is.na(report_sec))
+
+
+  # Now check for variables IN A SECTION but not in the data
+  vars_not_in_data <-
+    base::setdiff(dict |> dplyr::pull(variable_name),
+                  data |> base::names())
+
+  if (length(vars_not_in_data) != 0) {
+    #remove from dictionary
+    dict <-
+      dict |>
+      dplyr::filter(!(variable_name %in% vars_not_in_data))
+
+    # warn
+    messages <- add_message(messages, paste0(
+      "The following variables are given a section in the dictionary but cannot be found in the data: ",
+      paste(vars_not_in_data, collapse = ", "),
+      "They are being ignored for the rest of this report."
+    ),
+    level = "WARNING"
+    )
+
+  } else {
+
+    messages <- add_message(messages,
+      "All variables that are assigned to a section in the data dictionary were found in the data.",
+      level = "NOTE"
+    )
+
+  }
+
+
+
+  # Now merge in establishment characteristics if provided
+  if (is.null(est_chars_path)){
+    messages <- add_message(messages, paste0(
+      "No establishment characteristics provided."
+    ),
+    level = "NOTE"
+    )
+  }else{
+    # first check that the establishment ID variable EST_ID is present in the survey data
+    num_EST_ID <- sum("EST_ID" == names(data))
+    if (num_EST_ID != 1) {
+      stop(paste0("The variable 'EST_ID' needs to appear in the data file once. But I can see it ",num_EST_ID," times."))
+    }
+
+    # load establishment characteristics file
+    est_chars <-
+      OMESurvey::safe_read_excel(
+        est_chars_path,
+        sheet = est_chars_sheet)
+
+    est_char_vars <- est_char_vars
+    est_char_types <- est_char_types
+    est_char_values <- est_char_values
+    est_char_statements <- est_char_statements
+
+    # v simple check of other est_chars parameters
+    stopifnot(is.character(est_char_vars) && is.null(dim(est_char_vars)))
+    stopifnot(is.character(est_char_types) && is.null(dim(est_char_types)))
+    stopifnot(is.character(est_char_values) && is.null(dim(est_char_values)))
+    stopifnot(is.character(est_char_statements) && is.null(dim(est_char_statements)))
+    stopifnot(length(est_char_vars) == length(est_char_types) &&
+                length(est_char_vars) == length(est_char_values) &&
+                length(est_char_vars) == length(est_char_statements))
+
+
+    # find variables not in the data
+    char_vars_not_in_data <-
+      base::setdiff(est_char_vars,
+                    est_chars |> base::names())
+
+    if (length(char_vars_not_in_data) != 0) {
+      messages <- add_message(messages, paste0(
+        "The following establishment characteristics are requested to be included as grouping variables but cannot be found in the establishment characteristics data: ",
+        paste(char_vars_not_in_data, collapse = ", ")
+      ),
+      level = "WARNING"
+      )
+    }
+
+    # variables we will add to the dictionary
+    est_char_vars <- base::setdiff(est_char_vars, char_vars_not_in_data)
+
+    est_chars <-
+      est_chars |>
+      dplyr::select(EstablishmentID, all_of(est_char_vars))
+
+    # if there are some variables to work with
+    if (length(est_char_vars) > 0){
+      # join them to the data
+      data <-
+        data |>
+        dplyr::left_join(est_chars |> dplyr::select(EstablishmentID, dplyr::all_of(est_char_vars)),
+                         by=dplyr::join_by(EST_ID == EstablishmentID))
+
+      # add them to the data dictionary and, if numeric, calculate the appropriate x-iles
+      for (i in seq_len(length(est_char_vars))){
+        if (grepl("^factor-",est_char_types[i])){
+          dict <-
+            dict |>
+            tibble::add_row(variable_name = est_char_vars[i],
+                            data_type = est_char_types[i],
+                            allowed_values = est_char_values[i],
+                            item_statement = est_char_statements[i],
+                            report_sec = "Grouping variables",
+                            grouping_var = "T",
+                            condition = NA)
+        } else if (grepl("^numeric-",est_char_types[i])) {
+
+          # first look up x-iles from the establishment characteristics spreadsheet
+          if (!exists("est_stats")){
+            est_stats <-
+              OMESurvey::safe_read_excel(
+                est_chars_path,
+                sheet = switch (est_chars_sheet,
+                                partner_characteristics_sec = "stats_sec",
+                                partner_characteristics_pri = "stats_pri")
+              )
+          }
+
+          # depending on xxx in numeric-xxx, look up stats and prepare other variables
+          if (endsWith(est_char_types[i], "-quintiles")){
+            est_xiles <-
+              est_stats |>
+              dplyr::filter(variable==est_char_vars[i], grepl("/5$",statistic)) |>
+              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+              dplyr::arrange(statistic) |>
+              dplyr::pull(value)
+            label_prefix <- "Quintile "
+            label_max_num <- 5
+          } else if (endsWith(est_char_types[i], "-tertiles")){
+            est_xiles <-
+              est_stats |>
+              dplyr::filter(variable==est_char_vars[i], grepl("/3$",statistic)) |>
+              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+              dplyr::arrange(statistic) |>
+              dplyr::pull(value)
+            label_prefix <- "Tertile "
+            label_max_num <- 3
+          } else if (endsWith(est_char_types[i], "-quartiles")){
+            est_xiles <-
+              est_stats |>
+              dplyr::filter(variable==est_char_vars[i], grepl("/[24]$",statistic)) |>
+              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+              dplyr::arrange(statistic) |>
+              dplyr::pull(value)
+            label_prefix <- "Quartile "
+            label_max_num <- 4
+          } else {
+            stop("Unknown suffix in a `est_char_types` entry of the form numeric-xxx.")
+          }
+
+          # Construct the factor labels
+          final_labels <- paste0(label_prefix, seq_len(label_max_num))
+
+          final_labels[c(1, label_max_num)] <-
+            paste0(
+              final_labels[c(1, label_max_num)],
+              c("\n(Lowest)", "\n(Highest)")
+            )
+
+          # Add dictionary row with correct allowed values (semicolon-delimited)
+          dict <- dict |>
+            tibble::add_row(
+              variable_name = est_char_vars[i],
+              data_type = "factor-lo-hi",
+              allowed_values = paste(final_labels, collapse = ";"),
+              item_statement = est_char_statements[i],
+              report_sec = "Grouping variables",
+              grouping_var = "T",
+              condition = NA
+            )
+
+          # Apply the cut() using the same labels
+          data <- data |>
+            dplyr::mutate("{est_char_vars[i]}_raw" := .data[[est_char_vars[i]]]) |>
+            dplyr::mutate("{est_char_vars[i]}" :=
+                            cut(.data[[paste0(est_char_vars[i], "_raw")]],
+                                breaks = c(-Inf, est_xiles, Inf),
+                                labels = final_labels))
+
+        }
+      }
+    }
+
+  }
+
+
+  #Compute ordering within each section
+  dict <-
+    dict |>
+    dplyr::mutate(report_sec = ifelse(is.na(report_sec) | stringr::str_trim(report_sec) == "",
+                                      NA_integer_,
+                                      report_sec)) |>
+    dplyr::mutate(report_sec_ord = dplyr::if_else(is.na(report_sec),
+                                                  NA_integer_,
+                                                  dplyr::row_number()),
+                  .by = report_sec)
+
+  #Normalize grouping_var to logical
+  if (!is.logical(dict$grouping_var)){
+    dict <- dict |>
+      dplyr::mutate(grouping_var = dplyr::case_when(
+        tolower(as.character(grouping_var)) %in% c("true","t","yes","y","1") ~ TRUE,
+        tolower(as.character(grouping_var)) %in% c("false","f","no","n","0") ~ FALSE,
+        .default = FALSE
+      ))
+  }
+
+  return(list(
+    data = data,
+    dict = dict,
+    messages = messages
+  ))
+
+}
+
+
+
+
+
+
+#' Validate and coerce survey data according to a data dictionary
+#'
+#' Applies validation and coercion rules to survey data using a supplied
+#' data dictionary. This includes enforcing data types, applying allowed
+#' values, handling conditional logic, and producing a structured
+#' validation log.
+#'
+#' This function operates on **in-memory data** (already read and merged)
+#' and performs only **data transformation and validation**, not file I/O.
+#'
+#' @param data A tibble containing the survey data, typically the \code{data}
+#'   component returned by \code{\link{survey_read_inputs}}. This may already
+#'   include merged establishment characteristics.
+#' @param dict A tibble containing the data dictionary, typically the \code{dict}
+#'   component returned by \code{\link{survey_read_inputs}}.
+#'
+#' @return A list with components:
+#' \describe{
+#'   \item{data}{A tibble containing the processed survey data, with variables
+#'   coerced to their specified types (e.g. factors, numeric) and with
+#'   allowed values enforced.}
+#'   \item{validation}{A tibble summarising validation checks applied to each
+#'   variable, including counts of values meeting or failing specified
+#'   conditions.}
+#'   \item{messages}{A list of message objects describing any issues
+#'   encountered during validation or coercion (e.g. missing variables,
+#'   invalid values, failed conditions).}
+#' }
+#'
+#' @details
+#' This function serves as the **data preparation stage** of the survey
+#' processing pipeline:
+#'
+#' \preformatted{
+#' survey_read_inputs() → survey_data_prepare() → reporting
+#' }
+#'
+#' Responsibilities include:
+#' \itemize{
+#'   \item Checking consistency between data and dictionary variables
+#'   \item Coercing variables to specified types (e.g. factor, numeric)
+#'   \item Applying allowed values (e.g. factor levels)
+#'   \item Handling special/sentinel values where specified
+#'   \item Evaluating conditional constraints defined in the dictionary
+#'   \item Producing a per-variable validation summary
+#'   \item Collecting messages describing any validation or coercion issues
+#' }
+#'
+#' This function does **not** perform any file reading or dataset merging;
+#' those steps are handled by \code{\link{survey_read_inputs}}.
+#'
+#' @seealso \code{\link{survey_read_inputs}}
+#'
+#' @export
+survey_data_prepare <- function(
+    data,
+    dict
+) {
+  # Helper function: parse allowed values for factors
+  parse_allowed <- function(x){
+    if(is.na(x) || stringr::str_trim(x) == "") return(NULL)
+    vals <- unlist(strsplit(as.character(x), ";", fixed = TRUE))
+    vals <- stringr::str_trim(vals)
+    vals <- vals[vals != ""]
+    if(length(vals) == 0) return(NULL)
+    vals
+  }
+
+
+
+  # Helper function: parse allowed ranges for numeric variables
+  parse_allowed_range <- function(x) {
+
+    if (is.na(x)) return(NULL)
+
+    s <- trimws(as.character(x))
+    if (!nzchar(s)) return(NULL)
+
+    parse_inf <- function(z) {
+      z <- trimws(z)
+      if (grepl("^(\\+?inf|∞)$", z, ignore.case = TRUE)) return(Inf)
+      if (grepl("^(-inf|-∞)$", z, ignore.case = TRUE)) return(-Inf)
+      suppressWarnings(as.numeric(z))
+    }
+
+    ## 1) Bracketed interval: [a,b), (a,Inf], etc.
+    if (nchar(s) >= 5 && substr(s, 1, 1) %in% c("[", "(") &&
+        substr(s, nchar(s), nchar(s)) %in% c("]", ")")) {
+
+      lower_incl <- substr(s, 1, 1) == "["
+      upper_incl <- substr(s, nchar(s), nchar(s)) == "]"
+
+      inner <- substr(s, 2, nchar(s) - 1)
+      parts <- strsplit(inner, ",", fixed = TRUE)[[1]]
+
+      if (length(parts) == 2) {
+        return(list(
+          lower = parse_inf(parts[1]),
+          upper = parse_inf(parts[2]),
+          lower_incl = lower_incl,
+          upper_incl = upper_incl
+        ))
+      }
+    }
+
+    ## 2) Dash form: a-b (inclusive)
+    if (grepl("-", s, fixed = TRUE)) {
+      parts <- strsplit(s, "-", fixed = TRUE)[[1]]
+      if (length(parts) == 2) {
+        return(list(
+          lower = parse_inf(parts[1]),
+          upper = parse_inf(parts[2]),
+          lower_incl = TRUE,
+          upper_incl = TRUE
+        ))
+      }
+    }
+
+    ## 3) Relational forms: >5, >=0, <10, <=100
+    if (grepl("^(>=|>|<=|<)", s)) {
+      op <- sub("^\\s*(>=|>|<=|<).*$", "\\1", s)
+      val <- parse_inf(sub("^\\s*(>=|>|<=|<)", "", s))
+
+      if (op %in% c(">", ">=")) {
+        return(list(
+          lower = val,
+          upper = Inf,
+          lower_incl = op == ">=",
+          upper_incl = FALSE
+        ))
+      } else {
+        return(list(
+          lower = -Inf,
+          upper = val,
+          lower_incl = FALSE,
+          upper_incl = op == "<="
+        ))
+      }
+    }
+
+    NULL
+  }
+
+  #helper function: coerce a column of data
+  coerce_col <- function(x, type, levels = NULL) {
+    if (grepl("integer", type, ignore.case = TRUE)) {
+      return(as.integer(x))
+    } else if (grepl("numeric|double", type, ignore.case = TRUE)) {
+      res <- suppress_specific_warning(as.numeric(x), "NAs introduced by coercion")
+      return(res$value)      # numeric result with NA
+      #res$suppressed # character vector of suppressed messages (if any)
+    } else if (grepl("binary|logical", type, ignore.case = TRUE)) {
+      return(as.factor(as.logical(x)))
+    } else if (grepl("date", type, ignore.case = TRUE)) {
+      return(as.Date(x))
+    } else if (grepl("factor-", type, ignore.case = TRUE)) {
+      if (!is.null(levels)) {
+        return(factor(x, levels = levels))
+      } else {
+        return(factor(x))
+      }
+    } else if (grepl("char|str|text", type, ignore.case = TRUE)) {
+      return(as.character(x))
+    } else {
+      return(x)
+    }
+  }
+
+
+  # helper to build a single validation row
+  make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
+                                  allowed_specified, allowed,
+                                  n_missing, n_non_allowed, non_allowed_freq,
+                                  fail_cond_freq,
+                                  report_sec, report_sec_ord, item_label,
+                                  condition = NA_character_, n_fail_cond = NA_integer_,
+                                  n_meet_cond = NA_integer_,
+                                  n_meet_cond_missing = NA_integer_,
+                                  n_meet_cond_non_allowed = NA_integer_
+  ) {
+    list(
+      variable = var,
+      type = type,
+      colo = colo,
+      order_values = order_values,
+      allowed_specified = allowed_specified,
+      allowed = if (allowed_specified) paste(allowed, collapse = ";") else NA_character_,
+      n_missing = n_missing,
+      n_non_allowed = n_non_allowed,
+      non_allowed_freq = list(non_allowed_freq),
+      fail_cond_freq = list(fail_cond_freq),
+      condition = condition,
+      n_fail_cond = n_fail_cond,
+      n_meet_cond = n_meet_cond,
+      n_meet_cond_missing = n_meet_cond_missing,
+      n_meet_cond_non_allowed = n_meet_cond_non_allowed,
+      report_sec = report_sec,
+      report_sec_ord = report_sec_ord,
+      item_statement = item_label
+    )
+  }
+
+  # initialise validation_log and messages list
+  validation_log <- vector("list", nrow(dict))
+  messages <- list()
+
+  # The main validation loop
+  for (i in seq_len(nrow(dict))) {
+    var <- dict$variable_name[i]
+
+    # debug step
+    # message(">>> Starting variable: ", var)
+    # flush.console()
+
+    tryCatch({
+
+      dtype <- tolower(dict$data_type[i])
+      allowed_raw <- dict$allowed_values[i]
+      allowed <- parse_allowed(allowed_raw)           # returns NULL or character vector
+      # only consider allowed values meaningful for factor-like types
+      is_allowed_type <- grepl("factor|numerical", dtype, ignore.case = TRUE)
+      allowed_specified <- is_allowed_type && !is.null(allowed)
+      if (!is_allowed_type) allowed <- NULL  # drop allowed for non-factors to avoid confusion
+      report_sec <- dict$report_sec[i]
+      report_sec_ord <- dict$report_sec_ord[i]
+      item_label <- dict$item_statement[i]  # remove line breaks here ?!?
+
+      raw <- data[[var]]
+      raw_chr <- as.character(raw)
+      data[[paste0("raw_", var)]] <- raw_chr
+
+      data[[var]] <- coerce_col(raw, dtype, levels = allowed)
+
+      non_allowed_mask <- rep(FALSE, nrow(data))
+      fail_cond_freq <- list()
+
+      ## parse and evaluate condition (if present)
+
+      cond_str <- if ("condition" %in% names(dict)) dict$condition[i] else NA_character_
+      cond_expr <- NULL
+      cond_mask <- NULL
+
+      has_valid_cond <- FALSE
+      meet_mask <- NULL
+      fail_mask <- NULL
+
+      n_fail_cond <- NA_integer_
+      n_meet_cond <- NA_integer_
+      n_meet_cond_missing <- NA_integer_
+      n_meet_cond_non_allowed <- NA_integer_
+
+      # parse and evaluate condition
+      if (!is.na(cond_str) && nzchar(cond_str)) {
+
+        cond_expr <- tryCatch(
+          rlang::parse_expr(cond_str),
+          error = function(e) {
+            stop("\n**Error parsing condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+            NULL
+          }
+        )
+
+        if (!is.null(cond_expr)) {
+
+          cond_mask <- tryCatch(
+            rlang::eval_tidy(cond_expr, data = data),
+            error = function(e) {
+              stop("\n**Error evaluating condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+              NULL
+            }
+          )
+        }
+
+
+        # cat("\nDEBUG: cond_mask class:", paste(class(cond_mask), collapse = ", "), "\n")
+        # cat("DEBUG: cond_mask typeof:", typeof(cond_mask), "\n")
+        # cat("DEBUG: length(cond_mask):", length(cond_mask), "\n")
+        # cat("DEBUG: nrow(data):", nrow(data), "\n")
+        # cat("DEBUG: first 10 values of cond_mask:\n")
+        # print(head(cond_mask, 10))
+        #
+        # cat("DEBUG: is.logical(cond_mask):", is.logical(cond_mask), "\n")
+        #
+        #
+        # cat("DEBUG: is.logical(as.logical(cond_mask)):", is.logical(as.logical(cond_mask)), "\n")
+        # cat("DEBUG: first 10 values after coercion:\n")
+        # print(head(as.logical(cond_mask), 10))
+        #
+        #
+        # cat("DEBUG: table(cond_mask, useNA='always'):\n")
+        # print(table(cond_mask, useNA = "always"))
+
+
+      }
+
+      # validate mask and define meet/fail masks
+      if (!is.null(cond_mask) &&
+          is.logical(cond_mask) &&
+          length(cond_mask) == nrow(data)) {
+
+        has_valid_cond <- TRUE
+        # meet_mask TRUE iff cond_mask is TRUE, but use %in% so NA becomes FALSE
+        # fail_mask is the complement (TRUE when cond_mask is FALSE or NA)
+        meet_mask <- cond_mask %in% TRUE
+        fail_mask <- !meet_mask
+
+      } else {
+
+        if (!is.null(cond_mask)) {
+          messages <- add_message(messages, paste0(
+            "Condition for variable ", var,
+            " did not evaluate to a logical vector of length ",
+            nrow(data),
+            ". Condition will be ignored."
+          ),
+          level = "NOTE"
+          )
+        }
+
+        has_valid_cond <- FALSE
+        meet_mask <- rep(TRUE, nrow(data))
+        fail_mask <- NULL
+      }
+
+      # cat("DEBUG: has_valid_cond:", has_valid_cond, "\n")
+      #
+      # cat("DEBUG: first 10 values of meet_mask:\n")
+      # print(head(meet_mask, 10))
+      # cat("DEBUG: first 10 values of fail_mask:\n")
+      # print(head(fail_mask, 10))
+
+
+      # compute condition counts
+      if (has_valid_cond) {
+        n_meet_cond <- sum(meet_mask)
+        n_fail_cond <- sum(fail_mask)
+      } else {
+        n_meet_cond <- NA_integer_
+        n_fail_cond <- NA_integer_
+      }
+
+
+      #  factors processing...
+      if (grepl("^factor-", stringr::str_squish(dtype), ignore.case = TRUE)) {
+
+        # they use allowed; compute non_allowed_mask from raw_chr
+        if (allowed_specified) {
+          non_allowed_mask <- !is.na(raw_chr) & !(raw_chr %in% allowed)
+        } else {
+          non_allowed_mask <- rep(FALSE, length(raw_chr))
+        }
+
+
+        if (has_valid_cond) {
+
+          n_meet_cond_missing <-
+            sum(meet_mask & is.na(raw))
+
+          n_meet_cond_non_allowed <-
+            sum(meet_mask & non_allowed_mask)
+
+        }
+
+        # then make a frequency table of non-allowed responses
+        non_allowed_freq <- list()
+
+        bad_vals <- if (has_valid_cond) {
+          raw_chr[meet_mask & non_allowed_mask]
+        } else {
+          raw_chr[non_allowed_mask]
+        }
+
+        if (length(bad_vals) > 0) {
+          non_allowed_freq$values <-
+            sort(table(bad_vals), decreasing = TRUE)
+        }
+
+
+        # frequency table where condition NOT met
+        if (!is.null(fail_mask)) {
+
+          vals_fail <- raw_chr[fail_mask]
+
+          if (length(vals_fail) > 0) {
+            fail_cond_freq$values <-
+              sort(table(vals_fail), decreasing = TRUE)
+          }
+        }
+
+
+
+        # they also need to have colour scheme determined
+        # and, for neg-pos ones, levels noted to use for ordering questions in section-level overall plots
+        switch(stringr::str_remove(dtype, "^factor-"),
+               `neg-pos`={
+                 colo <- OMESurvey::get_OME_colours(length(allowed), type="contrast")
+                 order_values <- list(allowed[seq(from=ceiling(length(allowed)/2)+1, to=length(allowed))])
+               },
+               `lo-hi`={
+                 colo <- OMESurvey::get_OME_colours(length(allowed), type="complementary")
+                 order_values <- list("mean(as.numeric())")
+               },
+               unordered={
+                 colo <- OMESurvey::get_OME_colours(length(allowed), type="distinct")
+                 order_values <- list(NA)
+               },
+               stop("Unknown factor type (in colour scheme determination)")
+        )
+
+        names(colo) <- allowed
+        colo <- list(colo)
+
+        # cat("\nDEBUG FINAL COUNTS: meet =", n_meet_cond, " fail =", n_fail_cond, "\n")
+
+
+        validation_log[[var]] <- make_validation_row(
+          var = var,
+          type = "factor",
+          colo = colo,
+          order_values = order_values,
+          allowed_specified = allowed_specified,
+          allowed = allowed,
+          n_missing = sum(is.na(raw)),
+          n_non_allowed = sum(non_allowed_mask, na.rm = TRUE),
+          non_allowed_freq = non_allowed_freq,
+          fail_cond_freq = fail_cond_freq,
+          report_sec = report_sec,
+          report_sec_ord = report_sec_ord,
+          item_label = item_label,
+          condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+          n_fail_cond = n_fail_cond,
+          n_meet_cond = n_meet_cond,
+          n_meet_cond_missing = n_meet_cond_missing,
+          n_meet_cond_non_allowed = n_meet_cond_non_allowed
+        )
+
+        # numeric processing
+      } else if (grepl("^numeric$|double", dtype, ignore.case = TRUE)) {
+        # detect a range spec like [0,100] or (0,100] or 0-100
+        range_spec <- parse_allowed_range(allowed_raw)
+
+        # data[[var]] is the coerced numeric; raw_chr is the original character representation
+        coerced <- data[[var]]
+
+        out_of_range <- NULL
+
+        # non-allowed if original non-missing but coercion produced NA (bad numeric text)
+        non_allowed_coercion <- !is.na(raw_chr) & is.na(coerced)
+
+        if (!is.null(range_spec)) {
+          # compute out-of-range mask for non-NA coerced values
+          out_low <-
+            if (range_spec$lower_incl){
+              coerced < range_spec$lower
+            } else {
+              coerced <= range_spec$lower
+            }
+          out_high <-
+            if (range_spec$upper_incl){
+              coerced > range_spec$upper
+            } else {
+              coerced >= range_spec$upper
+            }
+          out_of_range <- (!is.na(coerced)) & (out_low | out_high)
+
+
+          non_allowed_mask <-
+            non_allowed_coercion |
+            (!is.null(out_of_range) & out_of_range)
+
+
+          if (has_valid_cond) {
+
+            n_meet_cond_missing <-
+              sum(meet_mask & is.na(raw))
+
+            n_meet_cond_non_allowed <-
+              sum(meet_mask & non_allowed_mask)
+
+          }
+
+
+          #non_allowed_mask <- non_allowed_coercion | out_of_range
+          allowed_specified_num <- TRUE
+          allowed_for_report <- paste0(
+            if (range_spec$lower_incl) "[" else "(",
+            range_spec$lower, ",", range_spec$upper,
+            if (range_spec$upper_incl) "]" else ")"
+          )
+
+        } else {
+          # no numeric range specified: only mark coercion failures as non-allowed
+          #non_allowed_mask <- non_allowed_coercion
+          allowed_specified_num <- FALSE
+          allowed_for_report <- NULL
+        }
+
+
+        non_allowed_mask <-
+          non_allowed_coercion |
+          (!is.null(out_of_range) & out_of_range)
+
+
+        non_allowed_freq_numeric <- list()
+
+        ## (1) Raw values that failed numeric coercion
+        if (any(non_allowed_coercion, na.rm = TRUE)) {
+          non_allowed_freq_numeric$coercion <-
+            sort(table(raw_chr[meet_mask & non_allowed_coercion]), decreasing = TRUE)
+        }
+
+        ## (2) Numeric values outside the allowed range
+        if (!is.null(out_of_range) && any(out_of_range, na.rm = TRUE)) {
+          non_allowed_freq_numeric$out_of_range <-
+            sort(table(coerced[meet_mask & out_of_range]), decreasing = TRUE)
+        }
+
+        ## Normalise empty case
+        if (length(non_allowed_freq_numeric) == 0) {
+          non_allowed_freq_numeric <- list()
+        }
+
+
+        # frequency table where condition NOT met
+        fail_cond_freq <- list()
+
+        if (!is.null(fail_mask)) {
+
+          vals_fail <- raw_chr[fail_mask]
+
+          if (length(vals_fail) > 0) {
+            fail_cond_freq$values <-
+              sort(table(vals_fail), decreasing = TRUE)
+          }
+        }
+
+
+        validation_log[[var]] <- make_validation_row(
+          var = var,
+          type = "numeric",
+          allowed_specified = allowed_specified_num,
+          allowed = if (allowed_specified_num) allowed_for_report else NULL,
+          n_missing = sum(is.na(raw)),
+          n_non_allowed =
+            sum(non_allowed_coercion, na.rm = TRUE) +
+            if (!is.null(out_of_range)) sum(out_of_range, na.rm = TRUE) else 0L,
+          non_allowed_freq = non_allowed_freq_numeric,
+          fail_cond_freq = fail_cond_freq,
+          report_sec = report_sec,
+          report_sec_ord = report_sec_ord,
+          item_label = item_label,
+          condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+          n_fail_cond = n_fail_cond,
+          n_meet_cond = n_meet_cond,
+          n_meet_cond_missing = n_meet_cond_missing,
+          n_meet_cond_non_allowed = n_meet_cond_non_allowed
+        )
+
+
+        # } else if (grepl("integer", dtype, ignore.case = TRUE)) {
+        #   validation_log[[var]] <- make_validation_row(
+        #     var = var,
+        #     type = "integer",
+        #     allowed_specified = FALSE,
+        #     allowed = NULL,
+        #     n_missing = sum(is.na(raw)),
+        #     n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+        #     non_allowed_freq = non_allowed_freq,
+        #     fail_cond_freq = fail_cond_freq,
+        #     report_sec = report_sec,
+        #     report_sec_ord = report_sec_ord,
+        #     item_label = item_label,
+        #     condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+        #     n_fail_cond = n_fail_cond,
+        #     n_meet_cond = n_meet_cond,
+        #     n_meet_cond_missing = n_meet_cond_missing,
+        #     n_meet_cond_non_allowed = n_meet_cond_non_allowed
+        #   )
+
+      } else if (grepl("date", dtype, ignore.case = TRUE)) {
+        validation_log[[var]] <- make_validation_row(
+          var = var,
+          type = "date",
+          allowed_specified = FALSE,
+          allowed = NULL,
+          n_missing = sum(is.na(raw)),
+          n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+          non_allowed_freq = list(),
+          fail_cond_freq = fail_cond_freq,
+          report_sec = report_sec,
+          report_sec_ord = report_sec_ord,
+          item_label = item_label,
+          condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+          n_fail_cond = n_fail_cond,
+          n_meet_cond = n_meet_cond,
+          n_meet_cond_missing = n_meet_cond_missing,
+          n_meet_cond_non_allowed = n_meet_cond_non_allowed
+        )
+
+      } else {
+        # character / fallback
+
+
+
+        nonresponse_codes <- c("-999", "-888", "-777")
+
+        non_allowed_mask <-
+          !is.na(data[[var]]) &
+          data[[var]] %in% nonresponse_codes
+
+        # compute condition stats
+        if (has_valid_cond) {
+          n_meet_cond_missing <- sum(meet_mask & is.na(raw))
+          n_meet_cond_non_allowed <- sum(meet_mask & non_allowed_mask)
+        }
+
+
+        # Build non-allowed frequency table for text variables (conditional)
+        non_allowed_freq <- list()
+
+        if (has_valid_cond) {
+          bad_vals <- data[[var]][meet_mask & non_allowed_mask]
+        } else {
+          bad_vals <- data[[var]][non_allowed_mask]
+        }
+
+        if (length(bad_vals) > 0) {
+          non_allowed_freq$values <-
+            sort(table(bad_vals), decreasing = TRUE)
+        }
+
+
+        # frequency table where condition NOT met
+        fail_cond_freq <- list()
+
+        if (!is.null(fail_mask)) {
+
+          vals_fail <- data[[var]][fail_mask]
+
+          if (length(vals_fail) > 0) {
+            fail_cond_freq$values <-
+              sort(table(vals_fail), decreasing = TRUE)
+          }
+        }
+
+
+        validation_log[[var]] <- make_validation_row(
+          var = var,
+          type = "character",
+          allowed_specified = FALSE,
+          allowed = NULL,
+          n_missing = sum(is.na(raw)),
+          n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
+          non_allowed_freq = non_allowed_freq,
+          fail_cond_freq = fail_cond_freq,
+          report_sec = report_sec,
+          report_sec_ord = report_sec_ord,
+          item_label = item_label,
+          condition = if (!is.na(cond_str) && nzchar(cond_str)) cond_str else NA_character_,
+          n_fail_cond = n_fail_cond,
+          n_meet_cond = n_meet_cond,
+          n_meet_cond_missing = n_meet_cond_missing,
+          n_meet_cond_non_allowed = n_meet_cond_non_allowed
+        )
+      }
+
+      # checking validation_log entries/construction
+
+      # message(">>> Names in validation_log entry")
+      # print(names(validation_log[[var]]))
+      #
+      # message(">>> Size of validation_log entry")
+      # print(object.size(validation_log[[var]]), units = "MB")
+      #
+      # message(">>> Size of whole validation_log so far")
+      # print(object.size(validation_log), units = "MB")
+
+      # message(">>> non_allowed_mask length and summary")
+      # mask <- validation_log[[var]]$non_allowed_mask
+      # if (is.null(mask)) {
+      #   message("non_allowed_mask is NULL")
+      # } else {
+      #   message("length(mask) = ", length(mask))
+      #   message("sum(mask) = ", sum(mask, na.rm = TRUE))
+      #   message("sum(!mask) = ", sum(!mask, na.rm = TRUE))
+      # }
+
+
+    }, error = function(e) {
+
+      stop(
+        paste0(
+          "\nError while processing variable '", var, "':\n",
+          e$message
+        ),
+        call. = FALSE
+      )
+
+    })
+
+
+  }
+
+  # make a tibble from the validation_log
+  validation_df <- dplyr::bind_rows(validation_log)
+
+
+  return(list(
+    data = data,
+    validation_log = validation_log,
+    validation_df = validation_df,
+    messages = messages
+  ))
+
+}
+
+
+
+
+#' Read, merge, validate, and prepare survey data in one step
+#'
+#' Convenience wrapper that performs the full survey data preparation
+#' pipeline by combining \code{\link{survey_read_inputs}} and
+#' \code{\link{survey_data_prepare}}. This includes reading input files,
+#' merging establishment characteristics (if supplied), validating and
+#' coercing variables according to the data dictionary, and returning
+#' both processed data and diagnostic outputs.
+#'
+#' @param data_path Character string. Path to the survey data file
+#'   (csv, xls, or xlsx).
+#' @param dict_path Character string. Path to the data dictionary file
+#'   (xls or xlsx).
+#' @param dict_sheet Character string. Name of the sheet within the
+#'   data dictionary file to use.
+#'
+#' @param est_chars_path Optional character string. Path to the
+#'   establishment characteristics file (xls or xlsx). If \code{NULL}
+#'   (default) no additional data are merged.
+#' @param est_chars_sheet Optional character string. Name of the sheet
+#'   within the establishment characteristics file to use. Required if
+#'   \code{est_chars_path} is supplied.
+#' @param est_char_vars Optional character vector. Names of establishment
+#'   characteristics variables to include.
+#' @param est_char_types Optional character vector. Data types for
+#'   establishment characteristics variables (same format as dictionary).
+#' @param est_char_values Optional character vector. Allowed values for
+#'   establishment characteristics variables (as in the dictionary).
+#' @param est_char_statements Optional character vector. Descriptive
+#'   statements/labels for establishment characteristics variables.
+#'
+#' @return A list with components:
+#' \describe{
+#'   \item{data}{A tibble containing the fully prepared survey data,
+#'   including merged establishment characteristics (if supplied) and
+#'   variables coerced to their specified types.}
+#'   \item{validation}{A tibble summarising validation checks applied
+#'   to each variable.}
+#'   \item{read_messages}{A list of message objects generated during
+#'   input reading and merging.}
+#'   \item{prep_messages}{A list of message objects generated during
+#'   validation and coercion.}
+#' }
+#'
+#' @details
+#' This function provides a **single entry point** for the survey data
+#' preparation workflow:
+#'
+#' \preformatted{
+#' survey_prepare_data()
+#'   → survey_read_inputs()
+#'   → survey_data_prepare()
+#' }
+#'
+#' It is intended for use in scripts, reporting workflows, and batch
+#' processing where a complete, ready-to-use dataset is required.
+#'
+#' For more control over individual stages, the lower-level functions
+#' \code{\link{survey_read_inputs}} and \code{\link{survey_data_prepare}}
+#' can be called directly.
+#'
+#' @seealso
+#' \code{\link{survey_read_inputs}}, \code{\link{survey_data_prepare}}
+#'
+#' @export
+survey_prepare_data <- function(
+    data_path,
+    dict_path,
+    dict_sheet,
+    est_chars_path = NULL,
+    est_chars_sheet = NULL,
+    est_char_vars = NULL,
+    est_char_types = NULL,
+    est_char_values = NULL,
+    est_char_statements = NULL
+) {
+
+}
+
+
+
+
+
+#' Append a message to a message list
+#'
+#' Helper to add a structured message (with level and text) to a list
+#' of messages, returning the updated list. Intended for internal use
+#' within survey data preparation functions.
+#'
+#' @param messages A list of message objects.
+#' @param text Character string giving the message text.
+#' @param level Character string indicating severity (e.g. "NOTE",
+#'   "WARNING"). Defaults to "NOTE".
+#' @param var Optional character string giving the associated variable name.
+#'
+#' @return The updated list of messages.
+#'
+#' @keywords internal
+add_message <- function(messages, text, level = "NOTE", var = NULL) {
+  messages[[length(messages) + 1]] <- list(
+    level = level,
+    text  = paste0(text),
+    var   = var
+  )
+  messages
+}
+
+
+
+
+
+#' Narrow kable table with standard styling
+#'
+#' Convenience wrapper around \code{knitr::kable()} that applies
+#' \code{kableExtra::kable_styling()} with sensible defaults for
+#' compact, centred tables in reports.
+#'
+#' @param x An object to be converted to a table by \code{knitr::kable()}.
+#' @param ... Additional arguments passed to \code{knitr::kable()}.
+#' @param full_width Logical; whether the table should span the full
+#'   page width. Defaults to \code{FALSE}.
+#' @param position Character string controlling table positioning
+#'   (e.g. \code{"center"}, \code{"left"}, \code{"right"}).
+#'
+#' @return A styled \code{kableExtra} table object.
+#'
+#' @export
+kable_narrow <- function(x, ..., full_width = FALSE, position = "center") {
+  knitr::kable(x, ...) |>
+    kableExtra::kable_styling(full_width = full_width, position = position)
+}
+
+
+
+
+#' Format a NOTE or WARNING message for report output
+#'
+#' Creates a formatted HTML string representing a message with a
+#' severity level (e.g. NOTE or WARNING), suitable for use in
+#' R Markdown documents with \code{results = 'asis'}.
+#'
+#' @param ... Character content of the message (concatenated).
+#' @param level Character string indicating message severity.
+#'   One of \code{"WARNING"} or \code{"NOTE"} (default).
+#'
+#' @return A character string containing HTML-formatted message text.
+#'
+#' @export
+report_notice <- function(..., level = c("WARNING", "NOTE")) {
+  level <- match.arg(level)
+
+  colour <- switch(level,
+                   WARNING = "red",
+                   NOTE = "black"
+  )
+
+  paste0(
+    "\n\n",
+    '<span style="color: ', colour, ';"><b>', level, ':</b></span> ',
+    paste0(..., collapse = ""),
+    "\n\n"
+  )
+}

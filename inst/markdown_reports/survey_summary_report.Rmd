@@ -77,7 +77,7 @@ data <- switch(data_ext,
   "csv"  = readr::read_csv(params$data_path, show_col_types = FALSE),
   "xlsx" = OMESurvey::safe_read_excel(params$data_path, guess_max = 1e6),
   "xls"  = OMESurvey::safe_read_excel(params$data_path, guess_max = 1e6),
-  stop("Unsupported data file type: ", ext)
+  stop("Unsupported data file type: ", data_ext)
 ) # if changing see also file type checking in render_survey_summary() function
 
 
