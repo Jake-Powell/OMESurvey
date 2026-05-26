@@ -35,7 +35,7 @@ right-hand axis. Defaults to TRUE.}
 
 \item{na.rm}{Logical; whether to remove/ignore missing values.
 When \code{na.rm = TRUE}, count labels show the number of plotted (i.e. non-missing) observations;
-when \code{na.rm = FALSE}, labels show non‑missing and total number of observations.}
+when \code{na.rm = FALSE}, labels show non-missing and total number of observations.}
 
 \item{valueLabText}{Optional title for the value variable axis. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{value_var} is used.}

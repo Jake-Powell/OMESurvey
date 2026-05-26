@@ -14,6 +14,8 @@ render_survey_summary(
   output_author = NULL,
   output_date = NULL,
   overwrite = FALSE,
+  percCutHoriz = 5,
+  percCutVert = 5,
   est_chars_path = NULL,
   est_chars_sheet = NULL,
   est_char_vars = NULL,
@@ -29,11 +31,14 @@ render_survey_summary(
 \arguments{
 \item{data_path}{path to the survey data (assumed to be xls/xlsx/csv).}
 
-\item{dict_path, dict_sheet}{path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.}
+\item{dict_path, dict_sheet}{path to the data dictionary (assumed to be xls/xlsx)
+and name of sheet in that file to use.}
 
-\item{output_dir}{(optional) directory to save the output file to. Defaults to current working directory.}
+\item{output_dir}{(optional) directory to save the output file to.
+Defaults to current working directory.}
 
-\item{output_file}{name of output html file (needs to end with ".html", defaults to "\if{html}{\out{<name of data file>}}_summary.html")}
+\item{output_file}{name of output html file (needs to end with ".html",
+defaults to "\if{html}{\out{<name of data file>}}_summary.html")}
 
 \item{output_title}{(optional) text string to use as title for html report output}
 
@@ -41,21 +46,33 @@ render_survey_summary(
 
 \item{output_date}{(optional) text string to use as date for html report output}
 
-\item{overwrite}{(optional) whether to overwrite \code{output_file} if it already exists. Defaults to FALSE for safety but in use probably TRUE will be more typical.}
+\item{overwrite}{(optional) whether to overwrite \code{output_file} if it already exists.
+Defaults to FALSE for safety but in use probably TRUE will be more typical.}
+
+\item{percCutHoriz}{Numeric. Percentage cutoff for section summary plots:
+categorical levels with proportions below this value are not labelled.}
+
+\item{percCutVert}{Numeric. Percentage cutoff for variable-level plots:
+categorical levels with proportions below this value are not labelled.}
 
 \item{est_chars_path}{(optional) path to establishment characteristics data (xls/xlsx).}
 
 \item{est_chars_sheet}{(optional, needed if \code{est_chars_path} is used) name of sheet in est't chars to use.}
 
-\item{est_char_vars, est_char_types, est_char_values, est_char_statements}{(optional, needed if \code{est_chars_path} is used) specification of establishment characteristics to use, see Details.}
+\item{est_char_vars, est_char_types, est_char_values, est_char_statements}{(optional, needed if \code{est_chars_path} is used) specification of establishment
+characteristics to use, see Details.}
 
-\item{quiet}{(optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.}
+\item{quiet}{(optional) whether to quieten the Rmd rendering information.
+Defaults to TRUE; FALSE useful for testing.}
 
-\item{verbose}{(optional) whether to include extra/verbose detail in the report. Defaults to FALSE; TRUE useful for testing.}
+\item{verbose}{(optional) whether to include extra/verbose detail in the report.
+Defaults to FALSE; TRUE useful for testing.}
 
-\item{show}{(optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.}
+\item{show}{(optional) whether to show intermediate results in the RStudio Viewer.
+Defaults to FALSE; unclear when TRUE might be useful.}
 
-\item{rmd}{(optional) path to .Rmd document to use for report-making. Using anything other than the default should be rare.}
+\item{rmd}{(optional) path to .Rmd document to use for report-making.
+Using anything other than the default should be rare.}
 }
 \value{
 a string giving the path of the saved .html document

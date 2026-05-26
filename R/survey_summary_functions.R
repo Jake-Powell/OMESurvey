@@ -69,20 +69,34 @@ safe_read_excel <- function(path, sheet = NULL, ...) {
 #' And possibly quiet, show, rmd too.
 #'
 #' @param data_path path to the survey data (assumed to be xls/xlsx/csv).
-#' @param dict_path,dict_sheet path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.
-#' @param output_file name of output html file (needs to end with ".html", defaults to "<name of data file>_summary.html")
-#' @param output_dir (optional) directory to save the output file to. Defaults to current working directory.
+#' @param dict_path,dict_sheet path to the data dictionary (assumed to be xls/xlsx)
+#'  and name of sheet in that file to use.
+#' @param output_file name of output html file (needs to end with ".html",
+#'  defaults to "<name of data file>_summary.html")
+#' @param output_dir (optional) directory to save the output file to.
+#'  Defaults to current working directory.
 #' @param output_title (optional) text string to use as title for html report output
 #' @param output_author (optional) text string to use as author for html report output
 #' @param output_date (optional) text string to use as date for html report output
-#' @param overwrite (optional) whether to overwrite `output_file` if it already exists. Defaults to FALSE for safety but in use probably TRUE will be more typical.
+#' @param overwrite (optional) whether to overwrite `output_file` if it already exists.
+#'  Defaults to FALSE for safety but in use probably TRUE will be more typical.
+#' @param percCutHoriz Numeric. Percentage cutoff for section summary plots:
+#'   categorical levels with proportions below this value are not labelled.
+#' @param percCutVert Numeric. Percentage cutoff for variable-level plots:
+#'   categorical levels with proportions below this value are not labelled.
 #' @param est_chars_path (optional) path to establishment characteristics data (xls/xlsx).
 #' @param est_chars_sheet (optional, needed if `est_chars_path` is used) name of sheet in est't chars to use.
-#' @param est_char_vars,est_char_types,est_char_values,est_char_statements (optional, needed if `est_chars_path` is used) specification of establishment characteristics to use, see Details.
-#' @param quiet (optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.
-#' @param verbose (optional) whether to include extra/verbose detail in the report. Defaults to FALSE; TRUE useful for testing.
-#' @param show (optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.
-#' @param rmd (optional) path to .Rmd document to use for report-making. Using anything other than the default should be rare.
+#' @param est_char_vars,est_char_types,est_char_values,est_char_statements
+#'  (optional, needed if `est_chars_path` is used) specification of establishment
+#'   characteristics to use, see Details.
+#' @param quiet (optional) whether to quieten the Rmd rendering information.
+#'  Defaults to TRUE; FALSE useful for testing.
+#' @param verbose (optional) whether to include extra/verbose detail in the report.
+#'  Defaults to FALSE; TRUE useful for testing.
+#' @param show (optional) whether to show intermediate results in the RStudio Viewer.
+#'  Defaults to FALSE; unclear when TRUE might be useful.
+#' @param rmd (optional) path to .Rmd document to use for report-making.
+#'  Using anything other than the default should be rare.
 #'
 #' @returns a string giving the path of the saved .html document
 #'
@@ -149,6 +163,8 @@ render_survey_summary <- function(data_path,
                                   output_author = NULL,
                                   output_date = NULL,
                                   overwrite = FALSE,
+                                  percCutHoriz = 5,
+                                  percCutVert = 5,
                                   est_chars_path=NULL,
                                   est_chars_sheet=NULL,
                                   est_char_vars=NULL,
@@ -164,57 +180,12 @@ render_survey_summary <- function(data_path,
   if (is.null(rmd)) {
     rmd <- system.file("markdown_reports/survey_summary_report.Rmd", package="OMESurvey")
     if (!nzchar(rmd)) {
-      stop("Template Rmd not found in installed package. Did you put it in inst/markdown_reports/ and reinstall the package?")
+      stop("Template Rmd not found in installed package.\n
+           Did you (or Dave!) put it in inst/markdown_reports/ and reinstall the package?")
     }
   } else {
     if (!file.exists(rmd)) stop("rmd not found")
   }
-
-
-  # check that data & dict are real files
-  if (!file.exists(data_path)) {
-    stop("File not found: ", data_path)
-  }
-
-  if (!file.exists(dict_path)) {
-    stop("File not found: ", dict_path)
-  }
-
-  # check data file type (if changing see "data_ext <-" in the .Rmd)
-  if (!(tolower(tools::file_ext(data_path)) %in% c("csv", "xls", "xlsx"))){
-    stop("Unsupported data file type: ", ext)
-  }
-
-  # is_file_openable <- function(path) {
-  #   con <- try(file(path, open = "rb"), silent = TRUE)
-  #   if (inherits(con, "try-error")) {
-  #     return(FALSE)
-  #   }
-  #   close(con)
-  #   TRUE
-  # }
-  #
-  #
-  # if (!is_file_openable(data_path)) {
-  #   stop("Data file is locked or cannot be opened")
-  # }
-  # if (!is_file_openable(dict_path)) {
-  #   stop("Data dictionary file is locked or cannot be opened")
-  # }
-
-
-  # same for est_chars_path
-  if (!is.null(est_chars_path)) {
-    if (!file.exists(est_chars_path)) {
-      stop("File not found: ", est_chars_path)
-    }
-
-    # if(!is_file_openable(est_chars_path)){
-    #   stop("Establishment characteristics file is locked or cannot be opened")
-    # }
-  }
-
-
 
 
   # default output filename if not provided
@@ -223,8 +194,20 @@ render_survey_summary <- function(data_path,
     output_file <- paste0(base, "_summary.html")
   }
 
-  # ensure output_dir exists
-  if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+
+  # ensure output_dir exists (and can be created if needed)
+  if (!dir.exists(output_dir)) {
+    ok <- tryCatch(
+      dir.create(output_dir, recursive = TRUE),
+      warning = function(w) FALSE,
+      error   = function(e) FALSE
+    )
+
+    if (!ok || !dir.exists(output_dir)) {
+      stop("Could not create output directory: ", output_dir)
+    }
+  }
+
 
   # compute full output path (what rmarkdown::render will create)
   out_full <- normalizePath(file.path(output_dir, output_file), mustWork = FALSE)
@@ -285,7 +268,9 @@ render_survey_summary <- function(data_path,
     output_title = output_title,
     output_author = output_author,
     output_date = output_date,
-    verbose = verbose
+    verbose = verbose,
+    percCutHoriz = percCutHoriz,
+    percCutVert = percCutVert
   )
 
   # (optionally) suppress RStudio Viewer during render
@@ -1155,7 +1140,7 @@ plot_many_questions <- function(...) {
 #'   right-hand axis. Defaults to TRUE.
 #' @param na.rm Logical; whether to remove/ignore missing values.
 #'   When `na.rm = TRUE`, count labels show the number of plotted (i.e. non-missing) observations;
-#'   when `na.rm = FALSE`, labels show non‑missing and total number of observations.
+#'   when `na.rm = FALSE`, labels show non-missing and total number of observations.
 #'
 #' @param valueLabText Optional title for the value variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `value_var` is used.
@@ -1480,7 +1465,7 @@ OME_boxplot <- function(data,
 #'
 #' @details
 #' The variables in \code{dat} are pivoted to long format, then ordered according
-#' to the value returned by \code{order_fun} applied to each question’s observed
+#' to the value returned by \code{order_fun} applied to each question's observed
 #' responses (with \code{na.rm = TRUE}).
 #'
 #' The original column order of \code{dat} is preserved as a stable tie-breaker
@@ -1969,12 +1954,13 @@ scale_fill_OME <- function(type = "distinct", ...) {
 #' Reads the survey data, data dictionary, and optionally establishment
 #' characteristics files, and prepares them for downstream processing.
 #' This includes merging establishment characteristics onto the main data
-#' (if provided) and augmenting the dictionary with any additional variables.
+#' (if provided), augmenting the dictionary with corresponding additional
+#' variables, simple dictionary validation.
 #'
-#' This function performs only **input and structural preparation**:
-#' file reading, basic checks, and dataset merging. It does **not**
-#' perform validation or coercion of data values; those are handled by
-#' \code{\link{survey_data_prepare}}.
+#' This function performs input and structural preparation of the data and
+#' preparation & validation of the dictionary.
+#' \code{\link{survey_data_prepare}} is designed to take the
+#' output of this function and validate & coerce-to-type the data.
 #'
 #' @param data_path Character string. Path to the survey data file
 #'   (csv, xls, or xlsx).
@@ -2003,30 +1989,19 @@ scale_fill_OME <- function(type = "distinct", ...) {
 #'   \item{data}{A tibble containing the survey data, merged with
 #'   establishment characteristics if supplied.}
 #'   \item{dict}{A tibble containing the data dictionary, augmented
-#'   with any establishment characteristics entries if supplied.}
+#'   with any establishment characteristics entries supplied.}
 #'   \item{messages}{A list of message objects describing any issues
 #'   encountered during reading or merging (e.g. missing files,
 #'   duplicate keys, unmatched joins).}
 #' }
 #'
 #' @details
-#' This function serves as the **input stage** of the survey processing
-#' pipeline:
+#' The establishment characteristics to be merged into the data are specified
+#' through the variables `est_char_vars`, `est_char_types`, `est_char_values` and
+#' `est_char_statements`. They are vectors with elements corresponding to the
+#' variable name, data type, allowed values, item statement entries of the data
+#' dictionary. See the preprocessing SOP for details/examples.
 #'
-#' \preformatted{
-#' survey_read_inputs() → survey_data_prepare() → reporting
-#' }
-#'
-#' Responsibilities include:
-#' \itemize{
-#'   \item Reading data and dictionary files
-#'   \item Reading establishment characteristics data (if supplied)
-#'   \item Merging establishment characteristics onto the main dataset
-#'   \item Appending establishment characteristic variables to the dictionary
-#'   \item Collecting messages about input or merge issues
-#' }
-#'
-#' No validation or coercion of variable values is performed here.
 #'
 #' @seealso \code{\link{survey_data_prepare}}
 #'
@@ -2045,15 +2020,29 @@ survey_read_inputs <- function(
   # initialise messages
   messages <- list()
 
-  # load data & dict
+
+  # check that data, dict, est_chars are real files
+  if (!file.exists(data_path)) {
+    stop("Data file not found: ", data_path)
+  }
+
+  if (!file.exists(dict_path)) {
+    stop("Dictionary file not found: ", dict_path)
+  }
+
+  if (!is.null(est_chars_path) && !file.exists(est_chars_path)) {
+    stop("Establishment characteristics file not found: ", dict_path)
+  }
+
+
+  # load data (with file type check) & dict
   data_ext <- tolower(tools::file_ext(data_path))
   data <- switch(data_ext,
                  "csv"  = readr::read_csv(data_path, show_col_types = FALSE),
                  "xlsx" = OMESurvey::safe_read_excel(data_path, guess_max = 1e6),
                  "xls"  = OMESurvey::safe_read_excel(data_path, guess_max = 1e6),
                  stop("Unsupported data file type: ", data_ext)
-  ) # if changing see also file type checking in render_survey_summary() function
-
+  )
 
   dict <- OMESurvey::safe_read_excel(dict_path,
                                      sheet = dict_sheet)
@@ -2070,9 +2059,6 @@ survey_read_inputs <- function(
          paste(missing, collapse = ", "),
          "\n Note that 'grouping_var' and 'condition' are required columns, though they may be otherwise empty.")
   }
-
-
-
 
 
   # check for duplicated variable names in dictionary
@@ -2119,6 +2105,7 @@ survey_read_inputs <- function(
     }
   }
 
+
   # check for variables in dict but not data
   vars_not_in_data <- base::setdiff(
     dict |> dplyr::pull(variable_name),
@@ -2139,6 +2126,7 @@ survey_read_inputs <- function(
     level = "NOTE"
     )
   }
+
 
   # check for variables in data but not dict
   vars_not_in_dict <- base::setdiff(
@@ -2174,12 +2162,11 @@ survey_read_inputs <- function(
                   data |> base::names())
 
   if (length(vars_not_in_data) != 0) {
-    #remove from dictionary
+    # remove from dictionary
     dict <-
       dict |>
       dplyr::filter(!(variable_name %in% vars_not_in_data))
-
-    # warn
+    # and warn
     messages <- add_message(messages, paste0(
       "The following variables are given a section in the dictionary but cannot be found in the data: ",
       paste(vars_not_in_data, collapse = ", "),
@@ -2187,16 +2174,12 @@ survey_read_inputs <- function(
     ),
     level = "WARNING"
     )
-
   } else {
-
     messages <- add_message(messages,
       "All variables that are assigned to a section in the data dictionary were found in the data.",
       level = "NOTE"
     )
-
   }
-
 
 
   # Now merge in establishment characteristics if provided
@@ -2206,7 +2189,9 @@ survey_read_inputs <- function(
     ),
     level = "NOTE"
     )
+
   }else{
+
     # first check that the establishment ID variable EST_ID is present in the survey data
     num_EST_ID <- sum("EST_ID" == names(data))
     if (num_EST_ID != 1) {
@@ -2219,12 +2204,8 @@ survey_read_inputs <- function(
         est_chars_path,
         sheet = est_chars_sheet)
 
-    est_char_vars <- est_char_vars
-    est_char_types <- est_char_types
-    est_char_values <- est_char_values
-    est_char_statements <- est_char_statements
-
-    # v simple check of other est_chars parameters
+    # v simple checking of other est_chars parameters:
+    # that they are of character type, 1-dimensional, all the same length
     stopifnot(is.character(est_char_vars) && is.null(dim(est_char_vars)))
     stopifnot(is.character(est_char_types) && is.null(dim(est_char_types)))
     stopifnot(is.character(est_char_values) && is.null(dim(est_char_values)))
@@ -2234,7 +2215,7 @@ survey_read_inputs <- function(
                 length(est_char_vars) == length(est_char_statements))
 
 
-    # find variables not in the data
+    # check for variables specified but not in the data
     char_vars_not_in_data <-
       base::setdiff(est_char_vars,
                     est_chars |> base::names())
@@ -2248,9 +2229,10 @@ survey_read_inputs <- function(
       )
     }
 
-    # variables we will add to the dictionary
+    # variables to add to the dictionary
     est_char_vars <- base::setdiff(est_char_vars, char_vars_not_in_data)
 
+    # reduce to variables needed for the join
     est_chars <-
       est_chars |>
       dplyr::select(EstablishmentID, all_of(est_char_vars))
@@ -2260,7 +2242,7 @@ survey_read_inputs <- function(
       # join them to the data
       data <-
         data |>
-        dplyr::left_join(est_chars |> dplyr::select(EstablishmentID, dplyr::all_of(est_char_vars)),
+        dplyr::left_join(est_chars,
                          by=dplyr::join_by(EST_ID == EstablishmentID))
 
       # add them to the data dictionary and, if numeric, calculate the appropriate x-iles
@@ -2397,8 +2379,9 @@ survey_read_inputs <- function(
 #' values, handling conditional logic, and producing a structured
 #' validation log.
 #'
-#' This function operates on **in-memory data** (already read and merged)
-#' and performs only **data transformation and validation**, not file I/O.
+#' This function operates on in-memory data and a dictionary, usually the output from
+#' \code{\link{survey_read_inputs}}. That function reads files and validates
+#' the dictionary, this one uses the dictionary to transform & validate the data.
 #'
 #' @param data A tibble containing the survey data, typically the \code{data}
 #'   component returned by \code{\link{survey_read_inputs}}. This may already
@@ -2419,28 +2402,6 @@ survey_read_inputs <- function(
 #'   invalid values, failed conditions).}
 #' }
 #'
-#' @details
-#' This function serves as the **data preparation stage** of the survey
-#' processing pipeline:
-#'
-#' \preformatted{
-#' survey_read_inputs() → survey_data_prepare() → reporting
-#' }
-#'
-#' Responsibilities include:
-#' \itemize{
-#'   \item Checking consistency between data and dictionary variables
-#'   \item Coercing variables to specified types (e.g. factor, numeric)
-#'   \item Applying allowed values (e.g. factor levels)
-#'   \item Handling special/sentinel values where specified
-#'   \item Evaluating conditional constraints defined in the dictionary
-#'   \item Producing a per-variable validation summary
-#'   \item Collecting messages describing any validation or coercion issues
-#' }
-#'
-#' This function does **not** perform any file reading or dataset merging;
-#' those steps are handled by \code{\link{survey_read_inputs}}.
-#'
 #' @seealso \code{\link{survey_read_inputs}}
 #'
 #' @export
@@ -2448,7 +2409,7 @@ survey_data_prepare <- function(
     data,
     dict
 ) {
-  # Helper function: parse allowed values for factors
+  # Helper: parse allowed values for factors
   parse_allowed <- function(x){
     if(is.na(x) || stringr::str_trim(x) == "") return(NULL)
     vals <- unlist(strsplit(as.character(x), ";", fixed = TRUE))
@@ -2460,7 +2421,7 @@ survey_data_prepare <- function(
 
 
 
-  # Helper function: parse allowed ranges for numeric variables
+  # Helper: parse allowed ranges for numeric variables
   parse_allowed_range <- function(x) {
 
     if (is.na(x)) return(NULL)
@@ -2470,8 +2431,8 @@ survey_data_prepare <- function(
 
     parse_inf <- function(z) {
       z <- trimws(z)
-      if (grepl("^(\\+?inf|∞)$", z, ignore.case = TRUE)) return(Inf)
-      if (grepl("^(-inf|-∞)$", z, ignore.case = TRUE)) return(-Inf)
+      if (grepl("^(\\+?inf)$", z, ignore.case = TRUE)) return(Inf)
+      if (grepl("^(-inf)$", z, ignore.case = TRUE)) return(-Inf)
       suppressWarnings(as.numeric(z))
     }
 
@@ -2509,39 +2470,30 @@ survey_data_prepare <- function(
     }
 
     ## 3) Relational forms: >5, >=0, <10, <=100
-    if (grepl("^(>=|>|<=|<)", s)) {
-      op <- sub("^\\s*(>=|>|<=|<).*$", "\\1", s)
-      val <- parse_inf(sub("^\\s*(>=|>|<=|<)", "", s))
+    if (grepl("^(>=|>)", s)) {
+      op <- sub("^\\s*(>=|>).*$", "\\1", s)
+      val <- parse_inf(sub("^\\s*(>=|>)", "", s))
 
-      if (op %in% c(">", ">=")) {
-        return(list(
-          lower = val,
-          upper = Inf,
-          lower_incl = op == ">=",
-          upper_incl = FALSE
-        ))
-      } else {
-        return(list(
-          lower = -Inf,
-          upper = val,
-          lower_incl = FALSE,
-          upper_incl = op == "<="
-        ))
-      }
+      return(list(
+        lower = val,
+        upper = Inf,
+        lower_incl = op == ">=",
+        upper_incl = FALSE
+      ))
     }
 
     NULL
   }
 
-  #helper function: coerce a column of data
+  #helper: coerce a column of data
   coerce_col <- function(x, type, levels = NULL) {
     if (grepl("integer", type, ignore.case = TRUE)) {
       return(as.integer(x))
-    } else if (grepl("numeric|double", type, ignore.case = TRUE)) {
+    } else if (grepl("numeric", type, ignore.case = TRUE)) {
       res <- suppress_specific_warning(as.numeric(x), "NAs introduced by coercion")
       return(res$value)      # numeric result with NA
-      #res$suppressed # character vector of suppressed messages (if any)
-    } else if (grepl("binary|logical", type, ignore.case = TRUE)) {
+      #res$suppressed # is a character vector of suppressed messages (if any)
+    } else if (grepl("binary", type, ignore.case = TRUE)) {
       return(as.factor(as.logical(x)))
     } else if (grepl("date", type, ignore.case = TRUE)) {
       return(as.Date(x))
@@ -2551,7 +2503,7 @@ survey_data_prepare <- function(
       } else {
         return(factor(x))
       }
-    } else if (grepl("char|str|text", type, ignore.case = TRUE)) {
+    } else if (grepl("text", type, ignore.case = TRUE)) {
       return(as.character(x))
     } else {
       return(x)
@@ -2559,9 +2511,9 @@ survey_data_prepare <- function(
   }
 
 
-  # helper to build a single validation row
+  # helper: build a single validation row
   make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
-                                  allowed_specified, allowed,
+                                  allowed_specified, allowed_display, allowed_technical,
                                   n_missing, n_non_allowed, non_allowed_freq,
                                   fail_cond_freq,
                                   report_sec, report_sec_ord, item_label,
@@ -2576,7 +2528,10 @@ survey_data_prepare <- function(
       colo = colo,
       order_values = order_values,
       allowed_specified = allowed_specified,
-      allowed = if (allowed_specified) paste(allowed, collapse = ";") else NA_character_,
+      allowed_display = if (allowed_specified && !is.null(allowed_display)) {
+        if (length(allowed_display) > 1) paste(allowed_display, collapse = ";") else allowed_display
+      } else NA_character_,
+      allowed_technical = list(allowed_technical),
       n_missing = n_missing,
       n_non_allowed = n_non_allowed,
       non_allowed_freq = list(non_allowed_freq),
@@ -2605,7 +2560,7 @@ survey_data_prepare <- function(
     # flush.console()
 
     tryCatch({
-
+      # extract key info for easier reference in this loop
       dtype <- tolower(dict$data_type[i])
       allowed_raw <- dict$allowed_values[i]
       allowed <- parse_allowed(allowed_raw)           # returns NULL or character vector
@@ -2617,16 +2572,21 @@ survey_data_prepare <- function(
       report_sec_ord <- dict$report_sec_ord[i]
       item_label <- dict$item_statement[i]  # remove line breaks here ?!?
 
+      # make _raw copy of variable & coerce it
       raw <- data[[var]]
       raw_chr <- as.character(raw)
       data[[paste0("raw_", var)]] <- raw_chr
 
       data[[var]] <- coerce_col(raw, dtype, levels = allowed)
 
+
+      # initialise some thing - check location (& if others shold be here too) later!
       non_allowed_mask <- rep(FALSE, nrow(data))
       fail_cond_freq <- list()
 
-      ## parse and evaluate condition (if present)
+
+      # parse and evaluate condition (if present) and then condition masks and n_xxx variables
+      # (about numbers of records the meet/don't the condition, are invalid/missing, etc)
 
       cond_str <- if ("condition" %in% names(dict)) dict$condition[i] else NA_character_
       cond_expr <- NULL
@@ -2653,7 +2613,6 @@ survey_data_prepare <- function(
         )
 
         if (!is.null(cond_expr)) {
-
           cond_mask <- tryCatch(
             rlang::eval_tidy(cond_expr, data = data),
             error = function(e) {
@@ -2691,6 +2650,7 @@ survey_data_prepare <- function(
           length(cond_mask) == nrow(data)) {
 
         has_valid_cond <- TRUE
+
         # meet_mask TRUE iff cond_mask is TRUE, but use %in% so NA becomes FALSE
         # fail_mask is the complement (TRUE when cond_mask is FALSE or NA)
         meet_mask <- cond_mask %in% TRUE
@@ -2744,13 +2704,10 @@ survey_data_prepare <- function(
 
 
         if (has_valid_cond) {
-
           n_meet_cond_missing <-
             sum(meet_mask & is.na(raw))
-
           n_meet_cond_non_allowed <-
             sum(meet_mask & non_allowed_mask)
-
         }
 
         # then make a frequency table of non-allowed responses
@@ -2767,7 +2724,6 @@ survey_data_prepare <- function(
             sort(table(bad_vals), decreasing = TRUE)
         }
 
-
         # frequency table where condition NOT met
         if (!is.null(fail_mask)) {
 
@@ -2780,9 +2736,8 @@ survey_data_prepare <- function(
         }
 
 
-
-        # they also need to have colour scheme determined
-        # and, for neg-pos ones, levels noted to use for ordering questions in section-level overall plots
+        # Determine colour scheme
+        # and how to order questions in section-level overall plots
         switch(stringr::str_remove(dtype, "^factor-"),
                `neg-pos`={
                  colo <- OMESurvey::get_OME_colours(length(allowed), type="contrast")
@@ -2805,13 +2760,15 @@ survey_data_prepare <- function(
         # cat("\nDEBUG FINAL COUNTS: meet =", n_meet_cond, " fail =", n_fail_cond, "\n")
 
 
-        validation_log[[var]] <- make_validation_row(
+        names(validation_log)[i] <- var
+        validation_log[[i]] <- make_validation_row(
           var = var,
           type = "factor",
           colo = colo,
           order_values = order_values,
           allowed_specified = allowed_specified,
-          allowed = allowed,
+          allowed_display = allowed,
+          allowed_technical = allowed,
           n_missing = sum(is.na(raw)),
           n_non_allowed = sum(non_allowed_mask, na.rm = TRUE),
           non_allowed_freq = non_allowed_freq,
@@ -2860,19 +2817,14 @@ survey_data_prepare <- function(
             non_allowed_coercion |
             (!is.null(out_of_range) & out_of_range)
 
-
           if (has_valid_cond) {
-
             n_meet_cond_missing <-
               sum(meet_mask & is.na(raw))
-
             n_meet_cond_non_allowed <-
               sum(meet_mask & non_allowed_mask)
-
           }
 
-
-          #non_allowed_mask <- non_allowed_coercion | out_of_range
+          # construct allowed_for_report for the validation log
           allowed_specified_num <- TRUE
           allowed_for_report <- paste0(
             if (range_spec$lower_incl) "[" else "(",
@@ -2927,11 +2879,13 @@ survey_data_prepare <- function(
         }
 
 
-        validation_log[[var]] <- make_validation_row(
+        names(validation_log)[i] <- var
+        validation_log[[i]] <- make_validation_row(
           var = var,
           type = "numeric",
           allowed_specified = allowed_specified_num,
-          allowed = if (allowed_specified_num) allowed_for_report else NULL,
+          allowed_display = if (allowed_specified_num) allowed_for_report else NULL,
+          allowed_technical = if (!is.null(range_spec)) range_spec else NULL,
           n_missing = sum(is.na(raw)),
           n_non_allowed =
             sum(non_allowed_coercion, na.rm = TRUE) +
@@ -2950,11 +2904,13 @@ survey_data_prepare <- function(
 
 
         # } else if (grepl("integer", dtype, ignore.case = TRUE)) {
-        #   validation_log[[var]] <- make_validation_row(
+        #     names(validation_log)[i] <- var
+        #     validation_log[[i]] <- make_validation_row(
         #     var = var,
         #     type = "integer",
         #     allowed_specified = FALSE,
-        #     allowed = NULL,
+        #     allowed_display = NULL,
+        #     allowed_technical = NULL,
         #     n_missing = sum(is.na(raw)),
         #     n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
         #     non_allowed_freq = non_allowed_freq,
@@ -2970,11 +2926,13 @@ survey_data_prepare <- function(
         #   )
 
       } else if (grepl("date", dtype, ignore.case = TRUE)) {
-        validation_log[[var]] <- make_validation_row(
+        names(validation_log)[i] <- var
+        validation_log[[i]] <- make_validation_row(
           var = var,
           type = "date",
           allowed_specified = FALSE,
-          allowed = NULL,
+          allowed_display = NULL,
+          allowed_technical = NULL,
           n_missing = sum(is.na(raw)),
           n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
           non_allowed_freq = list(),
@@ -3007,7 +2965,8 @@ survey_data_prepare <- function(
         }
 
 
-        # Build non-allowed frequency table for text variables (conditional)
+        # Build non-allowed frequency table for text variables
+        # (depending on whether or not there is a condition)
         non_allowed_freq <- list()
 
         if (has_valid_cond) {
@@ -3036,11 +2995,13 @@ survey_data_prepare <- function(
         }
 
 
-        validation_log[[var]] <- make_validation_row(
+        names(validation_log)[i] <- var
+        validation_log[[i]] <- make_validation_row(
           var = var,
           type = "character",
           allowed_specified = FALSE,
-          allowed = NULL,
+          allowed_display = NULL,
+          allowed_technical = NULL,
           n_missing = sum(is.na(raw)),
           n_non_allowed = NA_integer_, # sum(non_allowed_mask, na.rm = TRUE),
           non_allowed_freq = non_allowed_freq,
@@ -3145,30 +3106,15 @@ survey_data_prepare <- function(
 #'   \item{data}{A tibble containing the fully prepared survey data,
 #'   including merged establishment characteristics (if supplied) and
 #'   variables coerced to their specified types.}
-#'   \item{validation}{A tibble summarising validation checks applied
+#'   \item{validation_log}{A list summarising validation checks applied
 #'   to each variable.}
+#'   \item{validation_df}{A tibble made as `dplyr::bind_rows(validation_log)`
+#'   (easier to access for some purposes).}
 #'   \item{read_messages}{A list of message objects generated during
 #'   input reading and merging.}
 #'   \item{prep_messages}{A list of message objects generated during
 #'   validation and coercion.}
 #' }
-#'
-#' @details
-#' This function provides a **single entry point** for the survey data
-#' preparation workflow:
-#'
-#' \preformatted{
-#' survey_prepare_data()
-#'   → survey_read_inputs()
-#'   → survey_data_prepare()
-#' }
-#'
-#' It is intended for use in scripts, reporting workflows, and batch
-#' processing where a complete, ready-to-use dataset is required.
-#'
-#' For more control over individual stages, the lower-level functions
-#' \code{\link{survey_read_inputs}} and \code{\link{survey_data_prepare}}
-#' can be called directly.
 #'
 #' @seealso
 #' \code{\link{survey_read_inputs}}, \code{\link{survey_data_prepare}}
@@ -3185,6 +3131,28 @@ survey_prepare_data <- function(
     est_char_values = NULL,
     est_char_statements = NULL
 ) {
+  # first read & put together inputs
+  read_out <- survey_read_inputs(data_path,
+                                 dict_path,
+                                 dict_sheet,
+                                 est_chars_path,
+                                 est_chars_sheet,
+                                 est_char_vars,
+                                 est_char_types,
+                                 est_char_values,
+                                 est_char_statements)
+
+  # then use those to do data-preparation
+  prep_out <- survey_data_prepare(read_out$data,
+                                  read_out$dict)
+
+  return(list(
+    data = prep_out$data,
+    validation_log = prep_out$validation_log,
+    validation_df = prep_out$validation_df,
+    messages_read = read_out$messages,
+    messages_prep = prep_out$messages
+  ))
 
 }
 

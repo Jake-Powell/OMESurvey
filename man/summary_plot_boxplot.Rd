@@ -50,7 +50,7 @@ median of observed responses).
 }
 \details{
 The variables in \code{dat} are pivoted to long format, then ordered according
-to the value returned by \code{order_fun} applied to each question’s observed
+to the value returned by \code{order_fun} applied to each question's observed
 responses (with \code{na.rm = TRUE}).
 
 The original column order of \code{dat} is preserved as a stable tie-breaker

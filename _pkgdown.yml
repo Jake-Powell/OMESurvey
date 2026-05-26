@@ -44,17 +44,30 @@ reference:
 
 - title: Dave survey summary functions
   contents:
+
   - render_survey_summary
+  - survey_read_inputs
+  - survey_data_prepare
+  - survey_prepare_data
+
   - OME_stacked_bar
   - OME_boxplot
   - plot_many_questions
   - summary_plot_stacked_bar
   - summary_plot_boxplot
+
   - centre_legend_below
+
+  - add_message
+  - report_notice
+
   - suppress_specific_warning
   - frac_to_num
   - convert_colo
   - rename_NA_first_col
+
   - theme_OME
   - scale_fill_OME
   - scale_colour_OME
+
+  - kable_narrow

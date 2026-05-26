@@ -52,7 +52,7 @@ A list with components:
 \item{data}{A tibble containing the survey data, merged with
 establishment characteristics if supplied.}
 \item{dict}{A tibble containing the data dictionary, augmented
-with any establishment characteristics entries if supplied.}
+with any establishment characteristics entries supplied.}
 \item{messages}{A list of message objects describing any issues
 encountered during reading or merging (e.g. missing files,
 duplicate keys, unmatched joins).}
@@ -62,31 +62,20 @@ duplicate keys, unmatched joins).}
 Reads the survey data, data dictionary, and optionally establishment
 characteristics files, and prepares them for downstream processing.
 This includes merging establishment characteristics onto the main data
-(if provided) and augmenting the dictionary with any additional variables.
+(if provided), augmenting the dictionary with corresponding additional
+variables, simple dictionary validation.
 }
 \details{
-This function performs only \strong{input and structural preparation}:
-file reading, basic checks, and dataset merging. It does \strong{not}
-perform validation or coercion of data values; those are handled by
-\code{\link{survey_data_prepare}}.
+This function performs input and structural preparation of the data and
+preparation & validation of the dictionary.
+\code{\link{survey_data_prepare}} is designed to take the
+output of this function and validate & coerce-to-type the data.
 
-This function serves as the \strong{input stage} of the survey processing
-pipeline:
-
-\preformatted{
-survey_read_inputs() → survey_data_prepare() → reporting
-}
-
-Responsibilities include:
-\itemize{
-\item Reading data and dictionary files
-\item Reading establishment characteristics data (if supplied)
-\item Merging establishment characteristics onto the main dataset
-\item Appending establishment characteristic variables to the dictionary
-\item Collecting messages about input or merge issues
-}
-
-No validation or coercion of variable values is performed here.
+The establishment characteristics to be merged into the data are specified
+through the variables \code{est_char_vars}, \code{est_char_types}, \code{est_char_values} and
+\code{est_char_statements}. They are vectors with elements corresponding to the
+variable name, data type, allowed values, item statement entries of the data
+dictionary. See the preprocessing SOP for details/examples.
 }
 \seealso{
 \code{\link{survey_data_prepare}}

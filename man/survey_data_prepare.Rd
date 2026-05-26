@@ -35,29 +35,9 @@ values, handling conditional logic, and producing a structured
 validation log.
 }
 \details{
-This function operates on \strong{in-memory data} (already read and merged)
-and performs only \strong{data transformation and validation}, not file I/O.
-
-This function serves as the \strong{data preparation stage} of the survey
-processing pipeline:
-
-\preformatted{
-survey_read_inputs() → survey_data_prepare() → reporting
-}
-
-Responsibilities include:
-\itemize{
-\item Checking consistency between data and dictionary variables
-\item Coercing variables to specified types (e.g. factor, numeric)
-\item Applying allowed values (e.g. factor levels)
-\item Handling special/sentinel values where specified
-\item Evaluating conditional constraints defined in the dictionary
-\item Producing a per-variable validation summary
-\item Collecting messages describing any validation or coercion issues
-}
-
-This function does \strong{not} perform any file reading or dataset merging;
-those steps are handled by \code{\link{survey_read_inputs}}.
+This function operates on in-memory data and a dictionary, usually the output from
+\code{\link{survey_read_inputs}}. That function reads files and validates
+the dictionary, this one uses the dictionary to transform & validate the data.
 }
 \seealso{
 \code{\link{survey_read_inputs}}

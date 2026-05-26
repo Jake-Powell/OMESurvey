@@ -52,8 +52,10 @@ A list with components:
 \item{data}{A tibble containing the fully prepared survey data,
 including merged establishment characteristics (if supplied) and
 variables coerced to their specified types.}
-\item{validation}{A tibble summarising validation checks applied
+\item{validation_log}{A list summarising validation checks applied
 to each variable.}
+\item{validation_df}{A tibble made as \code{dplyr::bind_rows(validation_log)}
+(easier to access for some purposes).}
 \item{read_messages}{A list of message objects generated during
 input reading and merging.}
 \item{prep_messages}{A list of message objects generated during
@@ -67,23 +69,6 @@ pipeline by combining \code{\link{survey_read_inputs}} and
 merging establishment characteristics (if supplied), validating and
 coercing variables according to the data dictionary, and returning
 both processed data and diagnostic outputs.
-}
-\details{
-This function provides a \strong{single entry point} for the survey data
-preparation workflow:
-
-\preformatted{
-survey_prepare_data()
-  → survey_read_inputs()
-  → survey_data_prepare()
-}
-
-It is intended for use in scripts, reporting workflows, and batch
-processing where a complete, ready-to-use dataset is required.
-
-For more control over individual stages, the lower-level functions
-\code{\link{survey_read_inputs}} and \code{\link{survey_data_prepare}}
-can be called directly.
 }
 \seealso{
 \code{\link{survey_read_inputs}}, \code{\link{survey_data_prepare}}
