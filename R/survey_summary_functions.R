@@ -2721,7 +2721,18 @@ survey_data_prepare <- function(
       raw_chr <- as.character(raw)
       data[[paste0("raw_", var)]] <- raw_chr
 
+      sentinel_999 <- raw_chr %in% c("-999", -999)
+      sentinel_888 <- raw_chr %in% c("-888", -888)
+      sentinel_777 <- raw_chr %in% c("-777", -777)
+
+
       data[[var]] <- coerce_col(raw, dtype, levels = allowed)
+
+
+      if (grepl("^numeric", dtype, ignore.case = TRUE)) {
+        data[[var]][sentinel_999 | sentinel_888 | sentinel_777] <- NA
+      }
+
 
 
       # initialise some things - check location (& if others should be here too) later!
@@ -2838,10 +2849,6 @@ survey_data_prepare <- function(
 
 
       # Build & initialise diagnostic classification
-      # --------------------------------------------
-      sentinel_999 <- raw_chr %in% c("-999", -999)
-      sentinel_888 <- raw_chr %in% c("-888", -888)
-      sentinel_777 <- raw_chr %in% c("-777", -777)
 
       class_vec <- rep(NA_character_, length(raw_chr))
 
