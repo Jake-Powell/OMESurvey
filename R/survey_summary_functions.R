@@ -2324,10 +2324,17 @@ survey_read_inputs <- function(
           }
 
 
+          type_suffix <- dplyr::case_when(
+            endsWith(est_char_types[i], "-quintiles") ~ "quintile",
+            endsWith(est_char_types[i], "-tertiles")  ~ "tertile",
+            endsWith(est_char_types[i], "-quartiles") ~ "quartile",
+            TRUE ~ NA_character_
+          )
+
 
           # depending on xxx in numeric-xxx, look up stats and prepare other variables
           if (endsWith(est_char_types[i], "-quintiles")){
-            label_prefix <- "Quintile "
+            label_prefix <- paste0(tools::toTitleCase(type_suffix), " ")
             label_max_num <- 5
             est_xiles <- get_est_xiles(
               est_stats = est_stats,
@@ -2338,7 +2345,7 @@ survey_read_inputs <- function(
             )
 
           } else if (endsWith(est_char_types[i], "-tertiles")){
-            label_prefix <- "Tertile "
+            label_prefix <- paste0(tools::toTitleCase(type_suffix), " ")
             label_max_num <- 3
             est_xiles <- get_est_xiles(
               est_stats = est_stats,
@@ -2349,7 +2356,7 @@ survey_read_inputs <- function(
             )
 
           } else if (endsWith(est_char_types[i], "-quartiles")){
-            label_prefix <- "Quartile "
+            label_prefix <- paste0(tools::toTitleCase(type_suffix), " ")
             label_max_num <- 4
             est_xiles <- get_est_xiles(
               est_stats = est_stats,
@@ -2363,13 +2370,28 @@ survey_read_inputs <- function(
             stop("Unknown suffix in a `est_char_types` entry of the form numeric-xxx.")
           }
 
+
+
+
+
+          if (is.na(type_suffix)) {
+            stop(
+              "Unknown numeric type in est_char_types for variable '",
+              est_char_vars[i],
+              "'. Expected one of -quintiles, -tertiles, -quartiles.",
+              call. = FALSE
+            )
+          }
+
+
+
           # Construct the factor labels
           final_labels <- paste0(label_prefix, seq_len(label_max_num))
 
           final_labels[c(1, label_max_num)] <-
             paste0(
               final_labels[c(1, label_max_num)],
-              c("\n(Lowest)", "\n(Highest)")
+              c(" (Lowest)", " (Highest)")
             )
 
           # Add dictionary row with correct allowed values (semicolon-delimited)
@@ -2378,7 +2400,10 @@ survey_read_inputs <- function(
               variable_name = est_char_vars[i],
               data_type = "factor-lo-hi",
               allowed_values = paste(final_labels, collapse = ";"),
-              item_statement = est_char_statements[i],
+              item_statement = paste(
+                est_char_statements[i],
+                type_suffix
+              ),
               report_sec = "Grouping variables",
               grouping_var = "T",
               condition = NA
