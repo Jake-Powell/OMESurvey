@@ -71,3 +71,4 @@ reference:
   - scale_colour_OME
 
   - kable_narrow
+  - safe_read_excel
