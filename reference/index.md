@@ -68,6 +68,12 @@
 
 - [`render_survey_summary()`](https://jake-powell.github.io/OMESurvey/reference/render_survey_summary.md)
   : Produce html document summarising a single survey
+- [`survey_read_inputs()`](https://jake-powell.github.io/OMESurvey/reference/survey_read_inputs.md)
+  : Read and assemble survey data and dictionary inputs
+- [`survey_data_prepare()`](https://jake-powell.github.io/OMESurvey/reference/survey_data_prepare.md)
+  : Validate and coerce survey data according to a data dictionary
+- [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
+  : Read, merge, validate, and prepare survey data in one step
 - [`OME_stacked_bar_()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   : Stacked proportional bar chart in OME style (Dave's version.)
@@ -83,6 +89,10 @@
   : Section-level summary plot for numeric questions
 - [`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)
   : Centre a ggplot legend beneath the plot using cowplot
+- [`add_message()`](https://jake-powell.github.io/OMESurvey/reference/add_message.md)
+  : Append a message to a message list
+- [`report_notice()`](https://jake-powell.github.io/OMESurvey/reference/report_notice.md)
+  : Format a NOTE or WARNING message for report output
 - [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
   : Suppress warnings matching a specific pattern
 - [`frac_to_num()`](https://jake-powell.github.io/OMESurvey/reference/frac_to_num.md)
@@ -96,3 +106,7 @@
 - [`scale_colour_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
   [`scale_fill_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
   : OME colour scales for ggplot2
+- [`kable_narrow()`](https://jake-powell.github.io/OMESurvey/reference/kable_narrow.md)
+  : Narrow kable table with standard styling
+- [`safe_read_excel()`](https://jake-powell.github.io/OMESurvey/reference/safe_read_excel.md)
+  : Safely read Excel files, including when open or locked

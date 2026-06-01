@@ -65,6 +65,8 @@ Structure of the summary document is encoded in specified columns of the data di
 <span>  output_author <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  overwrite <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  percCutHoriz <span class="op">=</span> <span class="fl">5</span>,</span>
+<span>  percCutVert <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  est_chars_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  est_chars_sheet <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  est_char_vars <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -87,15 +89,18 @@ Structure of the summary document is encoded in specified columns of the data di
 
 
 <dt id="arg-dict-path-dict-sheet">dict_path, dict_sheet<a class="anchor" aria-label="anchor" href="#arg-dict-path-dict-sheet"></a></dt>
-<dd><p>path to the data dictionary (assumed to be xls/xlsx) and name of sheet in that file to use.</p></dd>
+<dd><p>path to the data dictionary (assumed to be xls/xlsx)
+and name of sheet in that file to use.</p></dd>
 
 
 <dt id="arg-output-dir">output_dir<a class="anchor" aria-label="anchor" href="#arg-output-dir"></a></dt>
-<dd><p>(optional) directory to save the output file to. Defaults to current working directory.</p></dd>
+<dd><p>(optional) directory to save the output file to.
+Defaults to current working directory.</p></dd>
 
 
 <dt id="arg-output-file">output_file<a class="anchor" aria-label="anchor" href="#arg-output-file"></a></dt>
-<dd><p>name of output html file (needs to end with ".html", defaults to "<name of data file>_summary.html")</name></p></dd>
+<dd><p>name of output html file (needs to end with ".html",
+defaults to "<name of data file>_summary.html")</name></p></dd>
 
 
 <dt id="arg-output-title">output_title<a class="anchor" aria-label="anchor" href="#arg-output-title"></a></dt>
@@ -111,7 +116,18 @@ Structure of the summary document is encoded in specified columns of the data di
 
 
 <dt id="arg-overwrite">overwrite<a class="anchor" aria-label="anchor" href="#arg-overwrite"></a></dt>
-<dd><p>(optional) whether to overwrite <code>output_file</code> if it already exists. Defaults to FALSE for safety but in use probably TRUE will be more typical.</p></dd>
+<dd><p>(optional) whether to overwrite <code>output_file</code> if it already exists.
+Defaults to FALSE for safety but in use probably TRUE will be more typical.</p></dd>
+
+
+<dt id="arg-perccuthoriz">percCutHoriz<a class="anchor" aria-label="anchor" href="#arg-perccuthoriz"></a></dt>
+<dd><p>Numeric. Percentage cutoff for section summary plots:
+categorical levels with proportions below this value are not labelled.</p></dd>
+
+
+<dt id="arg-perccutvert">percCutVert<a class="anchor" aria-label="anchor" href="#arg-perccutvert"></a></dt>
+<dd><p>Numeric. Percentage cutoff for variable-level plots:
+categorical levels with proportions below this value are not labelled.</p></dd>
 
 
 <dt id="arg-est-chars-path">est_chars_path<a class="anchor" aria-label="anchor" href="#arg-est-chars-path"></a></dt>
@@ -123,23 +139,28 @@ Structure of the summary document is encoded in specified columns of the data di
 
 
 <dt id="arg-est-char-vars-est-char-types-est-char-values-est-char-statements">est_char_vars, est_char_types, est_char_values, est_char_statements<a class="anchor" aria-label="anchor" href="#arg-est-char-vars-est-char-types-est-char-values-est-char-statements"></a></dt>
-<dd><p>(optional, needed if <code>est_chars_path</code> is used) specification of establishment characteristics to use, see Details.</p></dd>
+<dd><p>(optional, needed if <code>est_chars_path</code> is used) specification of establishment
+characteristics to use, see Details.</p></dd>
 
 
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
-<dd><p>(optional) whether to quieten the Rmd rendering information. Defaults to TRUE; FALSE useful for testing.</p></dd>
+<dd><p>(optional) whether to quieten the Rmd rendering information.
+Defaults to TRUE; FALSE useful for testing.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>(optional) whether to include extra/verbose detail in the report. Defaults to FALSE; TRUE useful for testing.</p></dd>
+<dd><p>(optional) whether to include extra/verbose detail in the report.
+Defaults to FALSE; TRUE useful for testing.</p></dd>
 
 
 <dt id="arg-show">show<a class="anchor" aria-label="anchor" href="#arg-show"></a></dt>
-<dd><p>(optional) whether to show intermediate results in the RStudio Viewer. Defaults to FALSE; unclear when TRUE might be useful.</p></dd>
+<dd><p>(optional) whether to show intermediate results in the RStudio Viewer.
+Defaults to FALSE; unclear when TRUE might be useful.</p></dd>
 
 
 <dt id="arg-rmd">rmd<a class="anchor" aria-label="anchor" href="#arg-rmd"></a></dt>
-<dd><p>(optional) path to .Rmd document to use for report-making. Using anything other than the default should be rare.</p></dd>
+<dd><p>(optional) path to .Rmd document to use for report-making.
+Using anything other than the default should be rare.</p></dd>
 
 </dl></div>
     <div class="section level2">

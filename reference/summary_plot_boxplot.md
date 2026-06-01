@@ -70,7 +70,7 @@ questions.
 
 The variables in `dat` are pivoted to long format, then ordered
 according to the value returned by `order_fun` applied to each
-question’s observed responses (with `na.rm = TRUE`).
+question's observed responses (with `na.rm = TRUE`).
 
 The original column order of `dat` is preserved as a stable tie-breaker
 when multiple questions have identical ordering statistics.

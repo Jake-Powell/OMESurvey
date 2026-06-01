@@ -17,6 +17,8 @@ render_survey_summary(
   output_author = NULL,
   output_date = NULL,
   overwrite = FALSE,
+  percCutHoriz = 5,
+  percCutVert = 5,
   est_chars_path = NULL,
   est_chars_sheet = NULL,
   est_char_vars = NULL,
@@ -68,6 +70,16 @@ render_survey_summary(
   (optional) whether to overwrite `output_file` if it already exists.
   Defaults to FALSE for safety but in use probably TRUE will be more
   typical.
+
+- percCutHoriz:
+
+  Numeric. Percentage cutoff for section summary plots: categorical
+  levels with proportions below this value are not labelled.
+
+- percCutVert:
+
+  Numeric. Percentage cutoff for variable-level plots: categorical
+  levels with proportions below this value are not labelled.
 
 - est_chars_path:
 

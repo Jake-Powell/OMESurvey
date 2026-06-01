@@ -50,7 +50,7 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 
   Logical; whether to remove/ignore missing values. When `na.rm = TRUE`,
   count labels show the number of plotted (i.e. non-missing)
-  observations; when `na.rm = FALSE`, labels show non‑missing and total
+  observations; when `na.rm = FALSE`, labels show non-missing and total
   number of observations.
 
 - valueLabText:
