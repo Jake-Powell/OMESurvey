@@ -2269,34 +2269,96 @@ survey_read_inputs <- function(
               )
           }
 
+
+          get_est_xiles <- function(est_stats, var, type_label, label_max_num, sheet_name) {
+
+            # check variable exists
+            if (!var %in% est_stats$variable) {
+              stop(
+                "Variable '", var,
+                "' not found in stats sheet (sheet: ", sheet_name, ").",
+                call. = FALSE
+              )
+            }
+
+            # determine regex pattern
+            pattern <- switch(
+              type_label,
+              quintile = "/5$",
+              tertile  = "/3$",
+              quartile = "/[24]$",
+              stop("Unknown type_label in get_est_xiles().", call. = FALSE)
+            )
+
+            # extract and process
+            est_xiles <-
+              est_stats |>
+              dplyr::filter(variable == var, grepl(pattern, statistic)) |>
+              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
+              dplyr::arrange(statistic) |>
+              dplyr::pull(value)
+
+            expected_n <- label_max_num - 1
+
+            # checks
+            if (length(est_xiles) == 0) {
+              stop(
+                "No statistics found for variable '", var,
+                "' in stats sheet (sheet: ", sheet_name, "). ",
+                "Expected ", expected_n, " cut points for ", type_label, ".",
+                call. = FALSE
+              )
+            }
+
+            if (length(est_xiles) != expected_n) {
+              stop(
+                "Incorrect number of statistics for variable '", var,
+                "' in stats sheet (sheet: ", sheet_name, "). ",
+                "Expected ", expected_n, " cut points for ", type_label,
+                ", but found ", length(est_xiles), ".",
+                call. = FALSE
+              )
+            }
+
+            return(est_xiles)
+          }
+
+
+
           # depending on xxx in numeric-xxx, look up stats and prepare other variables
           if (endsWith(est_char_types[i], "-quintiles")){
-            est_xiles <-
-              est_stats |>
-              dplyr::filter(variable==est_char_vars[i], grepl("/5$",statistic)) |>
-              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
-              dplyr::arrange(statistic) |>
-              dplyr::pull(value)
             label_prefix <- "Quintile "
             label_max_num <- 5
+            est_xiles <- get_est_xiles(
+              est_stats = est_stats,
+              var = est_char_vars[i],
+              type_label = "quintile",
+              label_max_num = label_max_num,
+              sheet_name = est_chars_sheet
+            )
+
           } else if (endsWith(est_char_types[i], "-tertiles")){
-            est_xiles <-
-              est_stats |>
-              dplyr::filter(variable==est_char_vars[i], grepl("/3$",statistic)) |>
-              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
-              dplyr::arrange(statistic) |>
-              dplyr::pull(value)
             label_prefix <- "Tertile "
             label_max_num <- 3
+            est_xiles <- get_est_xiles(
+              est_stats = est_stats,
+              var = est_char_vars[i],
+              type_label = "tertile",
+              label_max_num = label_max_num,
+              sheet_name = est_chars_sheet
+            )
+
           } else if (endsWith(est_char_types[i], "-quartiles")){
-            est_xiles <-
-              est_stats |>
-              dplyr::filter(variable==est_char_vars[i], grepl("/[24]$",statistic)) |>
-              dplyr::mutate(statistic = OMESurvey::frac_to_num(statistic)) |>
-              dplyr::arrange(statistic) |>
-              dplyr::pull(value)
             label_prefix <- "Quartile "
             label_max_num <- 4
+            est_xiles <- get_est_xiles(
+              est_stats = est_stats,
+              var = est_char_vars[i],
+              type_label = "quartile",
+              label_max_num = label_max_num,
+              sheet_name = est_chars_sheet
+            )
+
           } else {
             stop("Unknown suffix in a `est_char_types` entry of the form numeric-xxx.")
           }
