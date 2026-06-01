@@ -557,8 +557,9 @@ sections <- sec_meta$sec_display
 
 
 
+vars_with_unexpected_nonzero <- list()
 
-for(sec in sections){
+for (sec in sections){
   cat("\n\n# ", sec, "\n\n", sep = "")
   
   # catch potential file-naming issues
@@ -574,7 +575,7 @@ for(sec in sections){
   vars <- vars_in_sec$variable
   #vars |> print()
   
-  if(length(vars) == 0) next
+  if (length(vars) == 0) next
   
   # vars_in_sec |>
   #   dplyr::select(type, allowed_specified, allowed_display) |> print()
@@ -728,7 +729,10 @@ for(sec in sections){
   
   
   # now emit per-variable summaries for this section
-  for(i in seq_len(nrow(vars_in_sec))){
+  for (i in seq_len(nrow(vars_in_sec))){
+    
+    has_unexpected_nonzero <- FALSE
+    
     v <- vars_in_sec[i, ] # the current row of vars_in_sec, in turn from validation_df. So has
     var <- v$variable
     label <- ifelse(is.na(v$item_statement) || v$item_statement == "", var, v$item_statement)
@@ -815,39 +819,144 @@ for(sec in sections){
         "\n\n",
         sep = "")
     
-    cat("\n\n **Validation info and details of non-allowed responses** \n\n")
+    cat("\n\n Validation info \n\n")
     
     # validation summary and descriptive stats
     v |>
-      dplyr::select(variable, type, colo,
-                    allowed_display) |>
+      dplyr::select(variable, type, #colo,
+                    `Allowed values specified?` = allowed_specified,
+                    `Allowed values` = allowed_display,
+                    `Branching condition` = condition) |>
       kable_narrow() |>
       as.character() |>
       cat()
 
-    v |>
-      dplyr::select(`Allowed values specified?` = allowed_specified,
-                    `Non-allowed (n)` = n_non_allowed,
-                    `Missing (n)` = n_missing,
-                    `Branching condition` = condition,
-                    `Fail condition (n)` = n_fail_cond,
-                    `Meet condition (n)` =  n_meet_cond,
-                    `Meet condition & non-allowed (n)` = n_meet_cond_non_allowed,
-                    `Meet condition & missing (n)` = n_meet_cond_missing) |>
-      dplyr::mutate(dplyr::across(tidyselect::everything(), as.character)) |>
-      tidyr::pivot_longer(
-        everything(),
-        names_to = "Metric",
-        values_to = "Value"
-      ) |>
+    # cat("\n\n table that can now be deleted? \n\n")
+    # v |>
+    #   dplyr::select(`Allowed values specified?` = allowed_specified,
+    #                 `Non-allowed (n)` = n_non_allowed,
+    #                 `Missing (n)` = n_missing,
+    #                 `Branching condition` = condition,
+    #                 `Fail condition (n)` = n_fail_cond,
+    #                 `Meet condition (n)` =  n_meet_cond,
+    #                 `Meet condition & non-allowed (n)` = n_meet_cond_non_allowed,
+    #                 `Meet condition & missing (n)` = n_meet_cond_missing) |>
+    #   dplyr::mutate(dplyr::across(tidyselect::everything(), as.character)) |>
+    #   tidyr::pivot_longer(
+    #     everything(),
+    #     names_to = "Metric",
+    #     values_to = "Value"
+    #   ) |>
+    #   kable_narrow() |>
+    #   as.character() |>
+    #   cat()
+    
+    has_valid_cond <- !is.na(v$condition)
+    
+    
+    should_bold <- function(row, col, val, has_valid_cond) {
+      # condition-met and 1-column rules
+      if ((col == "Condition met" || (!has_valid_cond && col == "Total")) &&
+          row %in% c("Allowed", "-999 (Missing)", "-777 (Invalid)")) return(TRUE)
+      
+      # condition-not-met rules
+      if (col == "Condition not met" &&
+          row %in% c("-999 (Missing)", "-888 (Not branched)")) return(TRUE)
+      
+      return(FALSE)
+    }
+    
+    
+      
+    diag_tbl <- validation_log[[var]]$diag_table[[1]]
+    diag_tbl_fmt <- diag_tbl
+    
+    # convert to character for safe formatting
+    diag_tbl_fmt[] <- lapply(diag_tbl_fmt, as.character)
+    
+    # get grand total (bottom-right cell)
+    grand_total <- suppressWarnings(
+      as.numeric(diag_tbl[nrow(diag_tbl), "Total"])
+    )
+    
+    
+    # identify columns that have any boldable cells
+    cols_with_boldable <- setNames(
+      logical(ncol(diag_tbl)),
+      colnames(diag_tbl)
+    )
+    
+    for (j in seq_len(ncol(diag_tbl))) {
+      col_name <- colnames(diag_tbl)[j]
+      
+      for (i in seq_len(nrow(diag_tbl))) {
+        row_name <- rownames(diag_tbl)[i]
+        
+        if (should_bold(row_name, col_name, val=NA, has_valid_cond)) {
+          cols_with_boldable[col_name] <- TRUE
+          break
+        }
+      }
+    }
+    
+    
+    for (i in seq_len(nrow(diag_tbl))) {
+      for (j in seq_len(ncol(diag_tbl))) {
+        
+        row_name <- rownames(diag_tbl)[i]
+        col_name <- colnames(diag_tbl)[j]
+        val <- as.numeric(diag_tbl[i, j])
+        
+        
+        
+        # detect unexpected non-zero within relevant columns
+        if (cols_with_boldable[col_name] &&
+            row_name != "Total" &&
+            !should_bold(row_name, col_name, val, has_valid_cond) &&
+            !is.na(val) && val > 0) {
+          
+          has_unexpected_nonzero <- TRUE
+        }
+        
+        
+        # add % to Total row & column
+        
+        if (!is.na(val) && grand_total > 0) {
+          
+          if (xor(row_name == "Total", col_name == "Total")) {
+            pct <- round(100 * val / grand_total, 0)
+            val_str <- paste0(val, " (", pct, "%)")
+          } else {
+            val_str <- as.character(val)
+          }
+          
+        } else {
+          val_str <- as.character(val)
+        }
+        
+        
+        # ---- Apply bold rule
+        if (should_bold(row_name, col_name, val, has_valid_cond)) {
+          diag_tbl_fmt[i, j] <- paste0("**", val_str, "**")
+        } else {
+          diag_tbl_fmt[i, j] <- val_str
+        }
+      }
+    }
+    
+    
+    
+    cat("\n\nResponse diagnostic table (counts)\n\n")
+    
+    diag_tbl_fmt |>
+      tibble::rownames_to_column("Category") |>
       kable_narrow() |>
       as.character() |>
       cat()
+
     
-    
-    
-    
-    if(v$type == "factor" && !v$allowed_specified){
+        
+    if (v$type == "factor" && !v$allowed_specified){
       cat(report_notice(
         "No allowed_values specified in the dictionary for this variable. Levels were inferred from the data."
       ))
@@ -869,29 +978,48 @@ for(sec in sections){
       
       ## Factor invalids live in inv$values
       df_inv <- freq_to_df(inv$values, value_col = "Raw value")
+      
       if (!is.null(df_inv)) {
-        df_inv |>
-          kable_narrow(caption = paste0("Non-allowed responses (condition satisfied)")) |>
-          as.character() |>
-          cat()
+        df_inv <- df_inv[!(df_inv$`Raw value` %in% c("-999", "-888", "-777", "Total")), ]
+        
+        if (nrow(df_inv) > 0) {
+          df_inv |>
+            kable_narrow(caption = paste0("Non-allowed responses (condition satisfied)")) |>
+            as.character() |>
+            cat()
+          
+        }
       }
+      
       
       ## Numeric coercion failures live in inv$coercion
       df_inv <- freq_to_df(inv$coercion, value_col = "Raw value")
+      
       if (!is.null(df_inv)) {
-        df_inv |>
-          kable_narrow(caption = paste0("Non-allowed numeric responses (could not be parsed)")) |>
-          as.character() |>
-          cat()
+        df_inv <- df_inv[!(df_inv$`Raw value` %in% c("-999", "-888", "-777", "Total")), ]
+        
+        if (nrow(df_inv) > 0) {
+          df_inv |>
+            kable_narrow(caption = paste0("Non-allowed numeric responses (could not be parsed)")) |>
+            as.character() |>
+            cat()
+        }
       }
       
       ## Numeric out-of-range values live in inv$out_of_range
-      df_inv <- freq_to_df(inv$out_of_range, value_col = "Numeric value")
+      df_inv <- freq_to_df(inv$out_of_range, value_col = "Raw value")
+      
+      # if something there then exclude the sentinel values
       if (!is.null(df_inv)) {
+        df_inv <- df_inv[!(df_inv$`Raw value` %in% c("-999", "-888", "-777", "Total")), ]
+        
+        #if something still there then print it
+        if (nrow(df_inv) > 0) {
         df_inv |>
           kable_narrow(caption = paste0("Non-allowed numeric responses (out of allowed range)")) |>
           as.character() |>
           cat()
+        }
       }
       
       
@@ -902,13 +1030,22 @@ for(sec in sections){
     # print responses where condition NOT satisfied
     if (!is.null(inv_fail) && length(inv_fail) > 0) {
       
+      
       df_fail <- freq_to_df(inv_fail$values, value_col = "Raw value")
       
+      # if something there then exclude the sentinel values
       if (!is.null(df_fail)) {
-        df_fail |>
-          kable_narrow(caption = "Responses where condition NOT satisfied") |>
-          as.character() |>
-          cat()
+        df_fail <- df_fail[!(df_fail$`Raw value` %in% c("-999", "-888", "-777", "Total")), ]
+        
+        #if something still there then print it
+        if (nrow(df_fail) > 0) {
+          df_fail |>
+            kable_narrow(caption = "Responses where condition NOT satisfied") |>
+            as.character() |>
+            cat()
+          
+        }
+        
       }
     }
     
@@ -1140,15 +1277,35 @@ for(sec in sections){
     }
     
     
+    
+    if (has_unexpected_nonzero) {
+      if (is.null(vars_with_unexpected_nonzero[[sec]])) {
+        vars_with_unexpected_nonzero[[sec]] <- var
+      } else {
+        vars_with_unexpected_nonzero[[sec]] <- c(vars_with_unexpected_nonzero[[sec]], var)
+      }
+    }
+    
+    
   } # end per-variable loop
 } # end section loop
-```
-
-```{r}
-#cat("[3/4] Done")
-#flush.console()
 
 
-#cat("[4/4] Rendering report (can take some time, but the chance of errors is now very small)")
-#flush.console()
+
+cat("\n\n# Variables with unexpected values \n\n")
+
+if (length(vars_with_unexpected_nonzero) == 0) {
+  cat("None.\n")
+} else {
+  for (sec_name in names(vars_with_unexpected_nonzero)) {
+    
+    vars_in_sec_flagged <- vars_with_unexpected_nonzero[[sec_name]]
+    
+    if (length(vars_in_sec_flagged) > 0) {
+      cat("**", sec_name, "**", "\n", sep = "")
+      cat(paste0("  ", vars_in_sec_flagged, collapse = "\n"), "\n\n")
+    }
+  }
+}
+
 ```

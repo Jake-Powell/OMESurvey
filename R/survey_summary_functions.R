@@ -80,10 +80,9 @@ safe_read_excel <- function(path, sheet = NULL, ...) {
 #' @param output_date (optional) text string to use as date for html report output
 #' @param overwrite (optional) whether to overwrite `output_file` if it already exists.
 #'  Defaults to FALSE for safety but in use probably TRUE will be more typical.
-#' @param percCutHoriz Numeric. Percentage cutoff for section summary plots:
-#'   categorical levels with proportions below this value are not labelled.
-#' @param percCutVert Numeric. Percentage cutoff for variable-level plots:
-#'   categorical levels with proportions below this value are not labelled.
+#' @param percCutHoriz,percCutVert Optional numeric. Percentage cutoff below which categorical
+#'   levels are not labelled, for horizontal-barred section summary plots and
+#'   vertical-barred variable-level plots respectively. Default 5.
 #' @param est_chars_path (optional) path to establishment characteristics data (xls/xlsx).
 #' @param est_chars_sheet (optional, needed if `est_chars_path` is used) name of sheet in est't chars to use.
 #' @param est_char_vars,est_char_types,est_char_values,est_char_statements
@@ -2513,6 +2512,7 @@ survey_data_prepare <- function(
 
   # helper: build a single validation row
   make_validation_row <- function(var, type, colo=list(NA), order_values=list(NA),
+                                  diag_table = NULL,
                                   allowed_specified, allowed_display, allowed_technical,
                                   n_missing, n_non_allowed, non_allowed_freq,
                                   fail_cond_freq,
@@ -2527,6 +2527,7 @@ survey_data_prepare <- function(
       type = type,
       colo = colo,
       order_values = order_values,
+      diag_table = list(diag_table),
       allowed_specified = allowed_specified,
       allowed_display = if (allowed_specified && !is.null(allowed_display)) {
         if (length(allowed_display) > 1) paste(allowed_display, collapse = ";") else allowed_display
@@ -2547,6 +2548,61 @@ survey_data_prepare <- function(
     )
   }
 
+
+
+  make_diagnostic_table <- function(class_vec, meet_mask = NULL, has_valid_cond = FALSE) {
+
+    # fixed row order
+    row_levels <- c("allowed", "-999", "-888", "-777", "other_non_allowed", "missing")
+
+    # build column grouping
+    if (has_valid_cond) {
+      col_vec <- ifelse(meet_mask, "Condition met", "Condition not met")
+      col_levels <- c("Condition met", "Condition not met")
+    } else {
+      col_vec <- rep("Total", length(class_vec))
+      col_levels <- "Total"
+    }
+
+    # build contingency table (always 2D)
+    tab <- table(
+      factor(class_vec, levels = row_levels),
+      factor(col_vec, levels = col_levels)
+    )
+
+    # convert to data frame
+    diag_df <- as.data.frame.matrix(tab)
+
+    # ensure all rows present and ordered
+    diag_df <- diag_df[row_levels, , drop = FALSE]
+
+    # replace NA with 0
+    diag_df[is.na(diag_df)] <- 0
+
+    # add row totals if we are in a situation with multiple columns
+    if (has_valid_cond) {
+      diag_df$Total <- rowSums(diag_df)
+    }
+
+    # add column totals (bottom row)
+    diag_df <- rbind(diag_df, Total = colSums(diag_df))
+
+    # polish row names
+    rownames(diag_df) <- c(
+      "Allowed",
+      "-999 (Missing)",
+      "-888 (Not branched)",
+      "-777 (Invalid)",
+      "Non-allowed & non-'-xxx'",
+      "NA (Missing in data)",
+      "Total"
+    )
+
+    return(diag_df)
+  }
+
+
+
   # initialise validation_log and messages list
   validation_log <- vector("list", nrow(dict))
   messages <- list()
@@ -2559,7 +2615,8 @@ survey_data_prepare <- function(
     # message(">>> Starting variable: ", var)
     # flush.console()
 
-    tryCatch({
+    #tryCatch({
+
       # extract key info for easier reference in this loop
       dtype <- tolower(dict$data_type[i])
       allowed_raw <- dict$allowed_values[i]
@@ -2580,7 +2637,7 @@ survey_data_prepare <- function(
       data[[var]] <- coerce_col(raw, dtype, levels = allowed)
 
 
-      # initialise some thing - check location (& if others shold be here too) later!
+      # initialise some things - check location (& if others should be here too) later!
       non_allowed_mask <- rep(FALSE, nrow(data))
       fail_cond_freq <- list()
 
@@ -2692,6 +2749,19 @@ survey_data_prepare <- function(
       }
 
 
+
+      # Build & initialise diagnostic classification
+      # --------------------------------------------
+      sentinel_999 <- raw_chr %in% c("-999", -999)
+      sentinel_888 <- raw_chr %in% c("-888", -888)
+      sentinel_777 <- raw_chr %in% c("-777", -777)
+
+      class_vec <- rep(NA_character_, length(raw_chr))
+
+      class_vec[is.na(raw_chr)] <- "missing"
+
+
+
       #  factors processing...
       if (grepl("^factor-", stringr::str_squish(dtype), ignore.case = TRUE)) {
 
@@ -2701,6 +2771,22 @@ survey_data_prepare <- function(
         } else {
           non_allowed_mask <- rep(FALSE, length(raw_chr))
         }
+
+
+        # classification for factors
+
+        class_vec[!is.na(raw_chr) & !non_allowed_mask &
+                    !(sentinel_999 | sentinel_888 | sentinel_777)] <- "allowed"
+        class_vec[sentinel_999] <- "-999"
+        class_vec[sentinel_888] <- "-888"
+        class_vec[sentinel_777] <- "-777"
+
+        # other non-allowed (exclude sentinel codes)
+        class_vec[non_allowed_mask & !(sentinel_999 | sentinel_888 | sentinel_777)] <- "other_non_allowed"
+
+        # make diagnostic table
+        diag_df <- make_diagnostic_table(class_vec, meet_mask, has_valid_cond)
+
 
 
         if (has_valid_cond) {
@@ -2766,6 +2852,7 @@ survey_data_prepare <- function(
           type = "factor",
           colo = colo,
           order_values = order_values,
+          diag_table = diag_df,
           allowed_specified = allowed_specified,
           allowed_display = allowed,
           allowed_technical = allowed,
@@ -2782,6 +2869,7 @@ survey_data_prepare <- function(
           n_meet_cond_missing = n_meet_cond_missing,
           n_meet_cond_non_allowed = n_meet_cond_non_allowed
         )
+
 
         # numeric processing
       } else if (grepl("^numeric$|double", dtype, ignore.case = TRUE)) {
@@ -2813,7 +2901,7 @@ survey_data_prepare <- function(
           out_of_range <- (!is.na(coerced)) & (out_low | out_high)
 
 
-          non_allowed_mask <-
+          non_allowed_mask <-   ### duplicated ~30 lines below?
             non_allowed_coercion |
             (!is.null(out_of_range) & out_of_range)
 
@@ -2840,7 +2928,7 @@ survey_data_prepare <- function(
         }
 
 
-        non_allowed_mask <-
+        non_allowed_mask <-   ### duplicated ~30 lines above?
           non_allowed_coercion |
           (!is.null(out_of_range) & out_of_range)
 
@@ -2879,10 +2967,29 @@ survey_data_prepare <- function(
         }
 
 
+
+        # classification for numeric
+        class_vec[!is.na(coerced) & !non_allowed_mask] <- "allowed"
+        class_vec[sentinel_999] <- "-999"
+        class_vec[sentinel_888] <- "-888"
+        class_vec[sentinel_777] <- "-777"
+
+        # other non-allowed = out_of_range OR coercion
+        class_vec[non_allowed_mask & !(sentinel_999 | sentinel_888 | sentinel_777)] <- "other_non_allowed"
+
+        # make diagnostic table
+        diag_df <- make_diagnostic_table(class_vec, meet_mask, has_valid_cond)
+
+
+
+
+
+
         names(validation_log)[i] <- var
         validation_log[[i]] <- make_validation_row(
           var = var,
           type = "numeric",
+          diag_table = diag_df,
           allowed_specified = allowed_specified_num,
           allowed_display = if (allowed_specified_num) allowed_for_report else NULL,
           allowed_technical = if (!is.null(range_spec)) range_spec else NULL,
@@ -2995,10 +3102,24 @@ survey_data_prepare <- function(
         }
 
 
+
+        # generic fallback classification
+        class_vec[sentinel_999] <- "-999"
+        class_vec[sentinel_888] <- "-888"
+        class_vec[sentinel_777] <- "-777"
+        class_vec[is.na(class_vec) & !is.na(raw_chr)] <- "allowed"
+
+
+        # make diagnostic table
+        diag_df <- make_diagnostic_table(class_vec, meet_mask, has_valid_cond)
+
+
+
         names(validation_log)[i] <- var
         validation_log[[i]] <- make_validation_row(
           var = var,
           type = "character",
+          diag_table = diag_df,
           allowed_specified = FALSE,
           allowed_display = NULL,
           allowed_technical = NULL,
@@ -3039,17 +3160,17 @@ survey_data_prepare <- function(
       # }
 
 
-    }, error = function(e) {
-
-      stop(
-        paste0(
-          "\nError while processing variable '", var, "':\n",
-          e$message
-        ),
-        call. = FALSE
-      )
-
-    })
+    # }, error = function(e) {
+    #
+    #   stop(
+    #     paste0(
+    #       "\nError while processing variable '", var, "':\n",
+    #       e$message
+    #     ),
+    #     call. = FALSE
+    #   )
+    #
+    # })
 
 
   }
