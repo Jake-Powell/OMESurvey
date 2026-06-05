@@ -33,9 +33,18 @@ params:
 THINGS IN THIS SECTION MAY NEED REVISION/RELOCATION
 ```{r results='asis'}
 cat(report_notice(
-  "Numeric values outside allowed ranges are excluded from plots. ",
-  "Categorical non-allowed values are excluded via factor coercion. ",
-  "All such values are included in validation summaries.",
+  "All variable summaries follow roughly the same format: \n\n",
+  "Section summary plot, then per-variable details containing first a summary of all data for the variable and then plots/stats for values where any condition (for branching) is satisfied. \n\n",
+  "In all plots, responses are only included if they are froma respondent who satisfied the branching condition; and only allowed values are plotted - non-allowed values are indicated by the numbers in brackets. \n\n",
+  "**Example:** 100 repsondents, 25 each say Yes, No, don't answer, weren't branched to the question. \n\n ",
+  "The plot will show 50% Yes, 50% No and have (50/75) at the side to indicate that 50 allowed responses are plotted out of 75 respondents who were shown the question.",
+  level = 'NOTE'
+))
+
+cat(report_notice(
+  "Numeric values outside allowed ranges count as non-allowed and are excluded from plots/statistics. ",
+  "Categorical non-allowed values are similarly excluded. ",
+  "All such values are flagged in validation summaries.",
   level = 'NOTE'
 ))
 
@@ -49,8 +58,10 @@ cat(report_notice(
 ))
 
 cat(report_notice(
-  "'Missing' counts include only truly missing (NA) values. ",
-  "'Non‑allowed' counts include values present but violating dictionary or type constraints.",
+  "In the 'Response diagnostic table': \n",
+  "'NA (missing in data)' counts include only truly missing (NA) values, of which there should be none. \n",
+  "'Non‑allowed' counts include values present but violating dictionary or type constraints. \n",
+  "The bold entries in the table are the ones that we expect might be non-zero. Any variables with non-zero entries in non-bold positions are listed at the very end of the document. \n",
   level = 'NOTE'
 ))
 ```
@@ -70,7 +81,7 @@ knitr::opts_chunk$set(fig.height=2.5)
 ```{r results='asis'}
 if (!requireNamespace("cowplot", quietly=TRUE)){
   cat(report_notice(
-    "Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit a bit from  install.packages('cowplot') and then re-running.",
+    "Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit from  install.packages('cowplot') and then re-running.",
     level = "NOTE"))
 }
 ```
@@ -373,7 +384,7 @@ miss_summary |>
   ) +
   OMESurvey::theme_OME() +
   ggplot2::theme(
-    axis.text.x = ggplot2::element_text(angle = 45, hjust = 1),
+    axis.text.x = ggplot2::element_text(angle = -30, vjust=1, hjust = 0),
     legend.position = "right",
     legend.direction = "vertical"
   ) +
@@ -491,7 +502,12 @@ parse_report_sec <- function(sec) {
   )
 }
 
+
+
+
 ```
+
+
 
 ```{r results='asis', echo=FALSE, message=TRUE, fig.width=10, fig.height=6}
 
@@ -597,42 +613,107 @@ for (sec in sections){
     ))
   } else {
     
-    cat(report_notice(
-      "For numeric variables, values outside the allowed range are excluded from plots. ",
-      "For categorical variables, non-allowed values are implicitly excluded via factor coercion. ",
-      "Validation tables include these values.",
-      level = "NOTE"
-    ))
+        # determine section type
+    sec_type <- vars_in_sec$type[[1]]
+    #sec_type |> print()
+
+    
+    # cat(report_notice(
+    #   "For numeric variables, values outside the allowed range are excluded from plots. ",
+    #   "For categorical variables, non-allowed values are implicitly excluded via factor coercion. ",
+    #   "Validation tables include these values.",
+    #   level = "NOTE"
+    # ))
     
     # prepare df and labels for plotting
-    df_plot <- data |> dplyr::select(any_of(vars))
+
+raw_vars <- paste0("raw_", vars)
+
+df_plot <- data |> dplyr::select(dplyr::any_of(c(vars, raw_vars)))
     
     # Apply numeric range masking for section-level plots
     for (k in seq_len(nrow(vars_in_sec))) {
-      vk <- vars_in_sec[k, ]
-      var_k <- vk$variable
       
-      if (vk$type == "numeric") {
-        
-        range_spec_k <- vk$allowed_technical[[1]]
-        
-        if (!is.null(range_spec_k) && var_k %in% names(df_plot)) {
-          
-          df_plot[[var_k]] <- dplyr::if_else(
-            !is.na(df_plot[[var_k]]) &
-              (
-                (df_plot[[var_k]] <  range_spec_k$lower) |
-                  (df_plot[[var_k]] >  range_spec_k$upper) |
-                  (!range_spec_k$lower_incl & df_plot[[var_k]] == range_spec_k$lower) |
-                  (!range_spec_k$upper_incl & df_plot[[var_k]] == range_spec_k$upper)
-              ),
-            NA_real_,
-            df_plot[[var_k]]
-          )
-        }
-      }
+      vname <- vars[k]
+      raw_name <- paste0("raw_", vname)
+      
+      allowed_vals <- vars_in_sec$allowed_technical[[k]]
+      cond_k <- vars_in_sec$condition[k]
+      
+      
+
+# ALWAYS use data here
+raw_vec   <- data[[raw_name]]
+value_vec <- data[[vname]]
+
+# include mask, using raw variables to evaluate the condition
+
+include_vec <- if (!is.na(cond_k) && nzchar(cond_k)) {
+  
+  cond_k_expr <- rlang::parse_expr(cond_k)
+  cond_k_expr_raw <- OMESurvey::rewrite_cond_to_raw(cond_k_expr, names(data))
+  
+  tmp <- data |>
+    dplyr::mutate(.tmp = !!cond_k_expr_raw) |>
+    dplyr::pull(.tmp)
+  
+  if (anyNA(tmp)) {
+    cond_k_expr_txt     <- rlang::expr_text(cond_k_expr)
+    cond_k_expr_raw_txt <- rlang::expr_text(cond_k_expr_raw)
+    
+    cat(report_notice(
+      paste0(
+        "Section-summary condition for variable '", vname,
+        "' evaluated to NA for ", sum(is.na(tmp)),
+        " row", if (sum(is.na(tmp)) == 1) "" else "s",
+        ". These rows are being treated as condition not met.\n",
+        "Original condition: ", cond_k_expr_txt, "\n",
+        "Raw-evaluated condition: ", cond_k_expr_raw_txt
+      ),
+      level = "WARNING"
+    ))
+    
+    tmp[is.na(tmp)] <- FALSE
+  }
+  
+  tmp
+} else {
+  rep(TRUE, nrow(data))
+}
+
+
+# exclude sentinels
+include_vec <- include_vec & !(raw_vec %in% c("-888", -888))
+
+# plot mask
+has_allowed <- !is.null(allowed_vals) && length(allowed_vals) > 0
+
+if (sec_type == "factor") {
+  plot_vec <- if (has_allowed) {
+    raw_vec %in% allowed_vals
+  } else {
+    !is.na(value_vec)
+  }
+} else {
+  plot_vec <- !is.na(value_vec)
+}
+
+
+# attach
+df_plot[[paste0(vname, "_value")]]   <- df_plot[[vname]]
+df_plot[[paste0(vname, "_include")]] <- include_vec
+df_plot[[paste0(vname, "_plot")]]    <- plot_vec
+
+      
     }
     
+    # remove original variables (now _value)
+    df_plot <- df_plot |> dplyr::select(-all_of(vars))
+    
+df_plot <- df_plot |>
+  dplyr::select(-starts_with("raw_"))
+
+
     labels_vec <-
       as.character(vars_in_sec$item_statement) |>
       setNames(vars_in_sec$variable)
@@ -644,9 +725,6 @@ for (sec in sections){
     labels_vec <- labels_prefix$remainder
     
     
-    # determine section type
-    sec_type <- vars_in_sec$type[[1]]
-    #sec_type |> print()
     
     # compute dynamic height: 2 inches + 0.5 inch per variable
     fig_h <- (2 + 0.5 * length(vars))
@@ -772,47 +850,217 @@ for (sec in sections){
     
     # Build df for plotting: variable of interest, then grouping vars.
     # Respecting the condition if present
-    if (length(grouping_vars) == 0) {
-      if (!is.null(cond_expr)) {
-        df_for_plots <- data |>
-          dplyr::filter(!!cond_expr) |>
-          dplyr::select(dplyr::all_of(var))
-      } else {
-        df_for_plots <- data |>
-          dplyr::select(dplyr::all_of(var))
-      }
-    } else {
-      if (!is.null(cond_expr)) {
-        df_for_plots <- data |>
-          dplyr::filter(!!cond_expr) |>
-          dplyr::select(dplyr::all_of(c(var, grouping_vars)))
-      } else {
-        df_for_plots <- data |>
-          dplyr::select(dplyr::all_of(c(var, grouping_vars)))
-      }
-    }
     
     
-    # Tweak df_for_plots to mask out-of-range numeric values to NA for plotting/summaries only
-    range_spec <- v$allowed_technical[[1]]
+    raw_name <- paste0("raw_", var)
     
-    if (v$type == "numeric" && !is.null(range_spec)) {
-      df_for_plots <- df_for_plots |>
-        dplyr::mutate(
-          "{var}" := dplyr::if_else(
-            !is.na(.data[[var]]) &
-              (
-                (.data[[var]] <  range_spec$lower) |
-                  (.data[[var]] >  range_spec$upper) |
-                  (!range_spec$lower_incl & .data[[var]] == range_spec$lower) |
-                  (!range_spec$upper_incl & .data[[var]] == range_spec$upper)
-              ),
-            NA_real_,
-            .data[[var]]
+    
+#  build df (NO filtering yet) ----
+if (length(grouping_vars) == 0) {
+  df_for_plots <- data |>
+    dplyr::select(dplyr::all_of(c(var, raw_name)))
+} else {
+  df_for_plots <- data |>
+    dplyr::select(dplyr::all_of(c(var, raw_name, grouping_vars)))
+}
+
+    
+#  include mask (instead of filter) ----
+if (!is.null(cond_expr)) {
+  
+   cond_expr_raw <- rewrite_cond_to_raw(cond_expr, names(data))
+   
+   
+  include_vec <- data |>
+    dplyr::mutate(.tmp = !!cond_expr_raw) |>
+    dplyr::pull(.tmp)
+  
+  n_na_cond <- sum(is.na(include_vec))
+
+
+  if (n_na_cond > 0) {
+    
+    # Try to identify variables referenced in the condition
+    cond_vars <- tryCatch(
+      all.vars(cond_expr),
+      error = function(e) character(0)
+    )
+    
+    # Keep only names that are actually columns in the data
+    cond_vars <- intersect(cond_vars, names(data))
+    
+    # Summarise missingness in those variables
+    if (length(cond_vars) > 0) {
+      cond_var_info <- vapply(
+        cond_vars,
+        function(vv) {
+          x <- data[[vv]]
+          
+          # count NA
+          n_na <- sum(is.na(x))
+          
+          # optionally also count sentinel values if relevant
+          n_sentinel <- sum(x %in% c(-999, -888, -777, "-999", "-888", "-777"), na.rm = TRUE)
+          
+          paste0(
+            vv, ": ",
+            n_na, " NA",
+            if (n_sentinel > 0) paste0(", ", n_sentinel, " sentinel") else ""
           )
-        )
+        },
+        FUN.VALUE = character(1)
+      )
+      
+      cond_var_info_txt <- paste(cond_var_info, collapse = "; ")
+      
+      cat(report_notice(
+        paste0(
+          "Branching condition for variable '", var,
+          "' evaluated to NA for ", n_na_cond, " row",
+          if (n_na_cond == 1) "" else "s", ". ",
+          "These rows are being treated as condition not met. ",
+          "Condition: ", cond, ". ",
+          "Variables referenced: ", paste(cond_vars, collapse = ", "), ". ",
+          "Missingness in referenced variables: ", cond_var_info_txt, "."
+        ),
+        level = "WARNING"
+      ))
+      
+    } else {
+      
+      # fallback if no variables could be extracted
+      cat(report_notice(
+        paste0(
+          "Branching condition for variable '", var,
+          "' evaluated to NA for ", n_na_cond, " row",
+          if (n_na_cond == 1) "" else "s", ". ",
+          "These rows are being treated as condition not met. ",
+          "Condition: ", cond, "."
+        ),
+        level = "WARNING"
+      ))
     }
+  }
+
+
+  include_vec[is.na(include_vec)] <- FALSE
+
+} else {
+  include_vec <- rep(TRUE, nrow(df_for_plots))
+}
+
     
+    
+# plot mask (FULL DATA) ----
+allowed_vals <- v$allowed_technical[[1]]
+has_allowed <- !is.null(allowed_vals) && length(allowed_vals) > 0
+
+if (v$type == "factor") {
+
+  if (has_allowed) {
+    plot_vec <- df_for_plots[[raw_name]] %in% allowed_vals
+  } else {
+    plot_vec <- !is.na(df_for_plots[[var]])
+  }
+
+} else if (v$type == "numeric" && has_allowed) {
+
+  range_spec <- allowed_vals
+
+  plot_vec <- !is.na(df_for_plots[[var]]) &
+    (
+      (df_for_plots[[var]] > range_spec$lower |
+         (range_spec$lower_incl & df_for_plots[[var]] == range_spec$lower)) &
+      (df_for_plots[[var]] < range_spec$upper |
+         (range_spec$upper_incl & df_for_plots[[var]] == range_spec$upper))
+    )
+
+} else {
+
+  plot_vec <- !is.na(df_for_plots[[var]])
+
+}
+
+# apply masking ----
+df_for_plots[[var]][!plot_vec] <- NA
+
+# NOW filter using include ----
+df_for_plots <- df_for_plots[include_vec, , drop = FALSE]
+
+
+
+
+    
+    # if (length(grouping_vars) == 0) {
+    #   if (!is.null(cond_expr)) {
+    #     df_for_plots <- data |>
+    #       dplyr::filter(!!cond_expr) |>
+    #       dplyr::select(dplyr::all_of(c(var, raw_name)))
+    #   } else {
+    #     df_for_plots <- data |>
+    #       dplyr::select(dplyr::all_of(c(var, raw_name)))
+    #   }
+    # } else {
+    #   if (!is.null(cond_expr)) {
+    #     df_for_plots <- data |>
+    #       dplyr::filter(!!cond_expr) |>
+    #       dplyr::select(dplyr::all_of(c(var, raw_name, grouping_vars)))
+    #   } else {
+    #     df_for_plots <- data |>
+    #       dplyr::select(dplyr::all_of(c(var, raw_name, grouping_vars)))
+    #   }
+    # }
+    # 
+    # 
+    # 
+    # 
+    # raw_name <- paste0("raw_", var)
+    # 
+    # if (v$type == "factor") {
+    #   plot_vec <- df_for_plots[[raw_name]] %in% v$allowed_technical[[1]]
+    # } else if (v$type == "numeric" && !is.null(v$allowed_technical[[1]])) {
+    #   
+    #   range_spec <- v$allowed_technical[[1]]
+    #   
+    #   plot_vec <- !is.na(df_for_plots[[var]]) &
+    #     (
+    #       (df_for_plots[[var]] >  range_spec$lower | 
+    #          (range_spec$lower_incl & df_for_plots[[var]] == range_spec$lower)) &
+    #         (df_for_plots[[var]] <  range_spec$upper | 
+    #            (range_spec$upper_incl & df_for_plots[[var]] == range_spec$upper))
+    #     )
+    #   
+    # } else {
+    #   
+    #   plot_vec <- !is.na(df_for_plots[[var]])
+    #   
+    # }
+    # 
+    # df_for_plots[[var]][!plot_vec] <- NA
+    
+    
+    
+    
+    # # Tweak df_for_plots to mask out-of-range numeric values to NA for plotting/summaries only
+    # range_spec <- v$allowed_technical[[1]]
+    # 
+    # if (v$type == "numeric" && !is.null(range_spec)) {
+    #   df_for_plots <- df_for_plots |>
+    #     dplyr::mutate(
+    #       "{var}" := dplyr::if_else(
+    #         !is.na(.data[[var]]) &
+    #           (
+    #             (.data[[var]] <  range_spec$lower) |
+    #               (.data[[var]] >  range_spec$upper) |
+    #               (!range_spec$lower_incl & .data[[var]] == range_spec$lower) |
+    #               (!range_spec$upper_incl & .data[[var]] == range_spec$upper)
+    #           ),
+    #         NA_real_,
+    #         .data[[var]]
+    #       )
+    #     )
+    # }
+    # 
     
     cat("\n\n## ",
         stringr::str_replace_all(label, "[\r\n]+", " ") |> stringr::str_squish(),
@@ -886,11 +1134,11 @@ for (sec in sections){
       colnames(diag_tbl)
     )
     
-    for (j in seq_len(ncol(diag_tbl))) {
-      col_name <- colnames(diag_tbl)[j]
+    for (col_idx in seq_len(ncol(diag_tbl))) {
+      col_name <- colnames(diag_tbl)[col_idx]
       
-      for (i in seq_len(nrow(diag_tbl))) {
-        row_name <- rownames(diag_tbl)[i]
+      for (row_idx in seq_len(nrow(diag_tbl))) {
+        row_name <- rownames(diag_tbl)[row_idx]
         
         if (should_bold(row_name, col_name, val=NA, has_valid_cond)) {
           cols_with_boldable[col_name] <- TRUE
@@ -900,12 +1148,12 @@ for (sec in sections){
     }
     
     
-    for (i in seq_len(nrow(diag_tbl))) {
-      for (j in seq_len(ncol(diag_tbl))) {
+    for (row_idx in seq_len(nrow(diag_tbl))) {
+      for (col_idx in seq_len(ncol(diag_tbl))) {
         
-        row_name <- rownames(diag_tbl)[i]
-        col_name <- colnames(diag_tbl)[j]
-        val <- as.numeric(diag_tbl[i, j])
+        row_name <- rownames(diag_tbl)[row_idx]
+        col_name <- colnames(diag_tbl)[col_idx]
+        val <- as.numeric(diag_tbl[row_idx, col_idx])
         
         
         
@@ -937,9 +1185,9 @@ for (sec in sections){
         
         # ---- Apply bold rule
         if (should_bold(row_name, col_name, val, has_valid_cond)) {
-          diag_tbl_fmt[i, j] <- paste0("**", val_str, "**")
+          diag_tbl_fmt[row_idx, col_idx] <- paste0("**", val_str, "**")
         } else {
-          diag_tbl_fmt[i, j] <- val_str
+          diag_tbl_fmt[row_idx, col_idx] <- val_str
         }
       }
     }
@@ -1089,8 +1337,18 @@ for (sec in sections){
         cat()
     }
     
+    # stop(
+    #   paste0(
+    #     names(df_for_plots)
+    #   )
+    # )
+
+    df_for_plots <- df_for_plots |>
+  dplyr::select(-starts_with("raw_"))
+
     
-    # if a text variable, just list some and be done with it (i.e. no plots etc)
+    
+    # if a text variable, just list and be done with it (i.e. no plots etc)
     if ((dict |> dplyr::filter(variable_name == var) |> dplyr::pull(data_type)) == "text"){
       
       
@@ -1133,7 +1391,7 @@ for (sec in sections){
         value_var = num_var,
         group_var = "overall_group",
         omitGroupLabels = TRUE,
-        title = label
+        titleText = label
       )
       
       # ensure fig path exists
@@ -1162,7 +1420,7 @@ for (sec in sections){
           data = df_for_plots,
           value_var = num_var,
           group_var = g,
-          title = paste0(label, "\n by ", g)
+          titleText = paste0(label, "\n by ", g)
         )
         
         
@@ -1192,15 +1450,14 @@ for (sec in sections){
                                          response_var,
                                          group_var = NULL,
                                          facet_var = NULL,
+                                         sec_key,
+                                         qn_idx,
+                                         group_idx,
                                          ...) {
-      #print("WRAPPER DEBUG:")
-      #print(response_var)
-      #print(typeof(response_var))
-      
       tryCatch({
         
         # Call the (programmatic _() version of the) function
-        res <- OME_stacked_bar_(
+        res <- OMESurvey::OME_stacked_bar_(
           dat          = dat,
           response_var = response_var,
           group_var    = group_var,
@@ -1217,7 +1474,7 @@ for (sec in sections){
           fname <- file.path(
             fig_dir,
             sprintf("sec_%s_var_%02d_plot%02d.png",
-                    stringr::str_extract(sec, "^[^:]+"), i, j)
+                    sec_key, qn_idx, group_idx)
           )
           fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
           
@@ -1267,6 +1524,11 @@ for (sec in sections){
         dat          = sub_df,
         response_var = resp_name,
         group_var    = grp_name,
+                                         sec_key = sec_file_key,
+                                         qn_idx = i,
+                                         group_idx = j,
+        na.rm        = TRUE,
+        count_style  = "both",
         percCut      = percCutVert,
         colo         = colo_arg,
         fillLabText  = NULL,

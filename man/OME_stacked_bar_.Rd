@@ -15,6 +15,7 @@ OME_stacked_bar_(
   na.rm = FALSE,
   NA_label = "Missing",
   show_counts = TRUE,
+  count_style = if (na.rm) "non-missing" else "both",
   horiz = FALSE,
   text_scale = 1,
   fillLabText = NULL,

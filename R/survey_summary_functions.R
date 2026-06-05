@@ -439,6 +439,7 @@ OME_stacked_bar_ = function(dat, response_var,
                            percCut=NULL, colo=NULL,
                            na.rm=FALSE, NA_label="Missing",
                            show_counts=TRUE,
+                           count_style = if (na.rm) "non-missing" else "both",
                            horiz=FALSE, text_scale=1,
                            fillLabText=NULL, groupLabText=NULL,
                            propLabText="Proportion of responses",
@@ -499,6 +500,27 @@ OME_stacked_bar_ = function(dat, response_var,
   if (!is.factor(dat[[group_name]])) {
     stop("group_var must be a factor.")
   }
+
+
+  # if (!is.factor(dat[[group_var]])) {
+  #
+  #   stop(
+  #     paste0(
+  #       "group_var must be a factor.\n",
+  #       "group_var name: ", group_var, "\n",
+  #       "class: ", paste(class(dat[[group_var]]), collapse = ", "), "\n",
+  #       "typeof: ", typeof(dat[[group_var]]), "\n",
+  #       "n rows: ", nrow(dat), "\n",
+  #       "n unique: ", length(unique(dat[[group_var]])), "\n",
+  #       "any NA: ", any(is.na(dat[[group_var]])), "\n",
+  #       "first few values: ", paste(utils::head(dat[[group_var]]), collapse = ", ")
+  #     )
+  #   )
+  #
+  # }
+
+
+
   if (!is.factor(dat[[facet_name]])) {
     stop("facet_var must be a factor.")
   }
@@ -562,11 +584,41 @@ OME_stacked_bar_ = function(dat, response_var,
     if (is.null(colo)){
       colo <- (dat2 |> dplyr::pull(var_name) |> nlevels() - 1) |> get_OME_colours(type='distinct')
     }
-    colo = c(setNames("grey", NA_label), colo)
+    #colo = c(setNames("grey", NA_label), colo)
   }
 
-  # print("here!")
-  # print(str(dat2))
+
+
+  levels_var <- levels(dat2$var_name)
+
+  # ---- STEP 1: ensure Missing is present BEFORE alignment ----
+  if (!na.rm) {
+    if (is.null(names(colo))) {
+      # if unnamed, just prepend grey
+      colo <- c("grey", colo)
+    } else {
+      # if named, ensure Missing exists
+      if (!(NA_label %in% names(colo))) {
+        colo <- c(setNames("grey", NA_label), colo)
+      }
+    }
+  }
+
+  # ---- STEP 2: now check length ----
+
+  if (length(colo) < length(levels_var)) {
+    stop("Not enough colours supplied for factor levels")
+  }
+
+  # ---- STEP 3: now align ----
+  if (is.null(names(colo))) {
+    names(colo) <- levels_var
+  } else {
+    colo <- colo[levels_var]
+  }
+
+
+
 
 
   # --- Build plot -------------------------------------------------------------
@@ -681,14 +733,57 @@ OME_stacked_bar_ = function(dat, response_var,
 
     } else {
       # Global counts (no real faceting)
-      group_counts <- dat2 |>
+
+
+
+
+      group_counts <- dat |>
         dplyr::summarise(
           non_na = sum(!is.na(.data[[response_name]])),
           total  = dplyr::n(),
-          .by = var_subdivide
+          .by = .data[[group_name]]
+        )  |>
+        dplyr::mutate(
+          var_subdivide = factor(
+            .data[[group_name]],
+            levels = levels(dat2$var_subdivide)
+          )
         ) |>
-        #dplyr::mutate(label = sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total)))
-        dplyr::mutate(label = sprintf("(%s)", scales::comma(total)))
+      dplyr::mutate(
+          label = dplyr::case_when(
+            count_style == "non-missing" ~
+              sprintf("(%s)", scales::comma(non_na)),
+
+            count_style == "total" ~
+              sprintf("(%s)", scales::comma(total)),
+
+            count_style == "both" ~
+              sprintf("(%s/%s)",
+                      scales::comma(non_na),
+                      scales::comma(total)),
+
+            TRUE ~
+              sprintf("(%s)", scales::comma(non_na))
+          )
+        )
+
+
+
+      # group_counts <- dat2 |>
+      #   dplyr::summarise(
+      #     non_na = sum(!is.na(.data[[response_name]])),
+      #     total  = dplyr::n(),
+      #     .by = var_subdivide
+      #   ) |>
+      #   #dplyr::mutate(label = sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total)))
+      #   dplyr::mutate(label =
+      #                   if (na.rm) {
+      #                     sprintf("(%s)", scales::comma(non_na))
+      #                   } else {
+      #                     sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total))
+      #                   }
+      #   )
+
 
       idx <- match(group_levels, group_counts$var_subdivide)
       right_labels <- stats::setNames(group_counts$label[idx], group_levels)
@@ -892,6 +987,7 @@ OME_stacked_bar_ = function(dat, response_var,
   }
 
 
+
   return(thePlot)
 
 }
@@ -1032,14 +1128,21 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
   # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
 
-  # check that all variables are factors and that they all have the same levels
-  all_factors <- dat |> purrr::map_lgl(is.factor) |> all()
+
+  # identify value columns
+  value_cols <- names(dat)[grepl("_value$", names(dat))]
+
+  # factor checks on _value columns
+  all_factors <- value_cols |>
+    purrr::map_lgl(~ is.factor(dat[[.x]])) |>
+    all()
 
   same_levels <- all_factors && {
-    levs <- dat |> purrr::map(levels)
+    levs <- value_cols |> purrr::map(~ levels(dat[[.x]]))
     ref <- levs[[1]]
     levs[-1] |> purrr::map_lgl(~ identical(.x, ref)) |> all()
   }
+
 
   if (!all_factors | !same_levels){
     warning(paste0(
@@ -1048,32 +1151,71 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
       "(note that if (a) is false then the check of (b) here is not meaningful)"))
   }
 
-  if (!is.null(labels_vec) && !all(names(labels_vec) %in% names(dat))) {
-    warning("Some names in labels_vec do not match column names in dat.")
+
+  # labels_vec check against base variable names
+  if (!is.null(labels_vec)) {
+
+    value_vars <- sub("_value$", "", value_cols)
+
+    if (!all(names(labels_vec) %in% value_vars)) {
+      warning("Some names in labels_vec do not match variable names in dat (_value columns).")
+    }
   }
+
+    # ensure ordering of labels_vec matches those of the ???
+    #labels_vec <- labels_vec[value_vars]
+
 
 
 
   # pivot the many questions/variables to long question&response form,
   # reorder questions according to proportion of responses that are in order_values
-  dat <-
-    dat |>
-    tidyr::pivot_longer(dplyr::everything(),
-                        names_to = "question",
-                        values_to = "Response") |>
-    dplyr::mutate(question = forcats::fct_inorder(question),
-                  order_flag = dplyr::case_when(
-                    length(order_values) == 1 &&
-                      trimws(order_values) == "mean(as.numeric())" ~ as.numeric(Response),
 
-                    TRUE ~ as.character(Response) %in% order_values
-                  ),
-                  question = forcats::fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
+  # OLD LOGCI
+  # dat <-
+  #   dat |>
+  #   tidyr::pivot_longer(dplyr::everything(),
+  #                       names_to = "question",
+  #                       values_to = "Response") |>
+  #   dplyr::mutate(question = forcats::fct_inorder(question),
+  #                 order_flag = dplyr::case_when(
+  #                   length(order_values) == 1 &&
+  #                     trimws(order_values) == "mean(as.numeric())" ~ as.numeric(Response),
+  #
+  #                   TRUE ~ as.character(Response) %in% order_values
+  #                 ),
+  #                 question = forcats::fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
+
+
+
+  dat <- dat |>
+    # pivot to long format, keeping _value, _plot, _include groups of variables together
+    tidyr::pivot_longer(
+      cols = everything(),
+      names_to = c("question", ".value"),
+      names_pattern = "(.+)_(value|plot|include)",
+      cols_vary = "slowest"
+    ) |>
+    # apply masks: first set NAs with _plot, then filter with _include
+    dplyr::mutate(
+      value = dplyr::if_else(!plot, NA, value)
+    ) |>
+    dplyr::filter(include) |>
+    # reorder questions according to order_values
+    dplyr::mutate(
+      question = forcats::fct_inorder(question),
+      order_flag = dplyr::case_when( # if mean, do mean
+        length(order_values) == 1 &&
+          trimws(order_values) == "mean(as.numeric())" ~ as.numeric(value),
+        TRUE ~ as.character(value) %in% order_values # otherwise treat as values to count proportion of
+      ),
+      question = forcats::fct_reorder(question, order_flag, .fun = mean, .na_rm = TRUE)
+    )
 
 
   # do the plotting
   thePlot <- dat |>
-    OME_stacked_bar_(response_var = "Response",
+    OME_stacked_bar_(response_var = "value",
                     group_var = "question",
                     horiz = TRUE,
                     percCut = percCut,
@@ -1081,7 +1223,8 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
                     propLabText = NULL,
                     groupLabText = NULL,
                     colo = colo,
-                    na.rm = na.rm,
+                    na.rm = TRUE,
+                    count_style = "both",
                     NA_label = NA_label,
                     titleText = titleText,
                     fill_label_width = fill_label_width,
@@ -1235,9 +1378,32 @@ OME_boxplot_ <- function(data,
     stop("group_var and value_var must be columns in `data`.")
   }
 
+  # if (!is.factor(data[[group_var]])) {
+  #   stop("group_var must be a factor.")
+  # }
+  #
+
   if (!is.factor(data[[group_var]])) {
-    stop("group_var must be a factor.")
+
+    stop(
+      paste0(
+        "group_var must be a factor.\n",
+        "group_var name: ", group_var, "\n",
+        "class: ", paste(class(data[[group_var]]), collapse = ", "), "\n",
+        "typeof: ", typeof(data[[group_var]]), "\n",
+        "n rows: ", nrow(data), "\n",
+        "n unique: ", length(unique(data[[group_var]])), "\n",
+        "any NA: ", any(is.na(data[[group_var]])), "\n",
+        "first few values: ", paste(utils::head(data[[group_var]]), collapse = ", "), "\n",
+        "value_var name: ", value_var, "\n",
+        "class: ", paste(class(data[[value_var]]), collapse = ", "), "\n",
+        "typeof: ", typeof(data[[value_var]]), "\n"
+      )
+    )
+
   }
+
+
   if (!is.numeric(data[[value_var]])) {
     stop("value_var must be numeric.")
   }
@@ -1520,30 +1686,89 @@ summary_plot_boxplot <- function(dat, labels_vec = NULL,
                                  group_label_width = 30,
                                  ...) {
 
-  # check
-  if (!(dat |> purrr::map_lgl(is.numeric) |> all())) {
-    warning("The dataframe passed to summary_plot_boxplot() should have all its variables numeric.")
+
+  # stop("THIS VERSION OF summary_plot_boxplot IS RUNNING")
+  #
+  # cat("summary_plot_boxplot CALLED\n",
+  #     file = file.path(tempdir(), "debug.txt"),
+  #     append = TRUE)
+
+
+  # identify value columns
+  value_cols <- names(dat)[grepl("_value$", names(dat))]
+
+  # check numeric only on _value columns
+  all_numeric <- value_cols |>
+    purrr::map_lgl(~ is.numeric(dat[[.x]])) |>
+    all()
+
+  if (!all_numeric) {
+    warning("The dataframe passed to summary_plot_boxplot() should have all *_value variables numeric.")
   }
 
-  if (!is.null(labels_vec) && !all(names(labels_vec) %in% names(dat))) {
-    warning("Some names in labels_vec do not match column names in dat.")
+  # labels_vec check against base variable names
+  if (!is.null(labels_vec)) {
+
+    value_vars <- sub("_value$", "", value_cols)
+
+    if (!all(names(labels_vec) %in% value_vars)) {
+      warning("Some names in labels_vec do not match variable names in dat (_value columns).")
+    }
+
+    labels_vec <- labels_vec[value_vars]
   }
+
 
 
   # pivot to long form and reorder the factor `question`
+
   dat_long <- dat |>
     tidyr::pivot_longer(
-      dplyr::everything(),
-      names_to  = "question",
-      values_to = "value") |>
+      cols = everything(),
+      names_to = c("question", ".value"),
+      names_pattern = "(.+)_(value|plot|include)",
+      cols_vary = "slowest"
+    ) |>
     dplyr::mutate(
-      question = forcats::fct_inorder(question)) |>
+      value = dplyr::if_else(!plot, NA_real_, value)
+    ) |>
+    dplyr::filter(include) |>
+    dplyr::mutate(
+      question = forcats::as_factor(question)
+    ) |>
     dplyr::mutate(
       order_stat = order_fun(value, na.rm = TRUE),
-      .by = question) |>
+      .by = question
+    ) |>
     dplyr::mutate(
       question = forcats::fct_reorder(question, order_stat)
     )
+
+
+
+
+  # debug_file <- file.path(tempdir(), "debug.txt")
+  #
+  # cat("\n==============================\n", file = debug_file, append = TRUE)
+  # cat(paste("Time:", Sys.time(), "\n"), file = debug_file, append = TRUE)
+  #
+  # cat("Unique questions:\n", file = debug_file, append = TRUE)
+  # capture.output(print(unique(dat_long$question)), file = debug_file, append = TRUE)
+  #
+  # cat("CLASS OF question:\n", file = debug_file, append = TRUE)
+  # capture.output(print(class(dat_long$question)), file = debug_file, append = TRUE)
+  #
+  # cat("IS FACTOR:\n", file = debug_file, append = TRUE)
+  # capture.output(print(is.factor(dat_long$question)), file = debug_file, append = TRUE)
+  #
+  # cat("N rows:\n", file = debug_file, append = TRUE)
+  # capture.output(print(nrow(dat_long)), file = debug_file, append = TRUE)
+  #
+  # cat("==============================\n", file = debug_file, append = TRUE)
+
+
+
+  #dat_long$question <- factor(dat_long$question, levels = unique(dat_long$question))
 
 
   # plot
@@ -2456,6 +2681,46 @@ survey_read_inputs <- function(
 
 
 
+#' Rewrite a condition expression to use raw survey variables
+#'
+#' Replaces symbols in a parsed expression with their corresponding
+#' `raw_` variable names when those raw columns exist in the data.
+#'
+#' @param expr A parsed R expression, typically from `rlang::parse_expr()`.
+#' @param data_names Character vector of column names available in the data.
+#'
+#' @return A modified expression object.
+#' @export
+rewrite_cond_to_raw <- function(expr, data_names) {
+
+  # If it's a symbol/name, maybe replace it
+  if (rlang::is_symbol(expr)) {
+    nm <- rlang::as_name(expr)
+
+    # Only rewrite actual data columns
+    if (nm %in% data_names) {
+      raw_nm <- paste0("raw_", nm)
+      if (raw_nm %in% data_names) {
+        return(rlang::sym(raw_nm))
+      }
+    }
+
+    return(expr)
+  }
+
+  # If it's a call, rewrite recursively
+  if (rlang::is_call(expr)) {
+    expr[[1]] <- rewrite_cond_to_raw(expr[[1]], data_names)
+    for (k in 2:length(expr)) {
+      expr[[k]] <- rewrite_cond_to_raw(expr[[k]], data_names)
+    }
+    return(expr)
+  }
+
+  # Constants/literals unchanged
+  expr
+}
+
 
 
 #' Validate and coerce survey data according to a data dictionary
@@ -2756,6 +3021,7 @@ survey_data_prepare <- function(
       n_meet_cond_missing <- NA_integer_
       n_meet_cond_non_allowed <- NA_integer_
 
+
       # parse and evaluate condition
       if (!is.na(cond_str) && nzchar(cond_str)) {
 
@@ -2768,36 +3034,43 @@ survey_data_prepare <- function(
         )
 
         if (!is.null(cond_expr)) {
+
+          cond_expr_raw <- rewrite_cond_to_raw(cond_expr, names(data))
+
           cond_mask <- tryCatch(
-            rlang::eval_tidy(cond_expr, data = data),
+            rlang::eval_tidy(cond_expr_raw, data = data),
             error = function(e) {
-              stop("\n**Error evaluating condition for variable", var, ":** ", e$message, "\n\n", sep = " ")
+              stop(
+                "\n**Error evaluating raw-based condition for variable ", var, ":** ",
+                e$message,
+                "\nOriginal condition: ", rlang::expr_text(cond_expr),
+                "\nRaw-evaluated condition: ", rlang::expr_text(cond_expr_raw),
+                "\n\n",
+                sep = ""
+              )
               NULL
             }
           )
+
+          if (anyNA(cond_mask)) {
+            messages <- add_message(
+              messages,
+              paste0(
+                "Condition for variable ", var,
+                " evaluated to NA for ", sum(is.na(cond_mask)),
+                " rows when using raw variables. ",
+                "These rows will be treated as condition not met. ",
+                "Original condition: ", rlang::expr_text(cond_expr), ". ",
+                "Raw-evaluated condition: ", rlang::expr_text(cond_expr_raw), "."
+              ),
+              level = "WARNING"
+            )
+
+            cond_mask[is.na(cond_mask)] <- FALSE
+          }
         }
-
-
-        # cat("\nDEBUG: cond_mask class:", paste(class(cond_mask), collapse = ", "), "\n")
-        # cat("DEBUG: cond_mask typeof:", typeof(cond_mask), "\n")
-        # cat("DEBUG: length(cond_mask):", length(cond_mask), "\n")
-        # cat("DEBUG: nrow(data):", nrow(data), "\n")
-        # cat("DEBUG: first 10 values of cond_mask:\n")
-        # print(head(cond_mask, 10))
-        #
-        # cat("DEBUG: is.logical(cond_mask):", is.logical(cond_mask), "\n")
-        #
-        #
-        # cat("DEBUG: is.logical(as.logical(cond_mask)):", is.logical(as.logical(cond_mask)), "\n")
-        # cat("DEBUG: first 10 values after coercion:\n")
-        # print(head(as.logical(cond_mask), 10))
-        #
-        #
-        # cat("DEBUG: table(cond_mask, useNA='always'):\n")
-        # print(table(cond_mask, useNA = "always"))
-
-
       }
+
 
       # validate mask and define meet/fail masks
       if (!is.null(cond_mask) &&
@@ -3063,8 +3336,25 @@ survey_data_prepare <- function(
 
 
         # classification for numeric
-        class_vec[!is.na(coerced) & !non_allowed_mask] <- "allowed"
-        class_vec[sentinel_999] <- "-999"
+
+        if (!is.null(range_spec)) {
+
+          # existing behaviour
+          class_vec[!is.na(coerced) & !non_allowed_mask] <- "allowed"
+
+        } else {
+
+          # NEW: no range → everything numeric (non-sentinel, non-coercion) is allowed
+          class_vec[
+            !is.na(coerced) &
+              !non_allowed_coercion &
+              !(sentinel_999 | sentinel_888 | sentinel_777)
+          ] <- "allowed"
+
+        }
+
+
+                class_vec[sentinel_999] <- "-999"
         class_vec[sentinel_888] <- "-888"
         class_vec[sentinel_777] <- "-777"
 

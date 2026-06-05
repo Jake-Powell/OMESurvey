@@ -49,11 +49,9 @@ defaults to "\if{html}{\out{<name of data file>}}_summary.html")}
 \item{overwrite}{(optional) whether to overwrite \code{output_file} if it already exists.
 Defaults to FALSE for safety but in use probably TRUE will be more typical.}
 
-\item{percCutHoriz}{Numeric. Percentage cutoff for section summary plots:
-categorical levels with proportions below this value are not labelled.}
-
-\item{percCutVert}{Numeric. Percentage cutoff for variable-level plots:
-categorical levels with proportions below this value are not labelled.}
+\item{percCutHoriz, percCutVert}{Optional numeric. Percentage cutoff below which categorical
+levels are not labelled, for horizontal-barred section summary plots and
+vertical-barred variable-level plots respectively. Default 5.}
 
 \item{est_chars_path}{(optional) path to establishment characteristics data (xls/xlsx).}
 
