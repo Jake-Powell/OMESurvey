@@ -136,12 +136,12 @@ dat <- tibble::tibble(
 
 # Simplest use
 summary_plot_stacked_bar(dat)
-
+#> Error in levs[[1]]: subscript out of bounds
 
 # Add question labels
 labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
 summary_plot_stacked_bar(dat, labels_vec = labels)
-
+#> Error in levs[[1]]: subscript out of bounds
 
 # With custom wrapping if they are long
 labels_long <- c(
@@ -150,11 +150,11 @@ labels_long <- c(
   Q3 = "The third question asked as part of this series of three questions"
 )
 summary_plot_stacked_bar(dat, labels_vec = labels_long)
-
+#> Error in levs[[1]]: subscript out of bounds
 summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
-
+#> Error in levs[[1]]: subscript out of bounds
 
 # Remove missing values
 summary_plot_stacked_bar(dat, na.rm=FALSE)
-
+#> Error in levs[[1]]: subscript out of bounds
 ```

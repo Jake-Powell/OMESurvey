@@ -71,15 +71,11 @@ render_survey_summary(
   Defaults to FALSE for safety but in use probably TRUE will be more
   typical.
 
-- percCutHoriz:
+- percCutHoriz, percCutVert:
 
-  Numeric. Percentage cutoff for section summary plots: categorical
-  levels with proportions below this value are not labelled.
-
-- percCutVert:
-
-  Numeric. Percentage cutoff for variable-level plots: categorical
-  levels with proportions below this value are not labelled.
+  Optional numeric. Percentage cutoff below which categorical levels are
+  not labelled, for horizontal-barred section summary plots and
+  vertical-barred variable-level plots respectively. Default 5.
 
 - est_chars_path:
 

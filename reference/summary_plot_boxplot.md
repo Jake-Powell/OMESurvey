@@ -91,7 +91,7 @@ dat <- tibble::tibble(
 
 # Simplest use
 dat |> summary_plot_boxplot()
-
+#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
 
 
 # Add question labels
@@ -101,7 +101,8 @@ labels <- c(
   Q3 = "Mid-valued question"
 )
 dat |> summary_plot_boxplot(labels_vec = labels)
-
+#> Warning: Some names in labels_vec do not match variable names in dat (_value columns).
+#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
 
 # With longer labels
 labels_long <- c(
@@ -110,7 +111,8 @@ labels_long <- c(
   Q3 = "Question where responses tend to be somewhere in the middle"
 )
 dat |> summary_plot_boxplot(labels_vec = labels_long)
-
+#> Warning: Some names in labels_vec do not match variable names in dat (_value columns).
+#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
 
 # Control label wrapping
 summary_plot_boxplot(
@@ -118,8 +120,10 @@ summary_plot_boxplot(
   labels_vec = labels_long,
   group_label_width = 20
 )
-
+#> Warning: Some names in labels_vec do not match variable names in dat (_value columns).
+#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
 
 # Remove missing values for plotting
 dat |> summary_plot_boxplot(na.rm = TRUE)
+#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
 ```

@@ -93,14 +93,6 @@
   : Append a message to a message list
 - [`report_notice()`](https://jake-powell.github.io/OMESurvey/reference/report_notice.md)
   : Format a NOTE or WARNING message for report output
-- [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
-  : Suppress warnings matching a specific pattern
-- [`frac_to_num()`](https://jake-powell.github.io/OMESurvey/reference/frac_to_num.md)
-  : Convert simple text fractions to numeric values
-- [`convert_colo()`](https://jake-powell.github.io/OMESurvey/reference/convert_colo.md)
-  : Convert shorthand colour name to a colour vector
-- [`rename_NA_first_col()`](https://jake-powell.github.io/OMESurvey/reference/rename_NA_first_col.md)
-  : Relabel NA values in the first column of a data frame
 - [`theme_OME()`](https://jake-powell.github.io/OMESurvey/reference/theme_OME.md)
   : ROME ggplot2 theme
 - [`scale_colour_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
@@ -110,3 +102,13 @@
   : Narrow kable table with standard styling
 - [`safe_read_excel()`](https://jake-powell.github.io/OMESurvey/reference/safe_read_excel.md)
   : Safely read Excel files, including when open or locked
+- [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
+  : Suppress warnings matching a specific pattern
+- [`frac_to_num()`](https://jake-powell.github.io/OMESurvey/reference/frac_to_num.md)
+  : Convert simple text fractions to numeric values
+- [`convert_colo()`](https://jake-powell.github.io/OMESurvey/reference/convert_colo.md)
+  : Convert shorthand colour name to a colour vector
+- [`rename_NA_first_col()`](https://jake-powell.github.io/OMESurvey/reference/rename_NA_first_col.md)
+  : Relabel NA values in the first column of a data frame
+- [`rewrite_cond_to_raw()`](https://jake-powell.github.io/OMESurvey/reference/rewrite_cond_to_raw.md)
+  : Rewrite a condition expression to use raw survey variables
