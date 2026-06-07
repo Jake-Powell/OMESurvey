@@ -31,42 +31,43 @@ params:
 ## General notes re this report
 
 THINGS IN THIS SECTION MAY NEED REVISION/RELOCATION
+
+This semi-automated survey summary/report contains the following:
+
+- Any notes or warnings from data and dictionary importing, preparing, etc.
+- A short summary of missingness.
+- Sections of survey responses (grouped into sections by the preprocessor) which contain
+  - A summary plot of all variables in the section, **if** they all have the same allowed values
+  - Per-variable summaries containing (a) a summary of all data for the variable, (b) stats and a plot of values where any condition (for branching) is satisfied, (c) plots of values where any condition (for branching) is satisfied, broken down by any grouping variables present.
+  - Numerical variables are plotted using boxplots and factors/categorical variables using stacked bar charts. Stacked bar charts show the percentage of response in each category, but these are suppressed if below `r params$percCutHoriz`% (section summaries) or `r params$percCutVert`% (variable-level plots).
+
+  
+  
+The summary of all data include a 'response diagnostic table'. Here are some notes about it:
+
+- 'NA (missing in data)' counts include only truly missing (NA) values, of which there should be none. (They should probably be -999 or -888).
+- 'Non‑allowed' counts include values present but violating dictionary or type constraints. (If any of these are present they are listed in a separate frequency table.)
+- The bold entries in the table are the ones that we expect might be non-zero.
+- Any variables with non-zero entries in non-bold positions are listed at the very end of the document, in the section "Variables with unexpected values". It's a good idea to check that there aren't any there (or that any there are known about and are ok).
+
+(In variables with a condition, there will often be both -999 and -888 responses. The -888s are those who answered the branching question and did not get branched to the present question. The -999s either (a) answered the branching question, were branched to this question and didn't answer it or (b) didn't answer the branching question.)
+
+In the plots in this document the following approach is used with regard to dealing with missing data. (The intention is to have the plots focus on the distribution of the valid/allowed responses, but have info about missingness easily available.)
+
+- Responses are only included if they are from a respondent who satisfied the branching condition.
+- Only allowed values are plotted - non-allowed values as well as -999 (missing) and -777 (invalid) values indicated via the numbers in brackets.
+- The numbers in brackets are of the form '(n/N)'. n is the number of allowed values plotted and N is the number of respondents shown the question (either everyone or everyone who satisfied the condition for branching to the question).
+
+For example, suppose that in a survey with 100 respondents, a particular question has responses as follows: 25 Yes, 25 No, 25 don't answer(coded -999), 25 weren't branched to the question (coded -888). Then the plot will show 50% Yes, 50% No and have (50/75) at the side; to indicate that 50 allowed responses are plotted out of 75 respondents who were shown the question.
+
+
 ```{r results='asis'}
-cat(report_notice(
-  "All variable summaries follow roughly the same format: \n\n",
-  "Section summary plot, then per-variable details containing first a summary of all data for the variable and then plots/stats for values where any condition (for branching) is satisfied. \n\n",
-  "In all plots, responses are only included if they are froma respondent who satisfied the branching condition; and only allowed values are plotted - non-allowed values are indicated by the numbers in brackets. \n\n",
-  "**Example:** 100 repsondents, 25 each say Yes, No, don't answer, weren't branched to the question. \n\n ",
-  "The plot will show 50% Yes, 50% No and have (50/75) at the side to indicate that 50 allowed responses are plotted out of 75 respondents who were shown the question.",
-  level = 'NOTE'
-))
-
-cat(report_notice(
-  "Numeric values outside allowed ranges count as non-allowed and are excluded from plots/statistics. ",
-  "Categorical non-allowed values are similarly excluded. ",
-  "All such values are flagged in validation summaries.",
-  level = 'NOTE'
-))
-
-cat(report_notice(
-  paste0(
-    "For categorical plots, percentages are suppressed if below ",
-    params$percCutHoriz, "% (section summaries) or ",
-    params$percCutVert, "% (variable-level plots)."
-  ),
-  level = 'NOTE'
-))
-
-cat(report_notice(
-  "In the 'Response diagnostic table': \n",
-  "'NA (missing in data)' counts include only truly missing (NA) values, of which there should be none. \n",
-  "'Non‑allowed' counts include values present but violating dictionary or type constraints. \n",
-  "The bold entries in the table are the ones that we expect might be non-zero. Any variables with non-zero entries in non-bold positions are listed at the very end of the document. \n",
-  level = 'NOTE'
-))
+if (!requireNamespace("cowplot", quietly=TRUE)){
+  cat(report_notice(
+    "Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit from  install.packages('cowplot') and then re-running.",
+    level = "NOTE"))
+}
 ```
-
-
 
 ## Notes/warnings from data & dictionary preparation, cleaning, etc
 
@@ -78,13 +79,7 @@ knitr::opts_chunk$set(fig.height=2.5)
 
 ```
 
-```{r results='asis'}
-if (!requireNamespace("cowplot", quietly=TRUE)){
-  cat(report_notice(
-    "Package 'cowplot' is not detected. It is needed to centre legends underneath plots with respect to the whole figure rather than just the plot area. Any section summary plots with long labels on the vertical axis might benefit from  install.packages('cowplot') and then re-running.",
-    level = "NOTE"))
-}
-```
+
 
 
 ```{r}
@@ -220,32 +215,108 @@ percCutVert <- params$percCutVert
 
 A short summary of section-by-section complete missingness.
 
-- In this section, missing includes explicit non‑response codes (−999/−888/−777). In the validation summaries, these are treated separately (as "non-allowed").
-- A section missing means that all questions in that section have no substantive response.
+- In this section, missing means explicit non‑response codes (−999/−888). In the validation summaries, these are treated separately (as "non-allowed"). 
+- A **section missing** means that **all questions in that section have no substantive response**.
+
+This is a bit crude as it doesn't allow for branching; but the intention is to give a sense of survey attrition/dropout rates.
+
+```{r}
+# helper function
+parse_report_sec <- function(sec) {
+  s <- stringr::str_squish(as.character(sec))
+
+  # Special case: Grouping variables (no prefix, always first)
+  if (tolower(s) == "grouping variables") {
+    return(list(
+      display  = "Grouping variables",
+      letter   = NA_character_,
+      digit    = NA_integer_,
+      code     = "GV",       # filename-safe short code
+      sort_key = "0",        # always first
+      file_key = "GV"
+    ))
+  }
+
+  # General case:
+  # Allow "A: Title" OR "A1: Title" where digit is 1-9
+  m <- stringr::str_match(s, "^([A-Z])([1-9][0-9]?)?:\\s*(.+)$")
+  if (!is.na(m[1, 1])) {
+    letter <- m[1, 2]
+    digit  <- if (!is.na(m[1, 3])) as.integer(m[1, 3]) else NA_integer_
+    title  <- stringr::str_squish(m[1, 4])
+
+    code <- if (is.na(digit)) letter else paste0(letter, digit)
+
+    # sort: letter first, then digit (blank treated as 0, so "A:" comes before "A1:")
+    digit_sort <- if (is.na(digit)) 0L else digit
+
+    return(list(
+      display  = paste0(code, ": ", title),
+      letter   = letter,
+      digit    = digit,
+      code     = code,
+      sort_key = sprintf("1_%s_%02d", letter, digit_sort),
+      file_key = code
+    ))
+  }
+
+  stop(
+    "Invalid report_sec: '", s, "'. Allowed forms are:\n",
+    "  - 'Grouping variables'\n",
+    "  - 'X: Section title' where X is A–Z\n",
+    "  - 'Xy: Section title' where X is A–Z and y is an integer 1–99 (no leading zero)"
+  )
+}
+```
 
 
 ```{r}
-
-
 # ------------------------------------------------------------------
 # Section-level non-response summary
 # A response is missing if it is NA OR one of the sentinel codes
 # ------------------------------------------------------------------
 
-missing_codes <- c(-999, -888, -777)
+missing_codes <- c(-999, -888)
 
-# Map sections to variables (excluding Grouping variables)
+
+# Map sections to variables (excluding Grouping variables),
+# ordered in the same way as the main report
+sec_meta_missing <-
+  validation_df |>
+  dplyr::filter(
+    !is.na(report_sec),
+    report_sec != "Grouping variables"
+  ) |>
+  dplyr::distinct(report_sec) |>
+  dplyr::rename(sec_raw = report_sec) |>
+  dplyr::rowwise() |>
+  dplyr::mutate(
+    info = list(parse_report_sec(sec_raw)),
+    sec_sort_key = info$sort_key,
+    sec_display  = info$display
+  ) |>
+  dplyr::ungroup() |>
+  dplyr::arrange(sec_sort_key)
+
 sec_vars <-
   validation_df |>
   dplyr::filter(
     !is.na(report_sec),
     report_sec != "Grouping variables"
   ) |>
-  dplyr::arrange(report_sec, report_sec_ord) |>
+  dplyr::left_join(
+    sec_meta_missing |>
+      dplyr::select(report_sec = sec_raw, sec_sort_key),
+    by = "report_sec"
+  ) |>
+  dplyr::arrange(sec_sort_key, report_sec_ord) |>
   dplyr::summarise(
     vars = list(variable),
-    .by = report_sec
-  )
+    .by = c(report_sec, sec_sort_key)
+  ) |>
+  dplyr::arrange(sec_sort_key) |>
+  dplyr::select(-sec_sort_key)
+
 
 data_miss_flags <- data
 n_resp <- nrow(data)
@@ -313,7 +384,10 @@ miss_summary <-
       "This section only"
     ),
     sec_index = readr::parse_number(key),
-    sec = sec_vars$report_sec[sec_index],
+    sec = factor(
+      sec_vars$report_sec[sec_index],
+      levels = sec_vars$report_sec
+    ),
     prop = num / n_resp
   )
 
@@ -455,52 +529,6 @@ remove_common_prefix <- function(x) {
 }
 
 
-
-parse_report_sec <- function(sec) {
-  s <- stringr::str_squish(as.character(sec))
-
-  # Special case: Grouping variables (no prefix, always first)
-  if (tolower(s) == "grouping variables") {
-    return(list(
-      display  = "Grouping variables",
-      letter   = NA_character_,
-      digit    = NA_integer_,
-      code     = "GV",       # filename-safe short code
-      sort_key = "0",        # always first
-      file_key = "GV"
-    ))
-  }
-
-  # General case:
-  # Allow "A: Title" OR "A1: Title" where digit is 1-9
-  m <- stringr::str_match(s, "^([A-Z])([1-9][0-9]?)?:\\s*(.+)$")
-  if (!is.na(m[1, 1])) {
-    letter <- m[1, 2]
-    digit  <- if (!is.na(m[1, 3])) as.integer(m[1, 3]) else NA_integer_
-    title  <- stringr::str_squish(m[1, 4])
-
-    code <- if (is.na(digit)) letter else paste0(letter, digit)
-
-    # sort: letter first, then digit (blank treated as 0, so "A:" comes before "A1:")
-    digit_sort <- if (is.na(digit)) 0L else digit
-
-    return(list(
-      display  = paste0(code, ": ", title),
-      letter   = letter,
-      digit    = digit,
-      code     = code,
-      sort_key = sprintf("1_%s_%02d", letter, digit_sort),
-      file_key = code
-    ))
-  }
-
-  stop(
-    "Invalid report_sec: '", s, "'. Allowed forms are:\n",
-    "  - 'Grouping variables'\n",
-    "  - 'X: Section title' where X is A–Z\n",
-    "  - 'Xy: Section title' where X is A–Z and y is an integer 1–99 (no leading zero)"
-  )
-}
 
 
 
