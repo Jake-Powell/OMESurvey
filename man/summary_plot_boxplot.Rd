@@ -23,8 +23,8 @@ The function supports two input formats:
 \item \strong{Simple format}: one numeric column per question.
 All questions are assumed to be included and plotted.
 \item \strong{Extended format}: columns named using the pattern
-\code{question_value}, with optional \code{question_include} and
-\code{question_plot} columns.
+\code{question_value}, with optional \code{question_include} and \code{question_plot}
+columns.
 \itemize{
 \item \verb{*_value} columns contain numeric responses.
 \item \verb{*_include} (logical) indicates whether a response is
@@ -39,8 +39,7 @@ In all cases,
 \itemize{
 \item all \verb{*_value} variables should be numeric.
 \item only variables to be used in the plot should be included.
-I.e. calls may need to be of the form
-\verb{data |> dplyr::select(<variables needed for plotting>) |> summary_plot_boxplot()}.
+I.e. calls may need to be of the form \verb{data |> dplyr::select(<variables needed for plotting>) |> summary_plot_boxplot()}.
 }
 }}
 
@@ -49,9 +48,9 @@ I.e. calls may need to be of the form
 present, otherwise assumes simple format.}
 
 \item{labels_vec}{Optional named character vector of labels to use for the
-questions on the plot. Names should correspond to variable names
-(without \verb{_value} appended in extended format), and values are the labels
-to display on the axis.}
+questions on the plot. Names should correspond to variable names (without
+\verb{_value} appended in extended format), and values are the labels to display
+on the axis.}
 
 \item{na.rm}{Logical. Controls how missing values are handled in the plot.
 Missing values (including those created via \verb{*_plot = FALSE}) are:
@@ -60,33 +59,34 @@ Missing values (including those created via \verb{*_plot = FALSE}) are:
 \item retained (and therefore reflected in the displayed count) if \code{FALSE} (default).
 }}
 
-\item{order_fun}{Function used to order questions in the plot.
-This function should accept arguments \verb{(x, na.rm = TRUE)} and return
-a single numeric value (e.g. \code{median}, \code{mean}).
-Defaults to \code{median}.}
+\item{order_fun}{Function used to order questions in the plot, or \code{NULL}.
+This function should accept arguments \verb{(x, na.rm = TRUE)} and return a
+single numeric value (e.g. \code{median}, \code{mean}). If \code{NULL} ordering is the
+same as that of the variables in the data. Defaults to \code{median}.}
 
 \item{titleText}{Optional text to use as the plot title.}
 
 \item{group_label_width}{Optional integer. Width (in characters) used when
-wrapping question labels on the axis. Passed to \code{OME_boxplot_()}.
-Default is 30.}
+wrapping question labels on the axis. Passed to \code{OME_boxplot_()}. Default
+is 30.}
 
 \item{...}{Additional arguments passed to \code{OME_boxplot_()}.}
 }
 \value{
-A \code{ggplot} object, a horizontal boxplot summarising the survey questions.
+A \code{ggplot} object, a horizontal boxplot summarising the survey
+questions.
 }
 \description{
-Make a horizontal boxplot to summarise several numeric survey questions,
-with questions ordered according to a summary statistic (by default the
-median of observed responses).
+Make a horizontal boxplot to summarise several numeric survey questions, with
+questions ordered according to a summary statistic (by default the median of
+observed responses).
 }
 \details{
-The variables in \code{dat} are pivoted to long format, then ordered according
-to the value returned by order_fun\verb{applied to each question's observed responses (with}na.rm = TRUE`).
+The variables in \code{dat} are pivoted to long format, then ordered
+according to the value returned by order_fun\verb{applied to each question's observed responses (with}na.rm = TRUE`).
 
-The original column order of \code{dat} is preserved as a stable tie-breaker
-when multiple questions have identical ordering statistics.
+The original column order of \code{dat} is preserved as a stable tie-breaker when
+multiple questions have identical ordering statistics.
 
 Missing-value handling for ordering and for plotting are intentionally
 separated: missing responses are ignored for ordering purposes, but their

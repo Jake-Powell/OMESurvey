@@ -76,7 +76,7 @@ Note that percentage labels are in white, so the pallete needs to work with
 that. (... or this function/package needs upgrading!)}
 
 \item{order_values}{Optional. Controls how questions are ordered in the plot.
-May be a character vector of response levels, or the special value
+May be \code{NULL}, a character vector of response levels, or the special value
 \code{"mean(as.numeric())"}. See Details.}
 
 \item{titleText}{Optional text to use as plot title.}
@@ -102,6 +102,8 @@ particular pattern.
 The \code{order_values} argument controls how questions are ordered in
 the horizontal bar chart.
 \itemize{
+\item If \code{order_values} is \code{NULL}, questions are ordered in the same order as
+they appear in the data.
 \item If \code{order_values} is a character vector of response levels (e.g.
 \code{c("Strongly agree", "Agree")}), questions are ordered by the proportion of
 respondents whose answers fall into those levels. (Intended for factors

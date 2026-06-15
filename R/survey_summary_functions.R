@@ -1090,7 +1090,7 @@ OME_stacked_bar <- function(dat, response_var,
 #'   Note that percentage labels are in white, so the pallete needs to work with
 #'   that. (... or this function/package needs upgrading!)
 #' @param order_values Optional. Controls how questions are ordered in the plot.
-#'   May be a character vector of response levels, or the special value
+#'   May be `NULL`, a character vector of response levels, or the special value
 #'   `"mean(as.numeric())"`. See Details.
 #' @param titleText Optional text to use as plot title.
 #' @param fill_label_width Optional integer. Width (in characters) used when
@@ -1105,6 +1105,9 @@ OME_stacked_bar <- function(dat, response_var,
 #'
 #' @details The `order_values` argument controls how questions are ordered in
 #'   the horizontal bar chart.
+#'
+#' * If `order_values` is `NULL`, questions are ordered in the same order as
+#'   they appear in the data.
 #'
 #' * If `order_values` is a character vector of response levels (e.g.
 #'   `c("Strongly agree", "Agree")`), questions are ordered by the proportion of
@@ -1307,17 +1310,30 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
     dplyr::filter(include) |>
     # reorder questions according to order_values
     dplyr::mutate(
-      question = forcats::fct_inorder(question),
-      order_flag = dplyr::case_when(
-        is.null(order_values) ~ NA_real_,
-        # if mean, do mean
-        length(order_values) == 1 &&
-          trimws(order_values) == "mean(as.numeric())" ~ as.numeric(value),
-        # otherwise treat as values to count proportion of
-        TRUE ~ as.numeric(as.character(value) %in% order_values)
-      ),
-      question = forcats::fct_reorder(question, order_flag, .fun = mean, .na_rm = TRUE)
-    )
+      question = forcats::fct_inorder(question)
+      )
+
+  if (!is.null(order_values)) {
+
+    dat <- dat |>
+      dplyr::mutate(
+        order_flag = dplyr::case_when(
+          length(order_values) == 1 &&
+            trimws(order_values) == "mean(as.numeric())" ~ as.numeric(value),
+
+          TRUE ~ as.numeric(as.character(value) %in% order_values)
+        )
+      ) |>
+      dplyr::mutate(
+        question = forcats::fct_reorder(
+          question,
+          order_flag,
+          .fun = mean,
+          .na_rm = TRUE
+        )
+      )
+  }
+
 
 
   # do the plotting
@@ -1702,26 +1718,26 @@ OME_boxplot <- function(data,
 
 #' Section-level summary plot for numeric questions
 #'
-#' Make a horizontal boxplot to summarise several numeric survey questions,
-#' with questions ordered according to a summary statistic (by default the
-#' median of observed responses).
+#' Make a horizontal boxplot to summarise several numeric survey questions, with
+#' questions ordered according to a summary statistic (by default the median of
+#' observed responses).
 #'
 #' @param dat A tibble/data.frame containing survey responses.
 #'
-#' The function supports two input formats:
+#'   The function supports two input formats:
 #'
 #' * **Simple format**: one numeric column per question.
 #'   All questions are assumed to be included and plotted.
 #'
 #' * **Extended format**: columns named using the pattern
-#'   `question_value`, with optional `question_include` and
-#'   `question_plot` columns.
+#'   `question_value`, with optional `question_include` and `question_plot`
+#'   columns.
 #'
 #'   - `*_value` columns contain numeric responses.
 #'   - `*_include` (logical) indicates whether a response is
-#'     included in the analysis at all.
+#'   included in the analysis at all.
 #'   - `*_plot` (logical) indicates whether a response is shown
-#'     in the plot (values set to `FALSE` are treated as missing).
+#'   in the plot (values set to `FALSE` are treated as missing).
 #'
 #'   Any missing `*_plot` and `*_include` columns are assumed to be `TRUE`.
 #'
@@ -1729,46 +1745,45 @@ OME_boxplot <- function(data,
 #'
 #'   - all `*_value` variables should be numeric.
 #'   - only variables to be used in the plot should be included.
-#'   I.e. calls may need to be of the form
-#'    `data |> dplyr::select(<variables needed for plotting>) |> summary_plot_boxplot()`.
+#'   I.e. calls may need to be of the form `data |> dplyr::select(<variables
+#'   needed for plotting>) |> summary_plot_boxplot()`.
 #'
 #' @param dat_format One of `"auto"`, `"simple"`, or `"extended"`. Defaults to
 #'   `"auto"`, which detects extended format if any `*_value` columns are
 #'   present, otherwise assumes simple format.
 #'
 #' @param labels_vec Optional named character vector of labels to use for the
-#'   questions on the plot. Names should correspond to variable names
-#'   (without `_value` appended in extended format), and values are the labels
-#'   to display on the axis.
+#'   questions on the plot. Names should correspond to variable names (without
+#'   `_value` appended in extended format), and values are the labels to display
+#'   on the axis.
 #'
 #' @param na.rm Logical. Controls how missing values are handled in the plot.
 #'   Missing values (including those created via `*_plot = FALSE`) are:
 #'   - removed if `TRUE`
 #'   - retained (and therefore reflected in the displayed count) if `FALSE` (default).
 #'
-#' @param order_fun Function used to order questions in the plot.
-#' This function should accept arguments `(x, na.rm = TRUE)` and return
-#' a single numeric value (e.g. `median`, `mean`).
-#' Defaults to `median`.
+#' @param order_fun Function used to order questions in the plot, or `NULL`.
+#'   This function should accept arguments `(x, na.rm = TRUE)` and return a
+#'   single numeric value (e.g. `median`, `mean`). If `NULL` ordering is the
+#'   same as that of the variables in the data. Defaults to `median`.
 #'
 #' @param titleText Optional text to use as the plot title.
 #'
 #' @param group_label_width Optional integer. Width (in characters) used when
-#' wrapping question labels on the axis. Passed to `OME_boxplot_()`.
-#' Default is 30.
+#'   wrapping question labels on the axis. Passed to `OME_boxplot_()`. Default
+#'   is 30.
 #'
 #' @param ... Additional arguments passed to `OME_boxplot_()`.
 #'
-#' @returns
-#' A `ggplot` object, a horizontal boxplot summarising the survey questions.
+#' @returns A `ggplot` object, a horizontal boxplot summarising the survey
+#' questions.
 #'
-#' @details
-#' The variables in `dat` are pivoted to long format, then ordered according
-#' to the value returned by order_fun` applied to each question's observed
-#' responses (with `na.rm = TRUE`).
+#' @details The variables in `dat` are pivoted to long format, then ordered
+#' according to the value returned by order_fun` applied to each question's
+#' observed responses (with `na.rm = TRUE`).
 #'
-#' The original column order of `dat` is preserved as a stable tie-breaker
-#' when multiple questions have identical ordering statistics.
+#' The original column order of `dat` is preserved as a stable tie-breaker when
+#' multiple questions have identical ordering statistics.
 #'
 #' Missing-value handling for ordering and for plotting are intentionally
 #' separated: missing responses are ignored for ordering purposes, but their
@@ -1908,7 +1923,6 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
   }
 
   # pivot to long form, change values to NA using _plot, filter using _include,
-  # reorder the `question` factor
   dat_long <- dat |>
     tidyr::pivot_longer(
       cols = everything(),
@@ -1922,14 +1936,21 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
     dplyr::filter(include) |>
     dplyr::mutate(
       question = forcats::as_factor(question)
-    ) |>
-    dplyr::mutate(
-      order_stat = if (all(is.na(value))) NA_real_ else order_fun(value, na.rm = TRUE),
-      .by = question
-    ) |>
-    dplyr::mutate(
-      question = forcats::fct_reorder(question, order_stat)
     )
+
+  # reorder the `question` factor if needed
+  if (!is.null(order_fun)) {
+    dat_long <- dat_long |>
+      dplyr::mutate(
+        order_stat = if (all(is.na(value))) NA_real_
+        else order_fun(value, na.rm = TRUE),
+        .by = question
+      ) |>
+      dplyr::mutate(
+        question = forcats::fct_reorder(question, order_stat)
+      )
+  }
+
 
 
   # plot
