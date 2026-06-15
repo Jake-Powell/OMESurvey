@@ -9,6 +9,7 @@ median of observed responses).
 ``` r
 summary_plot_boxplot(
   dat,
+  dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
   order_fun = median,
@@ -22,22 +23,58 @@ summary_plot_boxplot(
 
 - dat:
 
-  A tibble/data.frame, each variable corresponding to a survey question.
-  All variables should be numeric.
+  A tibble/data.frame containing survey responses.
+
+  The function supports two input formats:
+
+  - **Simple format**: one numeric column per question. All questions
+    are assumed to be included and plotted.
+
+  - **Extended format**: columns named using the pattern
+    `question_value`, with optional `question_include` and
+    `question_plot` columns.
+
+    - `*_value` columns contain numeric responses.
+
+    - `*_include` (logical) indicates whether a response is included in
+      the analysis at all.
+
+    - `*_plot` (logical) indicates whether a response is shown in the
+      plot (values set to `FALSE` are treated as missing).
+
+    Any missing `*_plot` and `*_include` columns are assumed to be
+    `TRUE`.
+
+    In all cases,
+
+    - all `*_value` variables should be numeric.
+
+    - only variables to be used in the plot should be included. I.e.
+      calls may need to be of the form
+      `data |> dplyr::select(<variables needed for plotting>) |> summary_plot_boxplot()`.
+
+- dat_format:
+
+  One of `"auto"`, `"simple"`, or `"extended"`. Defaults to `"auto"`,
+  which detects extended format if any `*_value` columns are present,
+  otherwise assumes simple format.
 
 - labels_vec:
 
   Optional named character vector of labels to use for the questions on
-  the plot. Names must match the column names of `dat`, and values are
-  the labels to display on the axis.
+  the plot. Names should correspond to variable names (without `_value`
+  appended in extended format), and values are the labels to display on
+  the axis.
 
 - na.rm:
 
-  Logical. Whether missing values should be removed/ignored for the
-  purposes of plotting. Passed through to
-  [`OME_boxplot_()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot_.md).
-  Defaults to `FALSE`. Note that missing values are always removed when
-  computing the ordering statistic.
+  Logical. Controls how missing values are handled in the plot. Missing
+  values (including those created via `*_plot = FALSE`) are:
+
+  - removed if `TRUE`
+
+  - retained (and therefore reflected in the displayed count) if `FALSE`
+    (default).
 
 - order_fun:
 
@@ -69,8 +106,9 @@ questions.
 ## Details
 
 The variables in `dat` are pivoted to long format, then ordered
-according to the value returned by `order_fun` applied to each
-question's observed responses (with `na.rm = TRUE`).
+according to the value returned by
+order_fun`applied to each question's observed responses (with`na.rm =
+TRUE\`).
 
 The original column order of `dat` is preserved as a stable tie-breaker
 when multiple questions have identical ordering statistics.
@@ -78,6 +116,9 @@ when multiple questions have identical ordering statistics.
 Missing-value handling for ordering and for plotting are intentionally
 separated: missing responses are ignored for ordering purposes, but
 their treatment in the plot itself is controlled by `na.rm`.
+
+If `dat` is supplied in simple format, it is internally converted to the
+extended format with all `*_plot` and `*_include` values set to `TRUE`.
 
 ## Examples
 
@@ -91,7 +132,7 @@ dat <- tibble::tibble(
 
 # Simplest use
 dat |> summary_plot_boxplot()
-#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
+
 
 
 # Add question labels
@@ -101,8 +142,7 @@ labels <- c(
   Q3 = "Mid-valued question"
 )
 dat |> summary_plot_boxplot(labels_vec = labels)
-#> Warning: Some names in labels_vec do not match variable names in dat (_value columns).
-#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
+
 
 # With longer labels
 labels_long <- c(
@@ -111,8 +151,7 @@ labels_long <- c(
   Q3 = "Question where responses tend to be somewhere in the middle"
 )
 dat |> summary_plot_boxplot(labels_vec = labels_long)
-#> Warning: Some names in labels_vec do not match variable names in dat (_value columns).
-#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
+
 
 # Control label wrapping
 summary_plot_boxplot(
@@ -120,10 +159,18 @@ summary_plot_boxplot(
   labels_vec = labels_long,
   group_label_width = 20
 )
-#> Warning: Some names in labels_vec do not match variable names in dat (_value columns).
-#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
+
 
 # Remove missing values for plotting
 dat |> summary_plot_boxplot(na.rm = TRUE)
-#> Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"): Can't recycle `..1` (size 12) to match `..3` (size 0).
+
+
+# Extended format example
+dat_ext <- tibble::tibble(
+  Q1_value = dat$Q1,
+  Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
+  Q2_value = dat$Q2,
+  Q2_include = c(TRUE, TRUE, FALSE, TRUE)
+)
+summary_plot_boxplot(dat_ext)
 ```

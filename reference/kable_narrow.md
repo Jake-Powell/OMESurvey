@@ -32,7 +32,7 @@ kable_narrow(x, ..., full_width = FALSE, position = "center")
 - position:
 
   Character string controlling table positioning (e.g. `"center"`,
-  `"left"`, `"right"`).
+  `"left"`, \`"right").
 
 ## Value
 

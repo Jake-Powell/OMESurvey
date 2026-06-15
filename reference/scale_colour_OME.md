@@ -23,8 +23,7 @@ scale_fill_OME(type = "distinct", ...)
 
 - ...:
 
-  Additional arguments passed to
-  [`scale_colour_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html).
+  Additional arguments passed to scale_colour_manual()\`.
 
 ## Value
 

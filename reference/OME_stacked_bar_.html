@@ -134,6 +134,14 @@ convert them to <code>"Missing"</code> and treat as an additional response level
 Defaults to TRUE. Needs care if used with faceting.</p></dd>
 
 
+<dt id="arg-count-style">count_style<a class="anchor" aria-label="anchor" href="#arg-count-style"></a></dt>
+<dd><p>Character string controlling how counts are displayed
+when <code>show_counts = TRUE</code>. Options are:</p><ul><li><p><code>"non-missing"</code>: show number of non-missing responses</p></li>
+<li><p><code>"total"</code>: show total number of responses</p></li>
+<li><p><code>"both"</code>: show both as "(non-missing/total)"</p></li>
+</ul><p>Defaults to <code>"non-missing"</code> if <code>na.rm = TRUE</code>, otherwise <code>"both"</code>.</p></dd>
+
+
 <dt id="arg-horiz">horiz<a class="anchor" aria-label="anchor" href="#arg-horiz"></a></dt>
 <dd><p>Logical (default <code>FALSE</code>). If <code>TRUE</code>, flip coordinates so bars
 are horizontal and place the legend below the plot.</p></dd>

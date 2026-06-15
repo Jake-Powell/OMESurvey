@@ -9,6 +9,7 @@ responses that fit a particular pattern.
 ``` r
 summary_plot_stacked_bar(
   dat,
+  dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
   NA_label = "Missing",
@@ -25,18 +26,54 @@ summary_plot_stacked_bar(
 
 - dat:
 
-  a tibble/data.frame, each variable corresponding to a question. All
-  variables should be factors and all with the same possible values.
+  A tibble/data.frame containing survey responses.
+
+  The function supports two input formats:
+
+  - **Simple format**: one factor column per question. All questions are
+    assumed to be included and plotted.
+
+  - **Extended format**: columns named using the pattern
+    `question_value`, with optional `question_include` and
+    `question_plot` columns.
+
+    - `*_value` columns contain factor responses.
+
+    - `*_include` (logical) indicates whether a response is included in
+      the analysis at all.
+
+    - `*_plot` (logical) indicates whether a response is shown in the
+      plot (values set to `FALSE` are treated as missing).
+
+    Any missing `*_plot` and `*_include` columns are assumed to be
+    `TRUE`.
+
+    In all cases:
+
+    - all response variables should be factors with identical levels.
+
+    - only variables to be used in the plot should be included. I.e.
+      calls may need to be of the form
+      `data |> dplyr::select(<variables needed for plotting>) |> summary_plot_stacked_bar()`.
+
+- dat_format:
+
+  One of `"auto"`, `"simple"`, or `"extended"`. Defaults to `"auto"`,
+  which detects extended format if any `*_value` columns are present,
+  otherwise assumes simple format.
 
 - labels_vec:
 
   a named vector of labels to use for the questions on the plot. Names
-  are variable names and values are corresponding labels.
+  are variable names (without \_value appended) and values are
+  corresponding labels.
 
 - na.rm:
 
-  Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
-  convert them to `NA_label` and treat as an additional response level.
+  Logical. controls whether missing values (including those created via
+  \*\_plot = FALSE) are included in the plot as a separate category. If
+  `TRUE`, remove `NA` responses; if `FALSE` (default), convert them to
+  `NA_label` and treat as an additional response level.
 
 - NA_label:
 
@@ -97,23 +134,18 @@ horizontal bar chart.
 - If `order_values` is a character vector of response levels (e.g.
   `c("Strongly agree", "Agree")`), questions are ordered by the
   proportion of respondents whose answers fall into those levels.
-  (Intended for factors with positive-negative / divergent scales.)
+  (Intended for factors with positive-negative / divergent scales.) In
+  this case values in `order_values` must be valid levels of the
+  response factor.
 
 - If `order_values` is exactly `"mean(as.numeric())"`, the function
   instead orders questions by the mean of the numeric codes of the
   response factor. (Intended for factors with low-high / sequential
   scales.)
 
-Axis labels are wrapped using
-[`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html)
-with a width controlled by `group_label_width`. Legend/fill labels are
-treated the same using `fill_label_width`.
-
-## Note
-
-All variables in `dat` should have identical factor levels. The names of
-`labels_vec` must match the column names of `dat`. Values in
-`order_values` must be valid levels of the response factor.
+  If `dat` is supplied in simple format, it is internally converted to
+  the extended format with all `*_plot` and `*_include` values set to
+  `TRUE`.
 
 ## Legend placement
 
@@ -136,12 +168,12 @@ dat <- tibble::tibble(
 
 # Simplest use
 summary_plot_stacked_bar(dat)
-#> Error in levs[[1]]: subscript out of bounds
+
 
 # Add question labels
 labels <- c(Q1 = "Question 1", Q2 = "Question 2", Q3 = "Question 3")
 summary_plot_stacked_bar(dat, labels_vec = labels)
-#> Error in levs[[1]]: subscript out of bounds
+
 
 # With custom wrapping if they are long
 labels_long <- c(
@@ -150,11 +182,20 @@ labels_long <- c(
   Q3 = "The third question asked as part of this series of three questions"
 )
 summary_plot_stacked_bar(dat, labels_vec = labels_long)
-#> Error in levs[[1]]: subscript out of bounds
+
 summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
-#> Error in levs[[1]]: subscript out of bounds
+
 
 # Remove missing values
-summary_plot_stacked_bar(dat, na.rm=FALSE)
-#> Error in levs[[1]]: subscript out of bounds
+summary_plot_stacked_bar(dat, na.rm=TRUE)
+
+
+# Extended format example
+dat_ext <- tibble::tibble(
+  Q1_value = dat$Q1,
+  Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
+  Q2_value = dat$Q2,
+  Q2_include = c(TRUE, TRUE, FALSE, TRUE)
+)
+summary_plot_stacked_bar(dat_ext)
 ```

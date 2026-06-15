@@ -57,6 +57,7 @@ median of observed responses).</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">summary_plot_boxplot</span><span class="op">(</span></span>
 <span>  <span class="va">dat</span>,</span>
+<span>  dat_format <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  labels_vec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  order_fun <span class="op">=</span> <span class="va">median</span>,</span>
@@ -71,21 +72,43 @@ median of observed responses).</p>
 
 
 <dl><dt id="arg-dat">dat<a class="anchor" aria-label="anchor" href="#arg-dat"></a></dt>
-<dd><p>A tibble/data.frame, each variable corresponding to a survey
-question. All variables should be numeric.</p></dd>
+<dd><p>A tibble/data.frame containing survey responses.</p>
+<p>The function supports two input formats:</p><ul><li><p><strong>Simple format</strong>: one numeric column per question.
+All questions are assumed to be included and plotted.</p></li>
+<li><p><strong>Extended format</strong>: columns named using the pattern
+<code>question_value</code>, with optional <code>question_include</code> and
+<code>question_plot</code> columns.</p><ul><li><p><code>*_value</code> columns contain numeric responses.</p></li>
+<li><p><code>*_include</code> (logical) indicates whether a response is
+included in the analysis at all.</p></li>
+<li><p><code>*_plot</code> (logical) indicates whether a response is shown
+in the plot (values set to <code>FALSE</code> are treated as missing).</p></li>
+</ul><p>Any missing <code>*_plot</code> and <code>*_include</code> columns are assumed to be <code>TRUE</code>.</p>
+<p>In all cases,</p><ul><li><p>all <code>*_value</code> variables should be numeric.</p></li>
+<li><p>only variables to be used in the plot should be included.
+I.e. calls may need to be of the form
+<code>data |&gt; dplyr::select(&lt;variables needed for plotting&gt;) |&gt; summary_plot_boxplot()</code>.</p></li>
+</ul></li>
+</ul></dd>
+
+
+<dt id="arg-dat-format">dat_format<a class="anchor" aria-label="anchor" href="#arg-dat-format"></a></dt>
+<dd><p>One of <code>"auto"</code>, <code>"simple"</code>, or <code>"extended"</code>. Defaults to
+<code>"auto"</code>, which detects extended format if any <code>*_value</code> columns are
+present, otherwise assumes simple format.</p></dd>
 
 
 <dt id="arg-labels-vec">labels_vec<a class="anchor" aria-label="anchor" href="#arg-labels-vec"></a></dt>
 <dd><p>Optional named character vector of labels to use for the
-questions on the plot. Names must match the column names of <code>dat</code>, and
-values are the labels to display on the axis.</p></dd>
+questions on the plot. Names should correspond to variable names
+(without <code>_value</code> appended in extended format), and values are the labels
+to display on the axis.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
-<dd><p>Logical. Whether missing values should be removed/ignored for the
-purposes of plotting. Passed through to <code><a href="OME_boxplot_.html">OME_boxplot_()</a></code>.
-Defaults to <code>FALSE</code>. Note that missing values are always removed when
-computing the ordering statistic.</p></dd>
+<dd><p>Logical. Controls how missing values are handled in the plot.
+Missing values (including those created via <code>*_plot = FALSE</code>) are:</p><ul><li><p>removed if <code>TRUE</code></p></li>
+<li><p>retained (and therefore reflected in the displayed count) if <code>FALSE</code> (default).</p></li>
+</ul></dd>
 
 
 <dt id="arg-order-fun">order_fun<a class="anchor" aria-label="anchor" href="#arg-order-fun"></a></dt>
@@ -116,13 +139,14 @@ Default is 30.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The variables in <code>dat</code> are pivoted to long format, then ordered according
-to the value returned by <code>order_fun</code> applied to each question's observed
-responses (with <code>na.rm = TRUE</code>).</p>
+to the value returned by order_fun<code>applied to each question's observed responses (with</code>na.rm = TRUE`).</p>
 <p>The original column order of <code>dat</code> is preserved as a stable tie-breaker
 when multiple questions have identical ordering statistics.</p>
 <p>Missing-value handling for ordering and for plotting are intentionally
 separated: missing responses are ignored for ordering purposes, but their
 treatment in the plot itself is controlled by <code>na.rm</code>.</p>
+<p>If <code>dat</code> is supplied in simple format, it is internally converted to the
+extended format with all <code>*_plot</code> and <code>*_include</code> values set to <code>TRUE</code>.</p>
     </div>
 
     <div class="section level2">
@@ -136,7 +160,7 @@ treatment in the plot itself is controlled by <code>na.rm</code>.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Simplest use</span></span></span>
 <span class="r-in"><span><span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu">summary_plot_boxplot</span><span class="op">(</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"):</span> Can't recycle `..1` (size 12) to match `..3` (size 0).</span>
+<span class="r-plt img"><img src="summary_plot_boxplot-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Add question labels</span></span></span>
@@ -146,8 +170,7 @@ treatment in the plot itself is controlled by <code>na.rm</code>.</p>
 <span class="r-in"><span>  Q3 <span class="op">=</span> <span class="st">"Mid-valued question"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu">summary_plot_boxplot</span><span class="op">(</span>labels_vec <span class="op">=</span> <span class="va">labels</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some names in labels_vec do not match variable names in dat (_value columns).</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"):</span> Can't recycle `..1` (size 12) to match `..3` (size 0).</span>
+<span class="r-plt img"><img src="summary_plot_boxplot-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># With longer labels</span></span></span>
 <span class="r-in"><span><span class="va">labels_long</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span></span>
@@ -156,8 +179,7 @@ treatment in the plot itself is controlled by <code>na.rm</code>.</p>
 <span class="r-in"><span>  Q3 <span class="op">=</span> <span class="st">"Question where responses tend to be somewhere in the middle"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu">summary_plot_boxplot</span><span class="op">(</span>labels_vec <span class="op">=</span> <span class="va">labels_long</span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some names in labels_vec do not match variable names in dat (_value columns).</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"):</span> Can't recycle `..1` (size 12) to match `..3` (size 0).</span>
+<span class="r-plt img"><img src="summary_plot_boxplot-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Control label wrapping</span></span></span>
 <span class="r-in"><span><span class="fu">summary_plot_boxplot</span><span class="op">(</span></span></span>
@@ -165,12 +187,21 @@ treatment in the plot itself is controlled by <code>na.rm</code>.</p>
 <span class="r-in"><span>  labels_vec <span class="op">=</span> <span class="va">labels_long</span>,</span></span>
 <span class="r-in"><span>  group_label_width <span class="op">=</span> <span class="fl">20</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Some names in labels_vec do not match variable names in dat (_value columns).</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"):</span> Can't recycle `..1` (size 12) to match `..3` (size 0).</span>
+<span class="r-plt img"><img src="summary_plot_boxplot-4.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Remove missing values for plotting</span></span></span>
 <span class="r-in"><span><span class="va">dat</span> <span class="op">|&gt;</span> <span class="fu">summary_plot_boxplot</span><span class="op">(</span>na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in tidyr::pivot_longer(dat, cols = everything(), names_to = c("question",     ".value"), names_pattern = "(.+)_(value|plot|include)", cols_vary = "slowest"):</span> Can't recycle `..1` (size 12) to match `..3` (size 0).</span>
+<span class="r-plt img"><img src="summary_plot_boxplot-5.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Extended format example</span></span></span>
+<span class="r-in"><span><span class="va">dat_ext</span> <span class="op">&lt;-</span> <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/tibble.html" class="external-link">tibble</a></span><span class="op">(</span></span></span>
+<span class="r-in"><span>  Q1_value <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">Q1</span>,</span></span>
+<span class="r-in"><span>  Q1_plot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span><span class="op">)</span>,</span></span>
+<span class="r-in"><span>  Q2_value <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">Q2</span>,</span></span>
+<span class="r-in"><span>  Q2_include <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">TRUE</span>, <span class="cn">TRUE</span>, <span class="cn">FALSE</span>, <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">summary_plot_boxplot</span><span class="op">(</span><span class="va">dat_ext</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="summary_plot_boxplot-6.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -83,6 +83,19 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   Logical; whether to display (n) counts for each bar. Defaults to TRUE.
   Needs care if used with faceting.
 
+- count_style:
+
+  Character string controlling how counts are displayed when
+  `show_counts = TRUE`. Options are:
+
+  - `"non-missing"`: show number of non-missing responses
+
+  - `"total"`: show total number of responses
+
+  - `"both"`: show both as "(non-missing/total)"
+
+  Defaults to `"non-missing"` if `na.rm = TRUE`, otherwise `"both"`.
+
 - horiz:
 
   Logical (default `FALSE`). If `TRUE`, flip coordinates so bars are
