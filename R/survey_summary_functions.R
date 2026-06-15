@@ -2,7 +2,7 @@
 
 #' Safely read Excel files, including when open or locked
 #'
-#' A wrapper around \code{readxl::read_excel()} that attempts to read an Excel
+#' A wrapper around [`readxl::read_excel()`] that attempts to read an Excel
 #' file directly, and if that fails (e.g. because the file is open or locked in
 #' Excel on Windows), falls back to copying the file to a temporary location and
 #' reading from the copy.
@@ -11,8 +11,8 @@
 #' execution, such as interactive data preparation or reporting pipelines.
 #'
 #' @param path A character string giving the path to the Excel file.
-#' @param sheet Sheet to read from. Passed to \code{readxl::read_excel()}.
-#' @param ... Additional arguments passed to \code{readxl::read_excel()}.
+#' @param sheet Sheet to read from. Passed to `readxl::read_excel()`.
+#' @param ... Additional arguments passed to `readxl::read_excel()`.
 #'
 #' @return A tibble containing the data read from the Excel file.
 #'
@@ -344,6 +344,15 @@ render_survey_summary <- function(data_path,
 #' @param show_counts Logical; whether to display (n) counts for each bar.
 #'  Defaults to TRUE. Needs care if used with faceting.
 #'
+#' @param count_style Character string controlling how counts are displayed
+#'   when `show_counts = TRUE`. Options are:
+#'   \itemize{
+#'     \item `"non-missing"`: show number of non-missing responses
+#'     \item `"total"`: show total number of responses
+#'     \item `"both"`: show both as "(non-missing/total)"
+#'   }
+#'   Defaults to `"non-missing"` if `na.rm = TRUE`, otherwise `"both"`.
+#'
 #' @param horiz Logical (default `FALSE`). If `TRUE`, flip coordinates so bars
 #'   are horizontal and place the legend below the plot.
 #'
@@ -386,8 +395,8 @@ render_survey_summary <- function(data_path,
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
 #'   uses the factor's existing levels.
 #'
-#' @param ... Additional arguments passed from \code{OME_stacked_bar()} to
-#'   \code{OME_stacked_bar_()}. Not used when calling \code{OME_stacked_bar_()}
+#' @param ... Additional arguments passed from [`OME_stacked_bar()`] to
+#'   `OME_stacked_bar_()`. Not used when calling `OME_stacked_bar_()`
 #'   directly.
 #'
 #' @returns A `ggplot` object.
@@ -1032,60 +1041,89 @@ OME_stacked_bar <- function(dat, response_var,
 #' with questions ordered according to the proportion of responses that fit a
 #' particular pattern.
 #'
-#' @param dat a tibble/data.frame, each variable corresponding to a question.
-#'  All variables should be factors and all with the same possible values.
-#' @param labels_vec a named vector of labels to use for the questions on the plot.
-#'  Names are variable names and values are corresponding labels.
-#' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
-#'   convert them to `NA_label` and treat as an additional response level.
-#' @param NA_label Character, default `"Missing"`. Label to use for `NA` responses.
+#' @param dat A tibble/data.frame containing survey responses.
+#'
+#'   The function supports two input formats:
+#'
+#' * **Simple format**: one factor column per question.
+#'   All questions are assumed to be included and plotted.
+#'
+#' * **Extended format**: columns named using the pattern
+#'   `question_value`, with optional `question_include` and `question_plot`
+#'   columns.
+#'
+#'   - `*_value` columns contain factor responses.
+#'   - `*_include` (logical) indicates whether a response is
+#'   included in the analysis at all.
+#'   - `*_plot` (logical) indicates whether a response is shown
+#'   in the plot (values set to `FALSE` are treated as missing).
+#'
+#'   Any missing `*_plot` and `*_include` columns are assumed to be `TRUE`.
+#'
+#'   In all cases:
+#'
+#'   - all response variables should be factors with identical
+#'   levels.
+#'   - only variables to be used in the plot should be included.
+#'   I.e. calls may need to be of the form
+#'    `data |> dplyr::select(<variables needed for plotting>) |> summary_plot_stacked_bar()`.
+#'
+#' @param dat_format One of `"auto"`, `"simple"`, or `"extended"`. Defaults to
+#'   `"auto"`, which detects extended format if any `*_value` columns are
+#'   present, otherwise assumes simple format.
+#' @param labels_vec a named vector of labels to use for the questions on the
+#'   plot. Names are variable names (without _value appended) and values are
+#'   corresponding labels.
+#' @param na.rm Logical. controls whether missing values (including those
+#'   created via *_plot = FALSE) are included in the plot as a separate
+#'   category. If `TRUE`, remove `NA` responses; if `FALSE` (default), convert
+#'   them to `NA_label` and treat as an additional response level.
+#' @param NA_label Character, default `"Missing"`. Label to use for `NA`
+#'   responses.
 #' @param percCut numeric scalar (0-100). Cutoff below which percentages are not
-#'  shown in bar segments. Default `5`.
-#' @param colo (optional but recommended) vector of colours to use for the fill scale
-#'  (character vector of colours, length the same as the number of levels of the
-#'   factor that is the first variable of `dat`.)
-#' If `NULL` (default) the pallete from `OMESurvey::get_OME_colours(type='distinct')` is used.
-#' When `na.rm = FALSE` a grey colour is prepended for the "No response" level.
-#' Note that percentage labels are in white, so the pallete needs to work with that.
-#'  (... or this function/package needs upgrading!)
+#'   shown in bar segments. Default `5`.
+#' @param colo (optional but recommended) vector of colours to use for the fill
+#'   scale (character vector of colours, length the same as the number of levels
+#'   of the factor that is the first variable of `dat`.) If `NULL` (default) the
+#'   pallete from `OMESurvey::get_OME_colours(type='distinct')` is used. When
+#'   `na.rm = FALSE` a grey colour is prepended for the "No response" level.
+#'   Note that percentage labels are in white, so the pallete needs to work with
+#'   that. (... or this function/package needs upgrading!)
 #' @param order_values Optional. Controls how questions are ordered in the plot.
 #'   May be a character vector of response levels, or the special value
 #'   `"mean(as.numeric())"`. See Details.
 #' @param titleText Optional text to use as plot title.
-#' @param fill_label_width Optional integer. Width (in characters) used when wrapping
-#'   fill labels with `stringr::str_wrap()`. Passed to `OME_stacked_bar()`. Default is 20.
-#' @param group_label_width Optional integer. Width (in characters) used when wrapping
-#'   vertical (group/question) axis labels with `stringr::str_wrap()`. Default is 30.
+#' @param fill_label_width Optional integer. Width (in characters) used when
+#'   wrapping fill labels with `stringr::str_wrap()`. Passed to
+#'   `OME_stacked_bar()`. Default is 20.
+#' @param group_label_width Optional integer. Width (in characters) used when
+#'   wrapping vertical (group/question) axis labels with `stringr::str_wrap()`.
+#'   Default is 30.
 #'
-#' @returns
-#' A `ggplot` object, a horizontal stacked bar chart summarising the survey questions.
+#' @returns A `ggplot` object, a horizontal stacked bar chart summarising the
+#'   survey questions.
 #'
-#' @note
-#' All variables in `dat` should have identical factor levels.
-#' The names of `labels_vec` must match the column names of `dat`.
-#' Values in `order_values` must be valid levels of the response factor.
-#'
-#' @details
-#' The `order_values` argument controls how questions are ordered in the
-#' horizontal bar chart.
+#' @details The `order_values` argument controls how questions are ordered in
+#'   the horizontal bar chart.
 #'
 #' * If `order_values` is a character vector of response levels (e.g.
-#'   `c("Strongly agree", "Agree")`), questions are ordered by the proportion
-#'   of respondents whose answers fall into those levels.
-#'   (Intended for factors with positive-negative / divergent scales.)
+#'   `c("Strongly agree", "Agree")`), questions are ordered by the proportion of
+#'   respondents whose answers fall into those levels. (Intended for factors
+#'   with positive-negative / divergent scales.) In this case values in
+#'   `order_values` must be valid levels of the response factor.
 #'
 #' * If `order_values` is exactly `"mean(as.numeric())"`, the function instead
 #'   orders questions by the mean of the numeric codes of the response factor.
 #'   (Intended for factors with low-high / sequential scales.)
 #'
-#' Axis labels are wrapped using `stringr::str_wrap()` with a width controlled
-#' by `group_label_width`. Legend/fill labels are treated the same using `fill_label_width`.
+#'   If `dat` is supplied in simple format, it is internally converted to the
+#'   extended format with all `*_plot` and `*_include` values set to `TRUE`.
 #'
-#' @section Legend placement:
-#' By default, the legend is placed horizontally according to the standard
-#' ggplot2 layout. If you want the legend to be centred across the full width
-#' of the final figure, the helper function `centre_legend_below()` can be used
-#' after plotting. (This must be done after any tweaks to the ggplot theme, annotations, etc)
+#' @section Legend placement: By default, the legend is placed horizontally
+#'   according to the standard ggplot2 layout. If you want the legend to be
+#'   centred across the full width of the final figure, the helper function
+#'   `centre_legend_below()` can be used after plotting. (This must be done
+#'   after any tweaks to the ggplot theme, annotations, etc)
 #'
 #'
 #' @export
@@ -1115,9 +1153,19 @@ OME_stacked_bar <- function(dat, response_var,
 #' summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
 #'
 #' # Remove missing values
-#' summary_plot_stacked_bar(dat, na.rm=FALSE)
+#' summary_plot_stacked_bar(dat, na.rm=TRUE)
 #'
-summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
+#' # Extended format example
+#' dat_ext <- tibble::tibble(
+#'   Q1_value = dat$Q1,
+#'   Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
+#'   Q2_value = dat$Q2,
+#'   Q2_include = c(TRUE, TRUE, FALSE, TRUE)
+#' )
+#' summary_plot_stacked_bar(dat_ext)
+
+summary_plot_stacked_bar <- function(dat, dat_format = "auto",
+                                     labels_vec=NULL,
                                      na.rm=FALSE, NA_label="Missing",
                                      percCut=5,
                                      colo=NULL, order_values = NULL,
@@ -1125,12 +1173,66 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
                                      fill_label_width=20,
                                      group_label_width=30){
 
-  # In the context of using this for the survey_summary_report(.Rmd) this should be unnecessary, but maybe leave it for other use?
+
+  # In the context of using this for the survey_summary_report(.Rmd) this should
+  # be unnecessary, but maybe leave it for other use?
   colo <- convert_colo(colo)
+
+
+  # check dat_format is allowed
+  dat_format <- match.arg(dat_format, c("auto", "simple", "extended"))
+
+  # Identify any _value columns for dat_format=="auto"
+  has_value <- any(grepl("_value$", names(dat)))
+
+  # if extended & no _value columns, error
+  if (dat_format == "extended" && !has_value) {
+    stop("No *_value columns found but dat_format='extended'")
+  }
+
+  # if auto, decode
+  if (dat_format == "auto") {
+    dat_format <- if (has_value) "extended" else "simple"
+  }
+
+  # Normalise to extended format
+  # if simple: add _value, _plot, _include (as all TRUE)
+  if (dat_format == "simple"){
+    dat <- dat |>
+      dplyr::mutate(
+        dplyr::across(
+          everything(),
+          list(
+            value   = identity,
+            plot    = ~ TRUE,
+            include = ~ TRUE
+          ),
+          .names = "{.col}_{.fn}"
+        )
+      )
+  # if extended: ensure that every _value variable has a corresponding _plot and
+  # _include, defaulting any that don't exist to all TRUE
+  } else if (dat_format == "extended"){
+
+    value_vars <- sub("_value$", "", names(dat)[grepl("_value$", names(dat))])
+
+    for (v in value_vars) {
+      if (!paste0(v, "_plot") %in% names(dat)) {
+        dat[[paste0(v, "_plot")]] <- TRUE
+      }
+      if (!paste0(v, "_include") %in% names(dat)) {
+        dat[[paste0(v, "_include")]] <- TRUE
+      }
+    }
+
+  }
+
+
 
 
   # identify value columns
   value_cols <- names(dat)[grepl("_value$", names(dat))]
+
 
   # factor checks on _value columns
   all_factors <- value_cols |>
@@ -1143,33 +1245,35 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
     levs[-1] |> purrr::map_lgl(~ identical(.x, ref)) |> all()
   }
 
-
   if (!all_factors | !same_levels){
     warning(paste0(
-      "The dataframe passed to summary_plot_stacked_bar() should have all its variables (a) factors, (b) with the same levels\n",
+      "The dataframe passed to summary_plot_stacked_bar() should have all its variables ",
+      "(in simple dat_format, or all _value variables in extended format) ",
+      "(a) factors, (b) with the same levels\n",
       "Running with (a) ", all_factors, " and (b) ", same_levels, " ",
       "(note that if (a) is false then the check of (b) here is not meaningful)"))
   }
 
 
+  # identify value columns
+  value_cols <- names(dat)[grepl("_value$", names(dat))]
+  value_vars <- sub("_value$", "", value_cols)
+
   # labels_vec check against base variable names
   if (!is.null(labels_vec)) {
-
-    value_vars <- sub("_value$", "", value_cols)
 
     if (!all(names(labels_vec) %in% value_vars)) {
       warning("Some names in labels_vec do not match variable names in dat (_value columns).")
     }
-  }
 
-    # ensure ordering of labels_vec matches those of the ???
-    #labels_vec <- labels_vec[value_vars]
+    labels_vec <- labels_vec[value_vars]
+  }
 
 
 
 
   # pivot the many questions/variables to long question&response form,
-  # reorder questions according to proportion of responses that are in order_values
+  # reorder questions according to order_values
 
   # OLD LOGCI
   # dat <-
@@ -1193,7 +1297,7 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
     tidyr::pivot_longer(
       cols = everything(),
       names_to = c("question", ".value"),
-      names_pattern = "(.+)_(value|plot|include)",
+      names_pattern = "^(.+)_(value|plot|include)$",
       cols_vary = "slowest"
     ) |>
     # apply masks: first set NAs with _plot, then filter with _include
@@ -1204,10 +1308,13 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
     # reorder questions according to order_values
     dplyr::mutate(
       question = forcats::fct_inorder(question),
-      order_flag = dplyr::case_when( # if mean, do mean
+      order_flag = dplyr::case_when(
+        is.null(order_values) ~ NA_real_,
+        # if mean, do mean
         length(order_values) == 1 &&
           trimws(order_values) == "mean(as.numeric())" ~ as.numeric(value),
-        TRUE ~ as.character(value) %in% order_values # otherwise treat as values to count proportion of
+        # otherwise treat as values to count proportion of
+        TRUE ~ as.numeric(as.character(value) %in% order_values)
       ),
       question = forcats::fct_reorder(question, order_flag, .fun = mean, .na_rm = TRUE)
     )
@@ -1223,7 +1330,7 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
                     propLabText = NULL,
                     groupLabText = NULL,
                     colo = colo,
-                    na.rm = TRUE,
+                    na.rm = na.rm,
                     count_style = "both",
                     NA_label = NA_label,
                     titleText = titleText,
@@ -1239,10 +1346,10 @@ summary_plot_stacked_bar <- function(dat, labels_vec=NULL,
 #' @title Deprecated: Make a stacked bar chart summarising many survey questions
 #' @description
 #' This function is deprecated.
-#' Use \code{\link{summary_plot_stacked_bar}} instead.
+#' Use [`summary_plot_stacked_bar`] instead.
 #'
 #' @inheritParams summary_plot_stacked_bar
-#' @param ... Additional arguments passed to \code{summary_plot_stacked_bar()}.
+#' @param ... Additional arguments passed to `summary_plot_stacked_bar()`.
 #' @seealso summary_plot_stacked_bar
 #' @export
 plot_many_questions <- function(...) {
@@ -1305,9 +1412,8 @@ plot_many_questions <- function(...) {
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
 #'   uses the factor's existing levels.
 #'
-#' @param ... Additional arguments passed from \code{OME_boxplot()} to
-#'   \code{OME_boxplot_()}. Not used when calling \code{OME_boxplot_()}
-#'   directly.
+#' @param ... Additional arguments passed from [`OME_boxplot()`] to
+#'   `OME_boxplot_()`. Not used when calling `OME_boxplot_()` directly.
 #'
 #' @details
 #' `OME_boxplot()` uses tidy evaluation;
@@ -1600,45 +1706,76 @@ OME_boxplot <- function(data,
 #' with questions ordered according to a summary statistic (by default the
 #' median of observed responses).
 #'
-#' @param dat A tibble/data.frame, each variable corresponding to a survey
-#' question. All variables should be numeric.
+#' @param dat A tibble/data.frame containing survey responses.
+#'
+#' The function supports two input formats:
+#'
+#' * **Simple format**: one numeric column per question.
+#'   All questions are assumed to be included and plotted.
+#'
+#' * **Extended format**: columns named using the pattern
+#'   `question_value`, with optional `question_include` and
+#'   `question_plot` columns.
+#'
+#'   - `*_value` columns contain numeric responses.
+#'   - `*_include` (logical) indicates whether a response is
+#'     included in the analysis at all.
+#'   - `*_plot` (logical) indicates whether a response is shown
+#'     in the plot (values set to `FALSE` are treated as missing).
+#'
+#'   Any missing `*_plot` and `*_include` columns are assumed to be `TRUE`.
+#'
+#'   In all cases,
+#'
+#'   - all `*_value` variables should be numeric.
+#'   - only variables to be used in the plot should be included.
+#'   I.e. calls may need to be of the form
+#'    `data |> dplyr::select(<variables needed for plotting>) |> summary_plot_boxplot()`.
+#'
+#' @param dat_format One of `"auto"`, `"simple"`, or `"extended"`. Defaults to
+#'   `"auto"`, which detects extended format if any `*_value` columns are
+#'   present, otherwise assumes simple format.
 #'
 #' @param labels_vec Optional named character vector of labels to use for the
-#' questions on the plot. Names must match the column names of \code{dat}, and
-#' values are the labels to display on the axis.
+#'   questions on the plot. Names should correspond to variable names
+#'   (without `_value` appended in extended format), and values are the labels
+#'   to display on the axis.
 #'
-#' @param na.rm Logical. Whether missing values should be removed/ignored for the
-#' purposes of plotting. Passed through to \code{OME_boxplot_()}.
-#' Defaults to \code{FALSE}. Note that missing values are always removed when
-#' computing the ordering statistic.
+#' @param na.rm Logical. Controls how missing values are handled in the plot.
+#'   Missing values (including those created via `*_plot = FALSE`) are:
+#'   - removed if `TRUE`
+#'   - retained (and therefore reflected in the displayed count) if `FALSE` (default).
 #'
 #' @param order_fun Function used to order questions in the plot.
-#' This function should accept arguments \code{(x, na.rm = TRUE)} and return
-#' a single numeric value (e.g. \code{median}, \code{mean}).
-#' Defaults to \code{median}.
+#' This function should accept arguments `(x, na.rm = TRUE)` and return
+#' a single numeric value (e.g. `median`, `mean`).
+#' Defaults to `median`.
 #'
 #' @param titleText Optional text to use as the plot title.
 #'
 #' @param group_label_width Optional integer. Width (in characters) used when
-#' wrapping question labels on the axis. Passed to \code{OME_boxplot_()}.
+#' wrapping question labels on the axis. Passed to `OME_boxplot_()`.
 #' Default is 30.
 #'
-#' @param ... Additional arguments passed to \code{OME_boxplot_()}.
+#' @param ... Additional arguments passed to `OME_boxplot_()`.
 #'
 #' @returns
-#' A \code{ggplot} object, a horizontal boxplot summarising the survey questions.
+#' A `ggplot` object, a horizontal boxplot summarising the survey questions.
 #'
 #' @details
-#' The variables in \code{dat} are pivoted to long format, then ordered according
-#' to the value returned by \code{order_fun} applied to each question's observed
-#' responses (with \code{na.rm = TRUE}).
+#' The variables in `dat` are pivoted to long format, then ordered according
+#' to the value returned by order_fun` applied to each question's observed
+#' responses (with `na.rm = TRUE`).
 #'
-#' The original column order of \code{dat} is preserved as a stable tie-breaker
+#' The original column order of `dat` is preserved as a stable tie-breaker
 #' when multiple questions have identical ordering statistics.
 #'
 #' Missing-value handling for ordering and for plotting are intentionally
 #' separated: missing responses are ignored for ordering purposes, but their
-#' treatment in the plot itself is controlled by \code{na.rm}.
+#' treatment in the plot itself is controlled by `na.rm`.
+#'
+#' If `dat` is supplied in simple format, it is internally converted to the
+#' extended format with all `*_plot` and `*_include` values set to `TRUE`.
 #'
 #' @export
 #'
@@ -1679,19 +1816,70 @@ OME_boxplot <- function(data,
 #'
 #' # Remove missing values for plotting
 #' dat |> summary_plot_boxplot(na.rm = TRUE)
-summary_plot_boxplot <- function(dat, labels_vec = NULL,
+#'
+#' # Extended format example
+#' dat_ext <- tibble::tibble(
+#'   Q1_value = dat$Q1,
+#'   Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
+#'   Q2_value = dat$Q2,
+#'   Q2_include = c(TRUE, TRUE, FALSE, TRUE)
+#' )
+#' summary_plot_boxplot(dat_ext)
+summary_plot_boxplot <- function(dat, dat_format = "auto",
+                                 labels_vec = NULL,
                                  na.rm = FALSE,
                                  order_fun = median,
                                  titleText = NULL,
                                  group_label_width = 30,
                                  ...) {
 
+  dat_format <- match.arg(dat_format, c("auto", "simple", "extended"))
 
-  # stop("THIS VERSION OF summary_plot_boxplot IS RUNNING")
-  #
-  # cat("summary_plot_boxplot CALLED\n",
-  #     file = file.path(tempdir(), "debug.txt"),
-  #     append = TRUE)
+  # check if _value variables are present,
+  # warn / auto-decide dat_format as appropriate
+  has_value <- any(grepl("_value$", names(dat)))
+
+  if (dat_format == "extended" && !has_value) {
+    stop("No *_value columns found but dat_format='extended'")
+  }
+
+  if (dat_format == "auto") {
+    dat_format <- if (has_value) "extended" else "simple"
+  }
+
+
+
+
+  # simple: add _value, _plot=TRUE, _include=TRUE
+  if (dat_format=="simple"){
+    dat <- dat |>
+      dplyr::mutate(
+        dplyr::across(
+          everything(),
+          list(
+            value   = identity,
+            plot    = ~ TRUE,
+            include = ~ TRUE
+          ),
+          .names = "{.col}_{.fn}"
+        )
+      )
+
+    # extended: for each _value, check _plot & _include
+  } else if (dat_format=="extended"){
+
+    value_vars <- sub("_value$", "", names(dat)[grepl("_value$", names(dat))])
+
+    for (v in value_vars) {
+      if (!paste0(v, "_plot") %in% names(dat)) {
+        dat[[paste0(v, "_plot")]] <- TRUE
+      }
+      if (!paste0(v, "_include") %in% names(dat)) {
+        dat[[paste0(v, "_include")]] <- TRUE
+      }
+    }
+
+  }
 
 
   # identify value columns
@@ -1703,7 +1891,8 @@ summary_plot_boxplot <- function(dat, labels_vec = NULL,
     all()
 
   if (!all_numeric) {
-    warning("The dataframe passed to summary_plot_boxplot() should have all *_value variables numeric.")
+    warning("The dataframe passed to summary_plot_boxplot() should have all variables ",
+            "(in simple format, all *_value variables in extended format) numeric.")
   }
 
   # labels_vec check against base variable names
@@ -1718,15 +1907,13 @@ summary_plot_boxplot <- function(dat, labels_vec = NULL,
     labels_vec <- labels_vec[value_vars]
   }
 
-
-
-  # pivot to long form and reorder the factor `question`
-
+  # pivot to long form, change values to NA using _plot, filter using _include,
+  # reorder the `question` factor
   dat_long <- dat |>
     tidyr::pivot_longer(
       cols = everything(),
       names_to = c("question", ".value"),
-      names_pattern = "(.+)_(value|plot|include)",
+      names_pattern = "^(.+)_(value|plot|include)$",
       cols_vary = "slowest"
     ) |>
     dplyr::mutate(
@@ -1737,38 +1924,12 @@ summary_plot_boxplot <- function(dat, labels_vec = NULL,
       question = forcats::as_factor(question)
     ) |>
     dplyr::mutate(
-      order_stat = order_fun(value, na.rm = TRUE),
+      order_stat = if (all(is.na(value))) NA_real_ else order_fun(value, na.rm = TRUE),
       .by = question
     ) |>
     dplyr::mutate(
       question = forcats::fct_reorder(question, order_stat)
     )
-
-
-
-
-  # debug_file <- file.path(tempdir(), "debug.txt")
-  #
-  # cat("\n==============================\n", file = debug_file, append = TRUE)
-  # cat(paste("Time:", Sys.time(), "\n"), file = debug_file, append = TRUE)
-  #
-  # cat("Unique questions:\n", file = debug_file, append = TRUE)
-  # capture.output(print(unique(dat_long$question)), file = debug_file, append = TRUE)
-  #
-  # cat("CLASS OF question:\n", file = debug_file, append = TRUE)
-  # capture.output(print(class(dat_long$question)), file = debug_file, append = TRUE)
-  #
-  # cat("IS FACTOR:\n", file = debug_file, append = TRUE)
-  # capture.output(print(is.factor(dat_long$question)), file = debug_file, append = TRUE)
-  #
-  # cat("N rows:\n", file = debug_file, append = TRUE)
-  # capture.output(print(nrow(dat_long)), file = debug_file, append = TRUE)
-  #
-  # cat("==============================\n", file = debug_file, append = TRUE)
-
-
-
-  #dat_long$question <- factor(dat_long$question, levels = unique(dat_long$question))
 
 
   # plot
@@ -1798,7 +1959,7 @@ summary_plot_boxplot <- function(dat, labels_vec = NULL,
 #' @param p A ggplot object whose legend should be centred beneath the plot.
 #' @param rel_heights A numeric vector of length two giving the relative
 #'   heights of the plot area and the legend area when stacked vertically.
-#'   Defaults to \code{c(1, 0.1)}, which gives the legend 10% of the vertical
+#'   Defaults to `c(1, 0.1)`, which gives the legend 10% of the vertical
 #'   space the plot gets.
 #'
 #' @returns
@@ -1809,8 +1970,8 @@ summary_plot_boxplot <- function(dat, labels_vec = NULL,
 #' @details
 #' This function extracts the legend from the supplied ggplot object,
 #' removes the legend from the plot itself, and then stacks the plot and
-#' legend vertically using \code{cowplot::plot_grid()}. The relative
-#' heights of the two components can be controlled via \code{rel_heights}.
+#' legend vertically using `cowplot::plot_grid()`. The relative
+#' heights of the two components can be controlled via `rel_heights`.
 #'
 #' @examples
 #' \dontrun{
@@ -2009,13 +2170,13 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
 
 #' ROME ggplot2 theme
 #'
-#' An OME ggplot2 theme (based on \code{ggplot2::theme_bw()}).
+#' An OME ggplot2 theme (based on `ggplot2::theme_bw()`).
 #'
 #' !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
 #'
 #' @param base_size Numeric. Base font size for the theme. Defaults to 16.
 #'
-#' @return A \code{ggplot2} theme object that can be added to a ggplot with \code{+}.
+#' @return A `ggplot2` theme object that can be added to a ggplot with `+`.
 #'
 #' @examples
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
@@ -2089,13 +2250,13 @@ theme_OME <- function(base_size = 16) {
 #' OME colour scales for ggplot2
 #'
 #' Provides OME palettes for use with colour and fill aesthetics.
-#' (Convenience wrapper around \code{ggplot2::scale_colour_manual()} using
+#' (Convenience wrapper around `ggplot2::scale_colour_manual()` using
 #' the standard OME colour palette.)
 #'
 #' @param type Character string specifying which palette to use.
-#' Passed to \code{\link{get_OME_colours}}; see that function for available options.
-#' Default is \code{"distinct"}.
-#' @param ... Additional arguments passed to \code{scale_colour_manual()}.
+#' Passed to [`get_OME_colours`]; see that function for available options.
+#' Default is `"distinct"`.
+#' @param ... Additional arguments passed to scale_colour_manual()`.
 #'
 #' @return A ggplot2 scale for colours.
 #' @examples
@@ -2176,33 +2337,33 @@ scale_fill_OME <- function(type = "distinct", ...) {
 #' Read and assemble survey data and dictionary inputs
 #'
 #' Reads the survey data, data dictionary, and optionally establishment
-#' characteristics files, and prepares them for downstream processing.
-#' This includes merging establishment characteristics onto the main data
-#' (if provided), augmenting the dictionary with corresponding additional
-#' variables, simple dictionary validation.
+#' characteristics files, and prepares them for downstream processing. This
+#' includes merging establishment characteristics onto the main data (if
+#' provided), augmenting the dictionary with corresponding additional variables,
+#' simple dictionary validation.
 #'
 #' This function performs input and structural preparation of the data and
-#' preparation & validation of the dictionary.
-#' \code{\link{survey_data_prepare}} is designed to take the
-#' output of this function and validate & coerce-to-type the data.
+#' preparation & validation of the dictionary. [`survey_data_prepare`] is
+#' designed to take the output of this function and validate & coerce-to-type
+#' the data.
 #'
-#' @param data_path Character string. Path to the survey data file
-#'   (csv, xls, or xlsx).
-#' @param dict_path Character string. Path to the data dictionary file
-#'   (xls or xlsx).
-#' @param dict_sheet Character string. Name of the sheet within the
-#'   data dictionary file to use.
+#' @param data_path Character string. Path to the survey data file (csv, xls, or
+#'   xlsx).
+#' @param dict_path Character string. Path to the data dictionary file (xls or
+#'   xlsx).
+#' @param dict_sheet Character string. Name of the sheet within the data
+#'   dictionary file to use.
 #'
-#' @param est_chars_path Optional character string. Path to the
-#'   establishment characteristics file (xls or xlsx). If \code{NULL}
-#'   (default) no additional data are merged.
-#' @param est_chars_sheet Optional character string. Name of the sheet
-#'   within the establishment characteristics file to use. Required if
-#'   \code{est_chars_path} is supplied.
+#' @param est_chars_path Optional character string. Path to the establishment
+#'   characteristics file (xls or xlsx). If `NULL` (default) no additional data
+#'   are merged.
+#' @param est_chars_sheet Optional character string. Name of the sheet within
+#'   the establishment characteristics file to use. Required if `est_chars_path`
+#'   is supplied.
 #' @param est_char_vars Optional character vector. Names of establishment
 #'   characteristics variables to include.
-#' @param est_char_types Optional character vector. Data types for
-#'   establishment characteristics variables (same format as dictionary).
+#' @param est_char_types Optional character vector. Data types for establishment
+#'   characteristics variables (same format as dictionary).
 #' @param est_char_values Optional character vector. Allowed values for
 #'   establishment characteristics variables (as in the dictionary).
 #' @param est_char_statements Optional character vector. Descriptive
@@ -2219,15 +2380,15 @@ scale_fill_OME <- function(type = "distinct", ...) {
 #'   duplicate keys, unmatched joins).}
 #' }
 #'
-#' @details
-#' The establishment characteristics to be merged into the data are specified
-#' through the variables `est_char_vars`, `est_char_types`, `est_char_values` and
-#' `est_char_statements`. They are vectors with elements corresponding to the
-#' variable name, data type, allowed values, item statement entries of the data
-#' dictionary. See the preprocessing SOP for details/examples.
+#' @details The establishment characteristics to be merged into the data are
+#' specified through the variables `est_char_vars`, `est_char_types`,
+#' `est_char_values` and `est_char_statements`. They are vectors with elements
+#' corresponding to the variable name, data type, allowed values, item statement
+#' entries of the data dictionary. See the preprocessing SOP for
+#' details/examples.
 #'
 #'
-#' @seealso \code{\link{survey_data_prepare}}
+#' @seealso [`survey_data_prepare`]
 #'
 #' @export
 survey_read_inputs <- function(
@@ -2731,14 +2892,14 @@ rewrite_cond_to_raw <- function(expr, data_names) {
 #' validation log.
 #'
 #' This function operates on in-memory data and a dictionary, usually the output from
-#' \code{\link{survey_read_inputs}}. That function reads files and validates
+#' [`survey_read_inputs`]. That function reads files and validates
 #' the dictionary, this one uses the dictionary to transform & validate the data.
 #'
-#' @param data A tibble containing the survey data, typically the \code{data}
-#'   component returned by \code{\link{survey_read_inputs}}. This may already
+#' @param data A tibble containing the survey data, typically the `data`
+#'   component returned by [`survey_read_inputs`]. This may already
 #'   include merged establishment characteristics.
-#' @param dict A tibble containing the data dictionary, typically the \code{dict}
-#'   component returned by \code{\link{survey_read_inputs}}.
+#' @param dict A tibble containing the data dictionary, typically the `dict`
+#'   component returned by [`survey_read_inputs`].
 #'
 #' @return A list with components:
 #' \describe{
@@ -2753,7 +2914,7 @@ rewrite_cond_to_raw <- function(expr, data_names) {
 #'   invalid values, failed conditions).}
 #' }
 #'
-#' @seealso \code{\link{survey_read_inputs}}
+#' @seealso [`survey_read_inputs`]
 #'
 #' @export
 survey_data_prepare <- function(
@@ -3578,8 +3739,8 @@ survey_data_prepare <- function(
 #' Read, merge, validate, and prepare survey data in one step
 #'
 #' Convenience wrapper that performs the full survey data preparation
-#' pipeline by combining \code{\link{survey_read_inputs}} and
-#' \code{\link{survey_data_prepare}}. This includes reading input files,
+#' pipeline by combining [`survey_read_inputs`] and
+#' [`survey_data_prepare`]. This includes reading input files,
 #' merging establishment characteristics (if supplied), validating and
 #' coercing variables according to the data dictionary, and returning
 #' both processed data and diagnostic outputs.
@@ -3592,11 +3753,11 @@ survey_data_prepare <- function(
 #'   data dictionary file to use.
 #'
 #' @param est_chars_path Optional character string. Path to the
-#'   establishment characteristics file (xls or xlsx). If \code{NULL}
+#'   establishment characteristics file (xls or xlsx). If `NULL`
 #'   (default) no additional data are merged.
 #' @param est_chars_sheet Optional character string. Name of the sheet
 #'   within the establishment characteristics file to use. Required if
-#'   \code{est_chars_path} is supplied.
+#'   `est_chars_path` is supplied.
 #' @param est_char_vars Optional character vector. Names of establishment
 #'   characteristics variables to include.
 #' @param est_char_types Optional character vector. Data types for
@@ -3622,7 +3783,7 @@ survey_data_prepare <- function(
 #' }
 #'
 #' @seealso
-#' \code{\link{survey_read_inputs}}, \code{\link{survey_data_prepare}}
+#' [`survey_read_inputs`], [`survey_data_prepare`]
 #'
 #' @export
 survey_prepare_data <- function(
@@ -3695,18 +3856,18 @@ add_message <- function(messages, text, level = "NOTE", var = NULL) {
 
 #' Narrow kable table with standard styling
 #'
-#' Convenience wrapper around \code{knitr::kable()} that applies
-#' \code{kableExtra::kable_styling()} with sensible defaults for
+#' Convenience wrapper around [`knitr::kable()`] that applies
+#' [`kableExtra::kable_styling()`] with sensible defaults for
 #' compact, centred tables in reports.
 #'
-#' @param x An object to be converted to a table by \code{knitr::kable()}.
-#' @param ... Additional arguments passed to \code{knitr::kable()}.
+#' @param x An object to be converted to a table by `knitr::kable()`.
+#' @param ... Additional arguments passed to `knitr::kable()`.
 #' @param full_width Logical; whether the table should span the full
-#'   page width. Defaults to \code{FALSE}.
+#'   page width. Defaults to `FALSE`.
 #' @param position Character string controlling table positioning
-#'   (e.g. \code{"center"}, \code{"left"}, \code{"right"}).
+#'   (e.g. `"center"`, `"left"`, `"right").
 #'
-#' @return A styled \code{kableExtra} table object.
+#' @return A styled `kableExtra` table object.
 #'
 #' @export
 kable_narrow <- function(x, ..., full_width = FALSE, position = "center") {
@@ -3721,11 +3882,11 @@ kable_narrow <- function(x, ..., full_width = FALSE, position = "center") {
 #'
 #' Creates a formatted HTML string representing a message with a
 #' severity level (e.g. NOTE or WARNING), suitable for use in
-#' R Markdown documents with \code{results = 'asis'}.
+#' R Markdown documents with `results = 'asis'`.
 #'
 #' @param ... Character content of the message (concatenated).
 #' @param level Character string indicating message severity.
-#'   One of \code{"WARNING"} or \code{"NOTE"} (default).
+#'   One of `"WARNING"` or `"NOTE"` (default).
 #'
 #' @return A character string containing HTML-formatted message text.
 #'

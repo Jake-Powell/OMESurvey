@@ -17,7 +17,7 @@ safe_read_excel(path, sheet = NULL, ...)
 A tibble containing the data read from the Excel file.
 }
 \description{
-A wrapper around \code{readxl::read_excel()} that attempts to read an Excel
+A wrapper around \code{\link[readxl:read_excel]{readxl::read_excel()}} that attempts to read an Excel
 file directly, and if that fails (e.g. because the file is open or locked in
 Excel on Windows), falls back to copying the file to a temporary location and
 reading from the copy.

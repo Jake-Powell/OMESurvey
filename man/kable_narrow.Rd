@@ -15,13 +15,13 @@ kable_narrow(x, ..., full_width = FALSE, position = "center")
 page width. Defaults to \code{FALSE}.}
 
 \item{position}{Character string controlling table positioning
-(e.g. \code{"center"}, \code{"left"}, \code{"right"}).}
+(e.g. \code{"center"}, \code{"left"}, `"right").}
 }
 \value{
 A styled \code{kableExtra} table object.
 }
 \description{
-Convenience wrapper around \code{knitr::kable()} that applies
-\code{kableExtra::kable_styling()} with sensible defaults for
+Convenience wrapper around \code{\link[knitr:kable]{knitr::kable()}} that applies
+\code{\link[kableExtra:kable_styling]{kableExtra::kable_styling()}} with sensible defaults for
 compact, centred tables in reports.
 }

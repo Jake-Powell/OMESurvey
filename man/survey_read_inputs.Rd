@@ -17,28 +17,28 @@ survey_read_inputs(
 )
 }
 \arguments{
-\item{data_path}{Character string. Path to the survey data file
-(csv, xls, or xlsx).}
+\item{data_path}{Character string. Path to the survey data file (csv, xls, or
+xlsx).}
 
-\item{dict_path}{Character string. Path to the data dictionary file
-(xls or xlsx).}
+\item{dict_path}{Character string. Path to the data dictionary file (xls or
+xlsx).}
 
-\item{dict_sheet}{Character string. Name of the sheet within the
-data dictionary file to use.}
+\item{dict_sheet}{Character string. Name of the sheet within the data
+dictionary file to use.}
 
-\item{est_chars_path}{Optional character string. Path to the
-establishment characteristics file (xls or xlsx). If \code{NULL}
-(default) no additional data are merged.}
+\item{est_chars_path}{Optional character string. Path to the establishment
+characteristics file (xls or xlsx). If \code{NULL} (default) no additional data
+are merged.}
 
-\item{est_chars_sheet}{Optional character string. Name of the sheet
-within the establishment characteristics file to use. Required if
-\code{est_chars_path} is supplied.}
+\item{est_chars_sheet}{Optional character string. Name of the sheet within
+the establishment characteristics file to use. Required if \code{est_chars_path}
+is supplied.}
 
 \item{est_char_vars}{Optional character vector. Names of establishment
 characteristics variables to include.}
 
-\item{est_char_types}{Optional character vector. Data types for
-establishment characteristics variables (same format as dictionary).}
+\item{est_char_types}{Optional character vector. Data types for establishment
+characteristics variables (same format as dictionary).}
 
 \item{est_char_values}{Optional character vector. Allowed values for
 establishment characteristics variables (as in the dictionary).}
@@ -60,22 +60,23 @@ duplicate keys, unmatched joins).}
 }
 \description{
 Reads the survey data, data dictionary, and optionally establishment
-characteristics files, and prepares them for downstream processing.
-This includes merging establishment characteristics onto the main data
-(if provided), augmenting the dictionary with corresponding additional
-variables, simple dictionary validation.
+characteristics files, and prepares them for downstream processing. This
+includes merging establishment characteristics onto the main data (if
+provided), augmenting the dictionary with corresponding additional variables,
+simple dictionary validation.
 }
 \details{
 This function performs input and structural preparation of the data and
-preparation & validation of the dictionary.
-\code{\link{survey_data_prepare}} is designed to take the
-output of this function and validate & coerce-to-type the data.
+preparation & validation of the dictionary. \code{\link{survey_data_prepare}} is
+designed to take the output of this function and validate & coerce-to-type
+the data.
 
-The establishment characteristics to be merged into the data are specified
-through the variables \code{est_char_vars}, \code{est_char_types}, \code{est_char_values} and
-\code{est_char_statements}. They are vectors with elements corresponding to the
-variable name, data type, allowed values, item statement entries of the data
-dictionary. See the preprocessing SOP for details/examples.
+The establishment characteristics to be merged into the data are
+specified through the variables \code{est_char_vars}, \code{est_char_types},
+\code{est_char_values} and \code{est_char_statements}. They are vectors with elements
+corresponding to the variable name, data type, allowed values, item statement
+entries of the data dictionary. See the preprocessing SOP for
+details/examples.
 }
 \seealso{
 \code{\link{survey_data_prepare}}

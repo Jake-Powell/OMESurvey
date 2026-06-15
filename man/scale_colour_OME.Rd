@@ -14,7 +14,7 @@ scale_fill_OME(type = "distinct", ...)
 Passed to \code{\link{get_OME_colours}}; see that function for available options.
 Default is \code{"distinct"}.}
 
-\item{...}{Additional arguments passed to \code{scale_colour_manual()}.}
+\item{...}{Additional arguments passed to scale_colour_manual()`.}
 }
 \value{
 A ggplot2 scale for colours.

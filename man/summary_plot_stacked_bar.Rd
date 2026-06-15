@@ -6,6 +6,7 @@
 \usage{
 summary_plot_stacked_bar(
   dat,
+  dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
   NA_label = "Missing",
@@ -18,27 +19,61 @@ summary_plot_stacked_bar(
 )
 }
 \arguments{
-\item{dat}{a tibble/data.frame, each variable corresponding to a question.
-All variables should be factors and all with the same possible values.}
+\item{dat}{A tibble/data.frame containing survey responses.
 
-\item{labels_vec}{a named vector of labels to use for the questions on the plot.
-Names are variable names and values are corresponding labels.}
+The function supports two input formats:
+\itemize{
+\item \strong{Simple format}: one factor column per question.
+All questions are assumed to be included and plotted.
+\item \strong{Extended format}: columns named using the pattern
+\code{question_value}, with optional \code{question_include} and \code{question_plot}
+columns.
+\itemize{
+\item \verb{*_value} columns contain factor responses.
+\item \verb{*_include} (logical) indicates whether a response is
+included in the analysis at all.
+\item \verb{*_plot} (logical) indicates whether a response is shown
+in the plot (values set to \code{FALSE} are treated as missing).
+}
 
-\item{na.rm}{Logical. If \code{TRUE}, remove \code{NA} responses; if \code{FALSE} (default)
-convert them to \code{NA_label} and treat as an additional response level.}
+Any missing \verb{*_plot} and \verb{*_include} columns are assumed to be \code{TRUE}.
 
-\item{NA_label}{Character, default \code{"Missing"}. Label to use for \code{NA} responses.}
+In all cases:
+\itemize{
+\item all response variables should be factors with identical
+levels.
+\item only variables to be used in the plot should be included.
+I.e. calls may need to be of the form
+\verb{data |> dplyr::select(<variables needed for plotting>) |> summary_plot_stacked_bar()}.
+}
+}}
+
+\item{dat_format}{One of \code{"auto"}, \code{"simple"}, or \code{"extended"}. Defaults to
+\code{"auto"}, which detects extended format if any \verb{*_value} columns are
+present, otherwise assumes simple format.}
+
+\item{labels_vec}{a named vector of labels to use for the questions on the
+plot. Names are variable names (without _value appended) and values are
+corresponding labels.}
+
+\item{na.rm}{Logical. controls whether missing values (including those
+created via *_plot = FALSE) are included in the plot as a separate
+category. If \code{TRUE}, remove \code{NA} responses; if \code{FALSE} (default), convert
+them to \code{NA_label} and treat as an additional response level.}
+
+\item{NA_label}{Character, default \code{"Missing"}. Label to use for \code{NA}
+responses.}
 
 \item{percCut}{numeric scalar (0-100). Cutoff below which percentages are not
 shown in bar segments. Default \code{5}.}
 
-\item{colo}{(optional but recommended) vector of colours to use for the fill scale
-(character vector of colours, length the same as the number of levels of the
-factor that is the first variable of \code{dat}.)
-If \code{NULL} (default) the pallete from \code{OMESurvey::get_OME_colours(type='distinct')} is used.
-When \code{na.rm = FALSE} a grey colour is prepended for the "No response" level.
-Note that percentage labels are in white, so the pallete needs to work with that.
-(... or this function/package needs upgrading!)}
+\item{colo}{(optional but recommended) vector of colours to use for the fill
+scale (character vector of colours, length the same as the number of levels
+of the factor that is the first variable of \code{dat}.) If \code{NULL} (default) the
+pallete from \code{OMESurvey::get_OME_colours(type='distinct')} is used. When
+\code{na.rm = FALSE} a grey colour is prepended for the "No response" level.
+Note that percentage labels are in white, so the pallete needs to work with
+that. (... or this function/package needs upgrading!)}
 
 \item{order_values}{Optional. Controls how questions are ordered in the plot.
 May be a character vector of response levels, or the special value
@@ -46,14 +81,17 @@ May be a character vector of response levels, or the special value
 
 \item{titleText}{Optional text to use as plot title.}
 
-\item{fill_label_width}{Optional integer. Width (in characters) used when wrapping
-fill labels with \code{stringr::str_wrap()}. Passed to \code{OME_stacked_bar()}. Default is 20.}
+\item{fill_label_width}{Optional integer. Width (in characters) used when
+wrapping fill labels with \code{stringr::str_wrap()}. Passed to
+\code{OME_stacked_bar()}. Default is 20.}
 
-\item{group_label_width}{Optional integer. Width (in characters) used when wrapping
-vertical (group/question) axis labels with \code{stringr::str_wrap()}. Default is 30.}
+\item{group_label_width}{Optional integer. Width (in characters) used when
+wrapping vertical (group/question) axis labels with \code{stringr::str_wrap()}.
+Default is 30.}
 }
 \value{
-A \code{ggplot} object, a horizontal stacked bar chart summarising the survey questions.
+A \code{ggplot} object, a horizontal stacked bar chart summarising the
+survey questions.
 }
 \description{
 Make a horizontal stacked bar chart to summarise several survey questions,
@@ -61,32 +99,28 @@ with questions ordered according to the proportion of responses that fit a
 particular pattern.
 }
 \details{
-The \code{order_values} argument controls how questions are ordered in the
-horizontal bar chart.
+The \code{order_values} argument controls how questions are ordered in
+the horizontal bar chart.
 \itemize{
 \item If \code{order_values} is a character vector of response levels (e.g.
-\code{c("Strongly agree", "Agree")}), questions are ordered by the proportion
-of respondents whose answers fall into those levels.
-(Intended for factors with positive-negative / divergent scales.)
+\code{c("Strongly agree", "Agree")}), questions are ordered by the proportion of
+respondents whose answers fall into those levels. (Intended for factors
+with positive-negative / divergent scales.) In this case values in
+\code{order_values} must be valid levels of the response factor.
 \item If \code{order_values} is exactly \code{"mean(as.numeric())"}, the function instead
 orders questions by the mean of the numeric codes of the response factor.
 (Intended for factors with low-high / sequential scales.)
-}
 
-Axis labels are wrapped using \code{stringr::str_wrap()} with a width controlled
-by \code{group_label_width}. Legend/fill labels are treated the same using \code{fill_label_width}.
+If \code{dat} is supplied in simple format, it is internally converted to the
+extended format with all \verb{*_plot} and \verb{*_include} values set to \code{TRUE}.
 }
-\note{
-All variables in \code{dat} should have identical factor levels.
-The names of \code{labels_vec} must match the column names of \code{dat}.
-Values in \code{order_values} must be valid levels of the response factor.
 }
 \section{Legend placement}{
-
-By default, the legend is placed horizontally according to the standard
-ggplot2 layout. If you want the legend to be centred across the full width
-of the final figure, the helper function \code{centre_legend_below()} can be used
-after plotting. (This must be done after any tweaks to the ggplot theme, annotations, etc)
+ By default, the legend is placed horizontally
+according to the standard ggplot2 layout. If you want the legend to be
+centred across the full width of the final figure, the helper function
+\code{centre_legend_below()} can be used after plotting. (This must be done
+after any tweaks to the ggplot theme, annotations, etc)
 }
 
 \examples{
@@ -114,6 +148,14 @@ summary_plot_stacked_bar(dat, labels_vec = labels_long)
 summary_plot_stacked_bar(dat, labels_vec = labels_long, group_label_width = 20)
 
 # Remove missing values
-summary_plot_stacked_bar(dat, na.rm=FALSE)
+summary_plot_stacked_bar(dat, na.rm=TRUE)
 
+# Extended format example
+dat_ext <- tibble::tibble(
+  Q1_value = dat$Q1,
+  Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
+  Q2_value = dat$Q2,
+  Q2_include = c(TRUE, TRUE, FALSE, TRUE)
+)
+summary_plot_stacked_bar(dat_ext)
 }

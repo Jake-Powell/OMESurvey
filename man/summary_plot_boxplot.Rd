@@ -6,6 +6,7 @@
 \usage{
 summary_plot_boxplot(
   dat,
+  dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
   order_fun = median,
@@ -15,20 +16,52 @@ summary_plot_boxplot(
 )
 }
 \arguments{
-\item{dat}{A tibble/data.frame, each variable corresponding to a survey
-question. All variables should be numeric.}
+\item{dat}{A tibble/data.frame containing survey responses.
+
+The function supports two input formats:
+\itemize{
+\item \strong{Simple format}: one numeric column per question.
+All questions are assumed to be included and plotted.
+\item \strong{Extended format}: columns named using the pattern
+\code{question_value}, with optional \code{question_include} and
+\code{question_plot} columns.
+\itemize{
+\item \verb{*_value} columns contain numeric responses.
+\item \verb{*_include} (logical) indicates whether a response is
+included in the analysis at all.
+\item \verb{*_plot} (logical) indicates whether a response is shown
+in the plot (values set to \code{FALSE} are treated as missing).
+}
+
+Any missing \verb{*_plot} and \verb{*_include} columns are assumed to be \code{TRUE}.
+
+In all cases,
+\itemize{
+\item all \verb{*_value} variables should be numeric.
+\item only variables to be used in the plot should be included.
+I.e. calls may need to be of the form
+\verb{data |> dplyr::select(<variables needed for plotting>) |> summary_plot_boxplot()}.
+}
+}}
+
+\item{dat_format}{One of \code{"auto"}, \code{"simple"}, or \code{"extended"}. Defaults to
+\code{"auto"}, which detects extended format if any \verb{*_value} columns are
+present, otherwise assumes simple format.}
 
 \item{labels_vec}{Optional named character vector of labels to use for the
-questions on the plot. Names must match the column names of \code{dat}, and
-values are the labels to display on the axis.}
+questions on the plot. Names should correspond to variable names
+(without \verb{_value} appended in extended format), and values are the labels
+to display on the axis.}
 
-\item{na.rm}{Logical. Whether missing values should be removed/ignored for the
-purposes of plotting. Passed through to \code{OME_boxplot_()}.
-Defaults to \code{FALSE}. Note that missing values are always removed when
-computing the ordering statistic.}
+\item{na.rm}{Logical. Controls how missing values are handled in the plot.
+Missing values (including those created via \verb{*_plot = FALSE}) are:
+\itemize{
+\item removed if \code{TRUE}
+\item retained (and therefore reflected in the displayed count) if \code{FALSE} (default).
+}}
 
 \item{order_fun}{Function used to order questions in the plot.
-This function should accept arguments \code{(x, na.rm = TRUE)} and return
+This function should accept arguments \verb{(x, na.rm = TRUE)} and return
 a single numeric value (e.g. \code{median}, \code{mean}).
 Defaults to \code{median}.}
 
@@ -50,8 +83,7 @@ median of observed responses).
 }
 \details{
 The variables in \code{dat} are pivoted to long format, then ordered according
-to the value returned by \code{order_fun} applied to each question's observed
-responses (with \code{na.rm = TRUE}).
+to the value returned by order_fun\verb{applied to each question's observed responses (with}na.rm = TRUE`).
 
 The original column order of \code{dat} is preserved as a stable tie-breaker
 when multiple questions have identical ordering statistics.
@@ -59,6 +91,9 @@ when multiple questions have identical ordering statistics.
 Missing-value handling for ordering and for plotting are intentionally
 separated: missing responses are ignored for ordering purposes, but their
 treatment in the plot itself is controlled by \code{na.rm}.
+
+If \code{dat} is supplied in simple format, it is internally converted to the
+extended format with all \verb{*_plot} and \verb{*_include} values set to \code{TRUE}.
 }
 \examples{
 # Minimal example with three numeric questions
@@ -97,4 +132,13 @@ summary_plot_boxplot(
 
 # Remove missing values for plotting
 dat |> summary_plot_boxplot(na.rm = TRUE)
+
+# Extended format example
+dat_ext <- tibble::tibble(
+  Q1_value = dat$Q1,
+  Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
+  Q2_value = dat$Q2,
+  Q2_include = c(TRUE, TRUE, FALSE, TRUE)
+)
+summary_plot_boxplot(dat_ext)
 }

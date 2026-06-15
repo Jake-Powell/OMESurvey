@@ -776,12 +776,14 @@ df_plot <- df_plot |>
         
         res <- OMESurvey::summary_plot_stacked_bar(
           df_plot,
+          dat_format = "extended",
           labels_vec,
           percCut = percCutHoriz,
           colo = colo,
           order_values = order_values,
           titleText = title_text,
           NA_label = "Missing / Non-allowed",
+          na.rm = TRUE,
           fill_label_width = fill_label_width
         ) |>
           OMESurvey::centre_legend_below(rel_heights = c(1, 0.8 / fig_h))
@@ -791,6 +793,7 @@ df_plot <- df_plot |>
         # numeric section summary plot
         res <- OMESurvey::summary_plot_boxplot(
           df_plot,
+          dat_format = "extended",
           labels_vec = labels_vec,
           titleText = title_text
         )

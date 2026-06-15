@@ -59,6 +59,15 @@ convert them to \code{"Missing"} and treat as an additional response level.}
 \item{show_counts}{Logical; whether to display (n) counts for each bar.
 Defaults to TRUE. Needs care if used with faceting.}
 
+\item{count_style}{Character string controlling how counts are displayed
+when \code{show_counts = TRUE}. Options are:
+\itemize{
+\item \code{"non-missing"}: show number of non-missing responses
+\item \code{"total"}: show total number of responses
+\item \code{"both"}: show both as "(non-missing/total)"
+}
+Defaults to \code{"non-missing"} if \code{na.rm = TRUE}, otherwise \code{"both"}.}
+
 \item{horiz}{Logical (default \code{FALSE}). If \code{TRUE}, flip coordinates so bars
 are horizontal and place the legend below the plot.}
 
@@ -105,7 +114,7 @@ labels for the grouping variable. Should be of the form
 \code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
 uses the factor's existing levels.}
 
-\item{...}{Additional arguments passed from \code{OME_stacked_bar()} to
+\item{...}{Additional arguments passed from \code{\link[=OME_stacked_bar]{OME_stacked_bar()}} to
 \code{OME_stacked_bar_()}. Not used when calling \code{OME_stacked_bar_()}
 directly.}
 }

@@ -66,9 +66,8 @@ labels for the grouping variable. Should be of the form
 \code{c(level1 = "Label 1", level2 = "Label 2")}. Default is \code{NULL}, which
 uses the factor's existing levels.}
 
-\item{...}{Additional arguments passed from \code{OME_boxplot()} to
-\code{OME_boxplot_()}. Not used when calling \code{OME_boxplot_()}
-directly.}
+\item{...}{Additional arguments passed from \code{\link[=OME_boxplot]{OME_boxplot()}} to
+\code{OME_boxplot_()}. Not used when calling \code{OME_boxplot_()} directly.}
 }
 \value{
 A ggplot object
