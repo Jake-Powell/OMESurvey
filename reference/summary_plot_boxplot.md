@@ -78,9 +78,10 @@ summary_plot_boxplot(
 
 - order_fun:
 
-  Function used to order questions in the plot. This function should
-  accept arguments `(x, na.rm = TRUE)` and return a single numeric value
-  (e.g. `median`, `mean`). Defaults to `median`.
+  Function used to order questions in the plot, or `NULL`. This function
+  should accept arguments `(x, na.rm = TRUE)` and return a single
+  numeric value (e.g. `median`, `mean`). If `NULL` ordering is the same
+  as that of the variables in the data. Defaults to `median`.
 
 - titleText:
 

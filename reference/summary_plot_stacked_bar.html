@@ -136,7 +136,7 @@ that. (... or this function/package needs upgrading!)</p></dd>
 
 <dt id="arg-order-values">order_values<a class="anchor" aria-label="anchor" href="#arg-order-values"></a></dt>
 <dd><p>Optional. Controls how questions are ordered in the plot.
-May be a character vector of response levels, or the special value
+May be <code>NULL</code>, a character vector of response levels, or the special value
 <code>"mean(as.numeric())"</code>. See Details.</p></dd>
 
 
@@ -164,7 +164,9 @@ survey questions.</p>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The <code>order_values</code> argument controls how questions are ordered in
-the horizontal bar chart.</p><ul><li><p>If <code>order_values</code> is a character vector of response levels (e.g.
+the horizontal bar chart.</p><ul><li><p>If <code>order_values</code> is <code>NULL</code>, questions are ordered in the same order as
+they appear in the data.</p></li>
+<li><p>If <code>order_values</code> is a character vector of response levels (e.g.
 <code>c("Strongly agree", "Agree")</code>), questions are ordered by the proportion of
 respondents whose answers fall into those levels. (Intended for factors
 with positive-negative / divergent scales.) In this case values in

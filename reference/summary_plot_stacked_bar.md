@@ -97,8 +97,8 @@ summary_plot_stacked_bar(
 
 - order_values:
 
-  Optional. Controls how questions are ordered in the plot. May be a
-  character vector of response levels, or the special value
+  Optional. Controls how questions are ordered in the plot. May be
+  `NULL`, a character vector of response levels, or the special value
   `"mean(as.numeric())"`. See Details.
 
 - titleText:
@@ -130,6 +130,9 @@ questions.
 
 The `order_values` argument controls how questions are ordered in the
 horizontal bar chart.
+
+- If `order_values` is `NULL`, questions are ordered in the same order
+  as they appear in the data.
 
 - If `order_values` is a character vector of response levels (e.g.
   `c("Strongly agree", "Agree")`), questions are ordered by the
