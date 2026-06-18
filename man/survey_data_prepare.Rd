@@ -4,40 +4,68 @@
 \alias{survey_data_prepare}
 \title{Validate and coerce survey data according to a data dictionary}
 \usage{
-survey_data_prepare(data, dict)
+survey_data_prepare(data, dict, extra_vars = c("keep", "suffix_asis", "drop"))
 }
 \arguments{
 \item{data}{A tibble containing the survey data, typically the \code{data}
-component returned by \code{\link{survey_read_inputs}}. This may already
-include merged establishment characteristics.}
+component returned by \code{\link{survey_read_inputs}}. This may already include
+merged establishment characteristics.}
 
 \item{dict}{A tibble containing the data dictionary, typically the \code{dict}
 component returned by \code{\link{survey_read_inputs}}.}
+
+\item{extra_vars}{Character string controlling how extra variables present in
+the source data but absent from the dictionary are handled in the returned
+data. One of \code{"suffix_asis"} (default), \code{"keep"} or \code{"drop"}.
+\itemize{
+\item \code{"suffix_asis"} appends a suffix _asis to all such variable names
+\item \code{"keep"} keeps such variable names as they are, unchanged
+\item \code{"drop"} drops all such variables from the returned data
+}}
 }
 \value{
 A list with components:
 \describe{
 \item{data}{A tibble containing the processed survey data, with variables
 coerced to their specified types (e.g. factors, numeric) and with
-allowed values enforced.}
+allowed values enforced. See Details.}
 \item{validation}{A tibble summarising validation checks applied to each
 variable, including counts of values meeting or failing specified
 conditions.}
 \item{messages}{A list of message objects describing any issues
 encountered during validation or coercion (e.g. missing variables,
 invalid values, failed conditions).}
+\item{extra_vars}{Character vector of source-data variables not present in
+the dictionary.}
+\item{extra_vars_mode}{The value of \code{extra_vars} used when preparing the
+returned data.}
+\item{extra_var_map}{Named character vector mapping original extra-variable
+names to their returned names; dropped variables have \code{NA} values.}
 }
 }
 \description{
-Applies validation and coercion rules to survey data using a supplied
-data dictionary. This includes enforcing data types, applying allowed
-values, handling conditional logic, and producing a structured
-validation log.
+Applies validation and coercion rules to survey data using a supplied data
+dictionary. This includes enforcing data types, applying allowed values,
+handling conditional logic, and producing a structured validation log.
 }
 \details{
-This function operates on in-memory data and a dictionary, usually the output from
-\code{\link{survey_read_inputs}}. That function reads files and validates
-the dictionary, this one uses the dictionary to transform & validate the data.
+This function operates on in-memory data and a dictionary, usually the output
+from \code{\link{survey_read_inputs}}. That function reads files and validates the
+dictionary, this one uses the dictionary to transform & validate the data.
+
+In the returned \code{data}:
+\itemize{
+\item Dictionary-backed variables are returned under their dictionary names
+as prepared/coerced variables.
+\item For each dictionary-backed variable \code{x}, a companion variable \code{x_raw}
+is created containing the raw/original values before preparation/coercion.
+\item For establishment-characteristic variables that are numeric before
+being binned to factors based on x-iles of national data, the pre-binning
+numeric values are retained as \code{x_numeric}.
+\item Variables present in the source data but absent from the dictionary
+are handled according to \code{extra_vars}: renamed to \code{x_asis}, kept unchanged,
+or dropped.
+}
 }
 \seealso{
 \code{\link{survey_read_inputs}}

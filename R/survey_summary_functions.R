@@ -2820,9 +2820,9 @@ survey_read_inputs <- function(
 
           # Apply the cut() using the same labels
           data <- data |>
-            dplyr::mutate("{est_char_vars[i]}_raw" := .data[[est_char_vars[i]]]) |>
+            dplyr::mutate("{est_char_vars[i]}_numeric" := .data[[est_char_vars[i]]]) |>
             dplyr::mutate("{est_char_vars[i]}" :=
-                            cut(.data[[paste0(est_char_vars[i], "_raw")]],
+                            cut(.data[[paste0(est_char_vars[i], "_numeric")]],
                                 breaks = c(-Inf, est_xiles, Inf),
                                 labels = final_labels))
 
@@ -2883,7 +2883,7 @@ rewrite_cond_to_raw <- function(expr, data_names) {
 
     # Only rewrite actual data columns
     if (nm %in% data_names) {
-      raw_nm <- paste0("raw_", nm)
+      raw_nm <- paste0(nm, "_raw")
       if (raw_nm %in% data_names) {
         return(rlang::sym(raw_nm))
       }
@@ -2909,32 +2909,58 @@ rewrite_cond_to_raw <- function(expr, data_names) {
 
 #' Validate and coerce survey data according to a data dictionary
 #'
-#' Applies validation and coercion rules to survey data using a supplied
-#' data dictionary. This includes enforcing data types, applying allowed
-#' values, handling conditional logic, and producing a structured
-#' validation log.
+#' Applies validation and coercion rules to survey data using a supplied data
+#' dictionary. This includes enforcing data types, applying allowed values,
+#' handling conditional logic, and producing a structured validation log.
 #'
-#' This function operates on in-memory data and a dictionary, usually the output from
-#' [`survey_read_inputs`]. That function reads files and validates
-#' the dictionary, this one uses the dictionary to transform & validate the data.
+#' This function operates on in-memory data and a dictionary, usually the output
+#' from [`survey_read_inputs`]. That function reads files and validates the
+#' dictionary, this one uses the dictionary to transform & validate the data.
 #'
 #' @param data A tibble containing the survey data, typically the `data`
-#'   component returned by [`survey_read_inputs`]. This may already
-#'   include merged establishment characteristics.
+#'   component returned by [`survey_read_inputs`]. This may already include
+#'   merged establishment characteristics.
 #' @param dict A tibble containing the data dictionary, typically the `dict`
 #'   component returned by [`survey_read_inputs`].
+#' @param extra_vars Character string controlling how extra variables present in
+#'   the source data but absent from the dictionary are handled in the returned
+#'   data. One of `"suffix_asis"` (default), `"keep"` or `"drop"`.
+#'
+#'   - `"suffix_asis"` appends a suffix _asis to all such variable names
+#'   - `"keep"` keeps such variable names as they are, unchanged
+#'   - `"drop"` drops all such variables from the returned data
 #'
 #' @return A list with components:
 #' \describe{
 #'   \item{data}{A tibble containing the processed survey data, with variables
 #'   coerced to their specified types (e.g. factors, numeric) and with
-#'   allowed values enforced.}
+#'   allowed values enforced. See Details.}
 #'   \item{validation}{A tibble summarising validation checks applied to each
 #'   variable, including counts of values meeting or failing specified
 #'   conditions.}
 #'   \item{messages}{A list of message objects describing any issues
 #'   encountered during validation or coercion (e.g. missing variables,
 #'   invalid values, failed conditions).}
+#'   \item{extra_vars}{Character vector of source-data variables not present in
+#'    the dictionary.}
+#'   \item{extra_vars_mode}{The value of `extra_vars` used when preparing the
+#'    returned data.}
+#'   \item{extra_var_map}{Named character vector mapping original extra-variable
+#'    names to their returned names; dropped variables have `NA` values.}
+#' }
+#'
+#' @details In the returned `data`:
+#' \itemize{
+#'   \item Dictionary-backed variables are returned under their dictionary names
+#'   as prepared/coerced variables.
+#'   \item For each dictionary-backed variable `x`, a companion variable `x_raw`
+#'   is created containing the raw/original values before preparation/coercion.
+#'   \item For establishment-characteristic variables that are numeric before
+#'   being binned to factors based on x-iles of national data, the pre-binning
+#'    numeric values are retained as `x_numeric`.
+#'   \item Variables present in the source data but absent from the dictionary
+#'   are handled according to `extra_vars`: renamed to `x_asis`, kept unchanged,
+#'   or dropped.
 #' }
 #'
 #' @seealso [`survey_read_inputs`]
@@ -2942,9 +2968,12 @@ rewrite_cond_to_raw <- function(expr, data_names) {
 #' @export
 survey_data_prepare <- function(
     data,
-    dict
+    dict,
+    extra_vars = c("keep", "suffix_asis", "drop")
 ) {
-  # Helper: parse allowed values for factors
+  extra_vars <- match.arg(extra_vars)
+
+    # Helper: parse allowed values for factors
   parse_allowed <- function(x){
     if(is.na(x) || stringr::str_trim(x) == "") return(NULL)
     vals <- unlist(strsplit(as.character(x), ";", fixed = TRUE))
@@ -3143,6 +3172,20 @@ survey_data_prepare <- function(
   validation_log <- vector("list", nrow(dict))
   messages <- list()
 
+
+  # identify variables present in the data but not in the dictionary
+  dict_vars <- unique(dict$variable_name)
+  extra_var_names <- names(data)[!(names(data) %in% dict_vars)]
+
+  # record how extra variables are represented in the returned data
+  # named character vector: names are original source names,
+  # values are returned names; dropped variables remain NA
+  extra_var_map <- stats::setNames(
+    rep(NA_character_, length(extra_var_names)),
+    extra_var_names
+  )
+
+
   # The main validation loop
   for (i in seq_len(nrow(dict))) {
     var <- dict$variable_name[i]
@@ -3165,15 +3208,15 @@ survey_data_prepare <- function(
       report_sec_ord <- dict$report_sec_ord[i]
       item_label <- dict$item_statement[i]  # remove line breaks here ?!?
 
+
       # make _raw copy of variable & coerce it
       raw <- data[[var]]
       raw_chr <- as.character(raw)
-      data[[paste0("raw_", var)]] <- raw_chr
+      data[[paste0(var, "_raw")]] <- raw_chr
 
       sentinel_999 <- raw_chr %in% c("-999", -999)
       sentinel_888 <- raw_chr %in% c("-888", -888)
       sentinel_777 <- raw_chr %in% c("-777", -777)
-
 
       data[[var]] <- coerce_col(raw, dtype, levels = allowed)
 
@@ -3747,11 +3790,73 @@ survey_data_prepare <- function(
   validation_df <- dplyr::bind_rows(validation_log)
 
 
+  # make a tibble from the validation_log
+  validation_df <- dplyr::bind_rows(validation_log)
+
+  # handle variables present in the source data but not in the dictionary
+  if (length(extra_var_names) > 0) {
+
+    if (extra_vars == "keep") {
+      # keep extras unchanged
+      extra_var_map[extra_var_names] <- extra_var_names
+
+    } else if (extra_vars == "suffix_asis") {
+      new_names <- paste0(extra_var_names, "_asis")
+
+      # stop if renaming would create duplicate names
+      clashes <- new_names[new_names %in% names(data)]
+      if (length(clashes) > 0) {
+        stop(
+          "Renaming extra variables with '_asis' would create name clashes: ",
+          paste(clashes, collapse = ", "),
+          call. = FALSE
+        )
+      }
+
+      data <- data |>
+        dplyr::rename_with(
+          ~ paste0(.x, "_asis"),
+          dplyr::any_of(extra_var_names)
+        )
+
+            # map original source names -> returned names
+      extra_var_map[extra_var_names] <- new_names
+
+    } else if (extra_vars == "drop") {
+
+      data <- data |> dplyr::select(-dplyr::any_of(extra_var_names))
+      # extra_var_map stays as NA for dropped variables
+    }
+
+    messages <- add_message(
+      messages,
+      paste0(
+        "Variables present in the source data but not in the dictionary were handled with extra_vars = '",
+        extra_vars,
+        "'. Count: ",
+        length(extra_var_names),
+        "."
+      ),
+      level = "NOTE"
+    )
+
+  } else {
+
+    messages <- add_message(
+      messages,
+      "No variables were present in the source data outside the dictionary.",
+      level = "NOTE"
+    )
+  }
+
   return(list(
     data = data,
     validation_log = validation_log,
     validation_df = validation_df,
-    messages = messages
+    messages = messages,
+    extra_vars = extra_var_names,
+    extra_vars_mode = extra_vars,
+    extra_var_map = extra_var_map
   ))
 
 }
@@ -3759,7 +3864,7 @@ survey_data_prepare <- function(
 
 
 
-#' Read, merge, validate, and prepare survey data in one step
+#' Read, merge, validate, and prepare survey data
 #'
 #' Convenience wrapper that performs the full survey data preparation
 #' pipeline by combining [`survey_read_inputs`] and
@@ -3790,11 +3895,21 @@ survey_data_prepare <- function(
 #' @param est_char_statements Optional character vector. Descriptive
 #'   statements/labels for establishment characteristics variables.
 #'
+#' @param extra_vars Character string controlling how extra variables present in
+#'   the source data but absent from the dictionary are handled in the returned
+#'   data. One of `"suffix_asis"` (default), `"keep"` or `"drop"`.
+#'
+#'   - `"suffix_asis"` appends a suffix _asis to all such variable names
+#'   - `"keep"` keeps such variable names as they are, unchanged
+#'   - `"drop"` drops all such variables from the returned data
+#'
 #' @return A list with components:
 #' \describe{
 #'   \item{data}{A tibble containing the fully prepared survey data,
 #'   including merged establishment characteristics (if supplied) and
-#'   variables coerced to their specified types.}
+#'   variables coerced to their specified types. Variable naming conventions
+#'   follow [`survey_data_prepare()`], including the use of `*_raw`, `*_numeric`,
+#'   and optionally `*_asis` suffixes.}
 #'   \item{validation_log}{A list summarising validation checks applied
 #'   to each variable.}
 #'   \item{validation_df}{A tibble made as `dplyr::bind_rows(validation_log)`
@@ -3803,6 +3918,12 @@ survey_data_prepare <- function(
 #'   input reading and merging.}
 #'   \item{prep_messages}{A list of message objects generated during
 #'   validation and coercion.}
+#'   \item{extra_vars}{Character vector of source-data variables not present in
+#'    the dictionary.}
+#'   \item{extra_vars_mode}{The value of `extra_vars` used when preparing the
+#'    returned data.}
+#'   \item{extra_var_map}{Named character vector mapping original extra-variable
+#'    names to their returned names; dropped variables have `NA` values.}
 #' }
 #'
 #' @seealso
@@ -3818,8 +3939,12 @@ survey_prepare_data <- function(
     est_char_vars = NULL,
     est_char_types = NULL,
     est_char_values = NULL,
-    est_char_statements = NULL
+    est_char_statements = NULL,
+    extra_vars = c("suffix_asis", "keep", "drop")
 ) {
+
+  extra_vars <- match.arg(extra_vars)
+
   # first read & put together inputs
   read_out <- survey_read_inputs(data_path,
                                  dict_path,
@@ -3833,14 +3958,18 @@ survey_prepare_data <- function(
 
   # then use those to do data-preparation
   prep_out <- survey_data_prepare(read_out$data,
-                                  read_out$dict)
+                                  read_out$dict,
+                                  extra_vars = extra_vars)
 
   return(list(
     data = prep_out$data,
     validation_log = prep_out$validation_log,
     validation_df = prep_out$validation_df,
     messages_read = read_out$messages,
-    messages_prep = prep_out$messages
+    messages_prep = prep_out$messages,
+    extra_vars = prep_out$extra_vars,
+    extra_vars_mode = prep_out$extra_vars_mode,
+    extra_var_map = prep_out$extra_var_map
   ))
 
 }

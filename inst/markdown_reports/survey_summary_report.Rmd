@@ -148,7 +148,9 @@ for (m in read_messages) {
 #cat("[2/4] Coercing and validating data...")
 #flush.console()
 
-prep_out <- survey_data_prepare(data, dict)
+# For report generation, drop variables present in the raw data but absent from
+# the dictionary
+prep_out <- survey_data_prepare(data, dict, extra_vars="drop")
 
 data <- prep_out$data
 validation_log <- prep_out$validation_log
@@ -655,15 +657,15 @@ for (sec in sections){
     
     # prepare df and labels for plotting
 
-raw_vars <- paste0("raw_", vars)
+raw_vars <- paste0(vars, "_raw")
 
-df_plot <- data |> dplyr::select(dplyr::any_of(c(vars, raw_vars)))
+df_plot <- data |> dplyr::select(tidyselect::any_of(c(vars, raw_vars)))
     
     # Apply numeric range masking for section-level plots
     for (k in seq_len(nrow(vars_in_sec))) {
       
       vname <- vars[k]
-      raw_name <- paste0("raw_", vname)
+      raw_name <- paste0(vname, "_raw")
       
       allowed_vals <- vars_in_sec$allowed_technical[[k]]
       cond_k <- vars_in_sec$condition[k]
@@ -736,10 +738,10 @@ df_plot[[paste0(vname, "_plot")]]    <- plot_vec
     }
     
     # remove original variables (now _value)
-    df_plot <- df_plot |> dplyr::select(-all_of(vars))
+    df_plot <- df_plot |> dplyr::select(-tidyselect::all_of(vars))
     
 df_plot <- df_plot |>
-  dplyr::select(-starts_with("raw_"))
+  dplyr::select(-tidyselect::any_of(raw_vars))
 
 
     labels_vec <-
@@ -883,16 +885,16 @@ df_plot <- df_plot |>
     # Respecting the condition if present
     
     
-    raw_name <- paste0("raw_", var)
+    raw_name <- paste0(var, "_raw")
     
     
-#  build df (NO filtering yet) ----
+#  build df_for_plots (NO filtering yet) ----
 if (length(grouping_vars) == 0) {
   df_for_plots <- data |>
-    dplyr::select(dplyr::all_of(c(var, raw_name)))
+    dplyr::select(tidyselect::all_of(c(var, raw_name)))
 } else {
   df_for_plots <- data |>
-    dplyr::select(dplyr::all_of(c(var, raw_name, grouping_vars)))
+    dplyr::select(tidyselect::all_of(c(var, raw_name, grouping_vars)))
 }
 
     
@@ -1026,26 +1028,26 @@ df_for_plots <- df_for_plots[include_vec, , drop = FALSE]
     #   if (!is.null(cond_expr)) {
     #     df_for_plots <- data |>
     #       dplyr::filter(!!cond_expr) |>
-    #       dplyr::select(dplyr::all_of(c(var, raw_name)))
+    #       dplyr::select(tidyselect::all_of(c(var, raw_name)))
     #   } else {
     #     df_for_plots <- data |>
-    #       dplyr::select(dplyr::all_of(c(var, raw_name)))
+    #       dplyr::select(tidyselect::all_of(c(var, raw_name)))
     #   }
     # } else {
     #   if (!is.null(cond_expr)) {
     #     df_for_plots <- data |>
     #       dplyr::filter(!!cond_expr) |>
-    #       dplyr::select(dplyr::all_of(c(var, raw_name, grouping_vars)))
+    #       dplyr::select(tidyselect::all_of(c(var, raw_name, grouping_vars)))
     #   } else {
     #     df_for_plots <- data |>
-    #       dplyr::select(dplyr::all_of(c(var, raw_name, grouping_vars)))
+    #       dplyr::select(tidyselect::all_of(c(var, raw_name, grouping_vars)))
     #   }
     # }
     # 
     # 
     # 
     # 
-    # raw_name <- paste0("raw_", var)
+    # raw_name <- paste0(var, "_raw")
     # 
     # if (v$type == "factor") {
     #   plot_vec <- df_for_plots[[raw_name]] %in% v$allowed_technical[[1]]
@@ -1375,7 +1377,7 @@ df_for_plots <- df_for_plots[include_vec, , drop = FALSE]
     # )
 
     df_for_plots <- df_for_plots |>
-  dplyr::select(-starts_with("raw_"))
+  dplyr::select(-tidyselect::any_of(raw_name))
 
     
     

@@ -2,7 +2,7 @@
 % Please edit documentation in R/survey_summary_functions.R
 \name{survey_prepare_data}
 \alias{survey_prepare_data}
-\title{Read, merge, validate, and prepare survey data in one step}
+\title{Read, merge, validate, and prepare survey data}
 \usage{
 survey_prepare_data(
   data_path,
@@ -13,7 +13,8 @@ survey_prepare_data(
   est_char_vars = NULL,
   est_char_types = NULL,
   est_char_values = NULL,
-  est_char_statements = NULL
+  est_char_statements = NULL,
+  extra_vars = c("suffix_asis", "keep", "drop")
 )
 }
 \arguments{
@@ -45,13 +46,24 @@ establishment characteristics variables (as in the dictionary).}
 
 \item{est_char_statements}{Optional character vector. Descriptive
 statements/labels for establishment characteristics variables.}
+
+\item{extra_vars}{Character string controlling how extra variables present in
+the source data but absent from the dictionary are handled in the returned
+data. One of \code{"suffix_asis"} (default), \code{"keep"} or \code{"drop"}.
+\itemize{
+\item \code{"suffix_asis"} appends a suffix _asis to all such variable names
+\item \code{"keep"} keeps such variable names as they are, unchanged
+\item \code{"drop"} drops all such variables from the returned data
+}}
 }
 \value{
 A list with components:
 \describe{
 \item{data}{A tibble containing the fully prepared survey data,
 including merged establishment characteristics (if supplied) and
-variables coerced to their specified types.}
+variables coerced to their specified types. Variable naming conventions
+follow \code{\link[=survey_data_prepare]{survey_data_prepare()}}, including the use of \verb{*_raw}, \verb{*_numeric},
+and optionally \verb{*_asis} suffixes.}
 \item{validation_log}{A list summarising validation checks applied
 to each variable.}
 \item{validation_df}{A tibble made as \code{dplyr::bind_rows(validation_log)}
@@ -60,6 +72,12 @@ to each variable.}
 input reading and merging.}
 \item{prep_messages}{A list of message objects generated during
 validation and coercion.}
+\item{extra_vars}{Character vector of source-data variables not present in
+the dictionary.}
+\item{extra_vars_mode}{The value of \code{extra_vars} used when preparing the
+returned data.}
+\item{extra_var_map}{Named character vector mapping original extra-variable
+names to their returned names; dropped variables have \code{NA} values.}
 }
 }
 \description{
