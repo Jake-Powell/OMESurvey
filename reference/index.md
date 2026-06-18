@@ -73,7 +73,7 @@
 - [`survey_data_prepare()`](https://jake-powell.github.io/OMESurvey/reference/survey_data_prepare.md)
   : Validate and coerce survey data according to a data dictionary
 - [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
-  : Read, merge, validate, and prepare survey data in one step
+  : Read, merge, validate, and prepare survey data
 - [`OME_stacked_bar_()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   : Stacked proportional bar chart in OME style (Dave's version.)

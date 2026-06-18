@@ -1,4 +1,4 @@
-# Read, merge, validate, and prepare survey data in one step
+# Read, merge, validate, and prepare survey data
 
 Convenience wrapper that performs the full survey data preparation
 pipeline by combining
@@ -21,7 +21,8 @@ survey_prepare_data(
   est_char_vars = NULL,
   est_char_types = NULL,
   est_char_values = NULL,
-  est_char_statements = NULL
+  est_char_statements = NULL,
+  extra_vars = c("suffix_asis", "keep", "drop")
 )
 ```
 
@@ -70,6 +71,18 @@ survey_prepare_data(
   Optional character vector. Descriptive statements/labels for
   establishment characteristics variables.
 
+- extra_vars:
+
+  Character string controlling how extra variables present in the source
+  data but absent from the dictionary are handled in the returned data.
+  One of `"suffix_asis"` (default), `"keep"` or `"drop"`.
+
+  - `"suffix_asis"` appends a suffix \_asis to all such variable names
+
+  - `"keep"` keeps such variable names as they are, unchanged
+
+  - `"drop"` drops all such variables from the returned data
+
 ## Value
 
 A list with components:
@@ -78,7 +91,10 @@ A list with components:
 
   A tibble containing the fully prepared survey data, including merged
   establishment characteristics (if supplied) and variables coerced to
-  their specified types.
+  their specified types. Variable naming conventions follow
+  [`survey_data_prepare()`](https://jake-powell.github.io/OMESurvey/reference/survey_data_prepare.md),
+  including the use of `*_raw`, `*_numeric`, and optionally `*_asis`
+  suffixes.
 
 - validation_log:
 
@@ -96,6 +112,20 @@ A list with components:
 - prep_messages:
 
   A list of message objects generated during validation and coercion.
+
+- extra_vars:
+
+  Character vector of source-data variables not present in the
+  dictionary.
+
+- extra_vars_mode:
+
+  The value of `extra_vars` used when preparing the returned data.
+
+- extra_var_map:
+
+  Named character vector mapping original extra-variable names to their
+  returned names; dropped variables have `NA` values.
 
 ## See also
 
