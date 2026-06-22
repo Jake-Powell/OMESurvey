@@ -2,13 +2,15 @@
 
 Provides OME palettes for use with colour and fill aesthetics.
 (Convenience wrapper around
-[`ggplot2::scale_colour_manual()`](https://ggplot2.tidyverse.org/reference/scale_manual.html)
+[`ggplot2::discrete_scale()`](https://ggplot2.tidyverse.org/reference/discrete_scale.html)
 using the standard OME colour palette.)
 
 ## Usage
 
 ``` r
 scale_colour_OME(type = "distinct", ...)
+
+scale_color_OME(type = "distinct", ...)
 
 scale_fill_OME(type = "distinct", ...)
 ```
@@ -23,7 +25,7 @@ scale_fill_OME(type = "distinct", ...)
 
 - ...:
 
-  Additional arguments passed to scale_colour_manual()\`.
+  Additional arguments passed to `ggplot2::discrete`.
 
 ## Value
 
@@ -43,7 +45,7 @@ library(dplyr)
 #> 
 #>     intersect, setdiff, setequal, union
 
-# Examples here use scale_colour_OME(); scale_fill_OME() is exactly analagous.
+# Examples here use scale_colour_OME(); scale_fill_OME() is exactly analogous.
 
 # Prepare example dataset with labelled factors
 mtcars_small <- mtcars |>
@@ -59,7 +61,7 @@ mtcars_small |>
   ggplot(aes(x = wt, y = mpg, colour = am)) +
   geom_point() +
   scale_colour_OME() +
-  theme_OME() +
+  theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
   labs(
     x = "Weight (/1,000 lb)",
     y = "Miles per gallon",
@@ -73,7 +75,7 @@ mtcars_small |>
   ggplot(aes(x = wt, y = mpg, colour = cyl)) +
   geom_point() +
   scale_colour_OME(type = "sequential") +
-  theme_OME() +
+  theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
   labs(
     x = "Weight (/1,000 lb)",
     y = "Miles per gallon",

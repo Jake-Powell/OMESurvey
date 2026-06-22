@@ -18,7 +18,9 @@ summary_plot_stacked_bar(
   order_values = NULL,
   titleText = NULL,
   fill_label_width = 20,
-  group_label_width = 30
+  group_label_width = 30,
+  show_counts = TRUE,
+  count_style = "both"
 )
 ```
 
@@ -120,6 +122,24 @@ summary_plot_stacked_bar(
   (group/question) axis labels with
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is 30.
+
+- show_counts:
+
+  Logical; whether to display (n) type counts for each bar. Defaults to
+  TRUE. Needs care if used with faceting.
+
+- count_style:
+
+  Character string controlling how counts are displayed when
+  `show_counts = TRUE`. Options are:
+
+  - `"non-missing"`: show number of non-missing responses
+
+  - `"total"`: show total number of responses
+
+  - `"both"`: show both as "(non-missing/total)"
+
+  Defaults to `"both"`.
 
 ## Value
 

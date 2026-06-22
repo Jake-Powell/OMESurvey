@@ -66,7 +66,9 @@ particular pattern.</p>
 <span>  order_values <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fill_label_width <span class="op">=</span> <span class="fl">20</span>,</span>
-<span>  group_label_width <span class="op">=</span> <span class="fl">30</span></span>
+<span>  group_label_width <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  show_counts <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  count_style <span class="op">=</span> <span class="st">"both"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -154,6 +156,19 @@ wrapping fill labels with <code><a href="https://stringr.tidyverse.org/reference
 <dd><p>Optional integer. Width (in characters) used when
 wrapping vertical (group/question) axis labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>.
 Default is 30.</p></dd>
+
+
+<dt id="arg-show-counts">show_counts<a class="anchor" aria-label="anchor" href="#arg-show-counts"></a></dt>
+<dd><p>Logical; whether to display (n) type counts for each bar.
+Defaults to TRUE. Needs care if used with faceting.</p></dd>
+
+
+<dt id="arg-count-style">count_style<a class="anchor" aria-label="anchor" href="#arg-count-style"></a></dt>
+<dd><p>Character string controlling how counts are displayed
+when <code>show_counts = TRUE</code>. Options are:</p><ul><li><p><code>"non-missing"</code>: show number of non-missing responses</p></li>
+<li><p><code>"total"</code>: show total number of responses</p></li>
+<li><p><code>"both"</code>: show both as "(non-missing/total)"</p></li>
+</ul><p>Defaults to <code>"both"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

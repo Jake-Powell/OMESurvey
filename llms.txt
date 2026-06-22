@@ -207,6 +207,7 @@ check
 - [`theme_OME()`](https://jake-powell.github.io/OMESurvey/reference/theme_OME.md)
   : ROME ggplot2 theme
 - [`scale_colour_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
+  [`scale_color_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
   [`scale_fill_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
   : OME colour scales for ggplot2
 - [`kable_narrow()`](https://jake-powell.github.io/OMESurvey/reference/kable_narrow.md)
