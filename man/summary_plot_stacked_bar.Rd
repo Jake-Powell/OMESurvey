@@ -15,7 +15,9 @@ summary_plot_stacked_bar(
   order_values = NULL,
   titleText = NULL,
   fill_label_width = 20,
-  group_label_width = 30
+  group_label_width = 30,
+  show_counts = TRUE,
+  count_style = "both"
 )
 }
 \arguments{
@@ -88,6 +90,18 @@ wrapping fill labels with \code{stringr::str_wrap()}. Passed to
 \item{group_label_width}{Optional integer. Width (in characters) used when
 wrapping vertical (group/question) axis labels with \code{stringr::str_wrap()}.
 Default is 30.}
+
+\item{show_counts}{Logical; whether to display (n) type counts for each bar.
+Defaults to TRUE. Needs care if used with faceting.}
+
+\item{count_style}{Character string controlling how counts are displayed
+when \code{show_counts = TRUE}. Options are:
+\itemize{
+\item \code{"non-missing"}: show number of non-missing responses
+\item \code{"total"}: show total number of responses
+\item \code{"both"}: show both as "(non-missing/total)"
+}
+Defaults to \code{"both"}.}
 }
 \value{
 A \code{ggplot} object, a horizontal stacked bar chart summarising the

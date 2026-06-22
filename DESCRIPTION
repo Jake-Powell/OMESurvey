@@ -38,6 +38,7 @@ Imports:
 Suggests: 
     cowplot,
     DT,
+    systemfonts,
     testthat (>= 3.0.0),
     tibble
 VignetteBuilder: knitr

@@ -1101,6 +1101,16 @@ OME_stacked_bar <- function(dat, response_var,
 #' @param group_label_width Optional integer. Width (in characters) used when
 #'   wrapping vertical (group/question) axis labels with `stringr::str_wrap()`.
 #'   Default is 30.
+#' @param show_counts Logical; whether to display (n) type counts for each bar.
+#'  Defaults to TRUE. Needs care if used with faceting.
+#' @param count_style Character string controlling how counts are displayed
+#'   when `show_counts = TRUE`. Options are:
+#'   \itemize{
+#'     \item `"non-missing"`: show number of non-missing responses
+#'     \item `"total"`: show total number of responses
+#'     \item `"both"`: show both as "(non-missing/total)"
+#'   }
+#'   Defaults to `"both"`.
 #'
 #' @returns A `ggplot` object, a horizontal stacked bar chart summarising the
 #'   survey questions.
@@ -1176,7 +1186,9 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
                                      colo=NULL, order_values = NULL,
                                      titleText=NULL,
                                      fill_label_width=20,
-                                     group_label_width=30){
+                                     group_label_width=30,
+                                     show_counts = TRUE,
+                                     count_style = "both"){
 
 
   # In the context of using this for the survey_summary_report(.Rmd) this should
@@ -1349,7 +1361,8 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
                     groupLabText = NULL,
                     colo = colo,
                     na.rm = na.rm,
-                    count_style = "both",
+                    show_counts = show_counts,
+                    count_style = count_style,
                     NA_label = NA_label,
                     titleText = titleText,
                     fill_label_width = fill_label_width,
@@ -2191,6 +2204,30 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
 
 
 
+#' Choose an available font family
+#'
+#' Returns `preferred` if it is detected by `systemfonts`; otherwise returns
+#' `fallback`. If `systemfonts` is not installed, returns `fallback`.
+#'
+#' @param preferred Character. Preferred font family.
+#' @param fallback Character. Fallback font family.
+#'
+#' @return A character string giving the selected font family.
+#' @noRd
+choose_font_family <- function(preferred = "Arial", fallback = "sans") {
+  if (requireNamespace("systemfonts", quietly = TRUE)) {
+    fonts <- systemfonts::system_fonts()
+
+    if ("family" %in% names(fonts) &&
+        any(tolower(fonts$family) == tolower(preferred), na.rm = TRUE)) {
+      return(preferred)
+    }
+  }
+
+  fallback
+}
+
+
 #' ROME ggplot2 theme
 #'
 #' An OME ggplot2 theme (based on `ggplot2::theme_bw()`).
@@ -2198,6 +2235,8 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
 #' !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
 #'
 #' @param base_size Numeric. Base font size for the theme. Defaults to 16.
+#' @param base_family Base font family for plot text. Defaults to Arial when
+#'   available via `systemfonts`; otherwise falls back to `"sans"`.
 #'
 #' @return A `ggplot2` theme object that can be added to a ggplot with `+`.
 #'
@@ -2205,10 +2244,11 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
 #' if (requireNamespace("ggplot2", quietly = TRUE)) {
 #'   p <- ggplot2::ggplot(mtcars, ggplot2::aes(x = factor(cyl))) +
 #'     ggplot2::geom_bar() +
-#'     ggplot2::labs(title = "ROME theme demo")
-#'
-#'   # Add the theme to a single plot:
-#'   p + theme_OME()
+#'     ggplot2::labs(
+#'       title = "A plot with non-OME-relevant data,",
+#'       subtitle = "but which demos using theme_OME"
+#'       ) +
+#'    theme_OME()
 #'
 #'   # Set as the global default for the current session:
 #'   ggplot2::theme_set(theme_OME())
@@ -2216,13 +2256,17 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
 #'
 #' @export
 #' @importFrom ggplot2 %+replace%
-theme_OME <- function(base_size = 16) {
-  ggplot2::theme_bw(base_size = base_size) %+replace%
+
+theme_OME <- function(base_size = 16, base_family = choose_font_family("Arial")) {
+  ggplot2::theme_bw(base_size = base_size, base_family = base_family) %+replace%
     ggplot2::theme(
+      # set text font family
+      text = ggplot2::element_text(family = base_family),
+
       # title/subtitle
       plot.title = ggplot2::element_text(
         size = ggplot2::rel(1),
-        face = "bold",
+        face = "plain",
         hjust = 0,
         color = "black",
         margin = ggplot2::margin(t=0, r=0, b=5, l=0)
@@ -2230,11 +2274,12 @@ theme_OME <- function(base_size = 16) {
       plot.subtitle = ggplot2::element_text(
         size = ggplot2::rel(0.7),
         face = "plain",
-        hjust = -0.12,
+        hjust = 0,
         color = "black"
       ),
 
       #panel (the plot area)
+      panel.grid.major = ggplot2::element_line(colour = "grey60"),
       panel.grid.minor = ggplot2::element_blank(),
       panel.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.border = ggplot2::element_blank(),
@@ -2242,7 +2287,7 @@ theme_OME <- function(base_size = 16) {
       #axis
       axis.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
       axis.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
-      axis.line  = ggplot2::element_line(color = "gray"),
+      axis.line  = ggplot2::element_line(color = "black"),
 
       #legend
       legend.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
@@ -2255,11 +2300,12 @@ theme_OME <- function(base_size = 16) {
       legend.background = ggplot2::element_rect(fill = "transparent", colour = NA),
 
       # strip (headings of facet elements)
-      strip.background = ggplot2::element_rect(fill = "#17252D", color = "#17252D"),
+      strip.background = ggplot2::element_blank(),
       strip.text = ggplot2::element_text(
         size = ggplot2::rel(0.85),
         face = "plain",
-        color = "white",
+        color = "black",
+        hjust = 0.5,
         margin = ggplot2::margin(t=5, r=0, b=5, l=0)
       )
     )
@@ -2273,20 +2319,20 @@ theme_OME <- function(base_size = 16) {
 #' OME colour scales for ggplot2
 #'
 #' Provides OME palettes for use with colour and fill aesthetics.
-#' (Convenience wrapper around `ggplot2::scale_colour_manual()` using
+#' (Convenience wrapper around [`ggplot2::discrete_scale()`] using
 #' the standard OME colour palette.)
 #'
 #' @param type Character string specifying which palette to use.
 #' Passed to [`get_OME_colours`]; see that function for available options.
 #' Default is `"distinct"`.
-#' @param ... Additional arguments passed to scale_colour_manual()`.
+#' @param ... Additional arguments passed to `ggplot2::discrete`.
 #'
 #' @return A ggplot2 scale for colours.
 #' @examples
 #' library(ggplot2)
 #' library(dplyr)
 #'
-#' # Examples here use scale_colour_OME(); scale_fill_OME() is exactly analagous.
+#' # Examples here use scale_colour_OME(); scale_fill_OME() is exactly analogous.
 #'
 #' # Prepare example dataset with labelled factors
 #' mtcars_small <- mtcars |>
@@ -2302,7 +2348,7 @@ theme_OME <- function(base_size = 16) {
 #'   ggplot(aes(x = wt, y = mpg, colour = am)) +
 #'   geom_point() +
 #'   scale_colour_OME() +
-#'   theme_OME() +
+#'   theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
 #'   labs(
 #'     x = "Weight (/1,000 lb)",
 #'     y = "Miles per gallon",
@@ -2315,7 +2361,7 @@ theme_OME <- function(base_size = 16) {
 #'   ggplot(aes(x = wt, y = mpg, colour = cyl)) +
 #'   geom_point() +
 #'   scale_colour_OME(type = "sequential") +
-#'   theme_OME() +
+#'   theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
 #'   labs(
 #'     x = "Weight (/1,000 lb)",
 #'     y = "Miles per gallon",
@@ -2331,7 +2377,6 @@ NULL
 scale_colour_OME <- function(type = "distinct", ...) {
   ggplot2::discrete_scale(
     aesthetics = "colour",
-    scale_name = "OME",
     palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
     ...
   )
@@ -2340,10 +2385,15 @@ scale_colour_OME <- function(type = "distinct", ...) {
 
 #' @rdname scale_colour_OME
 #' @export
+#' @aliases scale_color_OME
+scale_color_OME <- scale_colour_OME
+
+
+#' @rdname scale_colour_OME
+#' @export
 scale_fill_OME <- function(type = "distinct", ...) {
   ggplot2::discrete_scale(
     aesthetics = "fill",
-    scale_name = "OME",
     palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
     ...
   )

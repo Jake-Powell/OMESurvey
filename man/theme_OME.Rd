@@ -4,10 +4,13 @@
 \alias{theme_OME}
 \title{ROME ggplot2 theme}
 \usage{
-theme_OME(base_size = 16)
+theme_OME(base_size = 16, base_family = choose_font_family("Arial"))
 }
 \arguments{
 \item{base_size}{Numeric. Base font size for the theme. Defaults to 16.}
+
+\item{base_family}{Base font family for plot text. Defaults to Arial when
+available via \code{systemfonts}; otherwise falls back to \code{"sans"}.}
 }
 \value{
 A \code{ggplot2} theme object that can be added to a ggplot with \code{+}.
@@ -22,10 +25,11 @@ An OME ggplot2 theme (based on \code{ggplot2::theme_bw()}).
 if (requireNamespace("ggplot2", quietly = TRUE)) {
   p <- ggplot2::ggplot(mtcars, ggplot2::aes(x = factor(cyl))) +
     ggplot2::geom_bar() +
-    ggplot2::labs(title = "ROME theme demo")
-
-  # Add the theme to a single plot:
-  p + theme_OME()
+    ggplot2::labs(
+      title = "A plot with non-OME-relevant data,",
+      subtitle = "but which demos using theme_OME"
+      ) +
+   theme_OME()
 
   # Set as the global default for the current session:
   ggplot2::theme_set(theme_OME())

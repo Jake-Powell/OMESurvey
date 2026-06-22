@@ -2,10 +2,13 @@
 % Please edit documentation in R/survey_summary_functions.R
 \name{scale_colour_OME}
 \alias{scale_colour_OME}
+\alias{scale_color_OME}
 \alias{scale_fill_OME}
 \title{OME colour scales for ggplot2}
 \usage{
 scale_colour_OME(type = "distinct", ...)
+
+scale_color_OME(type = "distinct", ...)
 
 scale_fill_OME(type = "distinct", ...)
 }
@@ -14,21 +17,21 @@ scale_fill_OME(type = "distinct", ...)
 Passed to \code{\link{get_OME_colours}}; see that function for available options.
 Default is \code{"distinct"}.}
 
-\item{...}{Additional arguments passed to scale_colour_manual()`.}
+\item{...}{Additional arguments passed to \code{ggplot2::discrete}.}
 }
 \value{
 A ggplot2 scale for colours.
 }
 \description{
 Provides OME palettes for use with colour and fill aesthetics.
-(Convenience wrapper around \code{ggplot2::scale_colour_manual()} using
+(Convenience wrapper around \code{\link[ggplot2:discrete_scale]{ggplot2::discrete_scale()}} using
 the standard OME colour palette.)
 }
 \examples{
 library(ggplot2)
 library(dplyr)
 
-# Examples here use scale_colour_OME(); scale_fill_OME() is exactly analagous.
+# Examples here use scale_colour_OME(); scale_fill_OME() is exactly analogous.
 
 # Prepare example dataset with labelled factors
 mtcars_small <- mtcars |>
@@ -44,7 +47,7 @@ mtcars_small |>
   ggplot(aes(x = wt, y = mpg, colour = am)) +
   geom_point() +
   scale_colour_OME() +
-  theme_OME() +
+  theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
   labs(
     x = "Weight (/1,000 lb)",
     y = "Miles per gallon",
@@ -57,7 +60,7 @@ mtcars_small |>
   ggplot(aes(x = wt, y = mpg, colour = cyl)) +
   geom_point() +
   scale_colour_OME(type = "sequential") +
-  theme_OME() +
+  theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
   labs(
     x = "Weight (/1,000 lb)",
     y = "Miles per gallon",
