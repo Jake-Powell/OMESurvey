@@ -45,3 +45,6 @@ convert_colo("an_odd_name")       # Unintended use: unknown and so returned unch
 convert_colo(c("thing","amijig"))  # Unintended use: vector -> returned unchanged
 
 }
+\author{
+Dave Sirl
+}

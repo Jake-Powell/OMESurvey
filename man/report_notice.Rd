@@ -20,3 +20,6 @@ Creates a formatted HTML string representing a message with a
 severity level (e.g. NOTE or WARNING), suitable for use in
 R Markdown documents with \code{results = 'asis'}.
 }
+\author{
+Dave Sirl
+}

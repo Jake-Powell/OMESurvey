@@ -25,3 +25,6 @@ Convenience wrapper around \code{\link[knitr:kable]{knitr::kable()}} that applie
 \code{\link[kableExtra:kable_styling]{kableExtra::kable_styling()}} with sensible defaults for
 compact, centred tables in reports.
 }
+\author{
+Dave Sirl
+}

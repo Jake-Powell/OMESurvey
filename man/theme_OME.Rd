@@ -4,7 +4,11 @@
 \alias{theme_OME}
 \title{ROME ggplot2 theme}
 \usage{
-theme_OME(base_size = 16, base_family = choose_font_family("Arial"))
+theme_OME(
+  base_size = 16,
+  base_family = choose_font_family("Arial"),
+  legend_placement = c("right", "bottom")
+)
 }
 \arguments{
 \item{base_size}{Numeric. Base font size for the theme. Defaults to 16.}
@@ -20,6 +24,7 @@ An OME ggplot2 theme (based on \code{ggplot2::theme_bw()}).
 }
 \details{
 !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
+!!! -> Maybe we could/should just edit ROME_ggtheme, but that might impact old code too... ???
 }
 \examples{
 if (requireNamespace("ggplot2", quietly = TRUE)) {
@@ -35,4 +40,7 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
   ggplot2::theme_set(theme_OME())
 }
 
+}
+\author{
+Dave Sirl
 }

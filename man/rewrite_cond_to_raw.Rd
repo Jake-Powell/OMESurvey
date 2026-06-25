@@ -18,3 +18,6 @@ A modified expression object.
 Replaces symbols in a parsed expression with their corresponding
 \code{raw_} variable names when those raw columns exist in the data.
 }
+\author{
+Dave Sirl
+}

@@ -175,3 +175,6 @@ dat_ext <- tibble::tibble(
 )
 summary_plot_stacked_bar(dat_ext)
 }
+\author{
+Dave Sirl
+}

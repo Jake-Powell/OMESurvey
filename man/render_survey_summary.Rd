@@ -138,3 +138,6 @@ render_survey_summary(
 }
 
 }
+\author{
+Dave Sirl
+}

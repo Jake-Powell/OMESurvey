@@ -91,3 +91,6 @@ both processed data and diagnostic outputs.
 \seealso{
 \code{\link{survey_read_inputs}}, \code{\link{survey_data_prepare}}
 }
+\author{
+Dave Sirl
+}

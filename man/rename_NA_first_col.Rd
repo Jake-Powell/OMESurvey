@@ -31,3 +31,6 @@ c(rep("A", 3), rep("B", 2), rep(NA, 2)) |>
   rename_NA_first_col()
 
 }
+\author{
+Dave Sirl
+}

@@ -20,3 +20,6 @@ value \eqn{a/b}. Intended for ordering or comparing simple fractions.
 frac_to_num(c("1/4", "1/2", "3/4"))
 
 }
+\author{
+Dave Sirl
+}

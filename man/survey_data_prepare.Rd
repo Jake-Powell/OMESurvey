@@ -70,3 +70,6 @@ or dropped.
 \seealso{
 \code{\link{survey_read_inputs}}
 }
+\author{
+Dave Sirl
+}

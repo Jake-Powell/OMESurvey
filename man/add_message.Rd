@@ -24,4 +24,7 @@ Helper to add a structured message (with level and text) to a list
 of messages, returning the updated list. Intended for internal use
 within survey data preparation functions.
 }
+\author{
+Dave Sirl
+}
 \keyword{internal}

@@ -68,6 +68,8 @@ safe_read_excel <- function(path, sheet = NULL, ...) {
 #' est_char_vars,est_char_types,est_char_values,est_char_statements.
 #' And possibly quiet, show, rmd too.
 #'
+#' @author Dave Sirl
+#'
 #' @param data_path path to the survey data (assumed to be xls/xlsx/csv).
 #' @param dict_path,dict_sheet path to the data dictionary (assumed to be xls/xlsx)
 #'  and name of sheet in that file to use.
@@ -512,26 +514,6 @@ OME_stacked_bar_ = function(dat, response_var,
     stop("group_var must be a factor.")
   }
 
-
-  # if (!is.factor(dat[[group_var]])) {
-  #
-  #   stop(
-  #     paste0(
-  #       "group_var must be a factor.\n",
-  #       "group_var name: ", group_var, "\n",
-  #       "class: ", paste(class(dat[[group_var]]), collapse = ", "), "\n",
-  #       "typeof: ", typeof(dat[[group_var]]), "\n",
-  #       "n rows: ", nrow(dat), "\n",
-  #       "n unique: ", length(unique(dat[[group_var]])), "\n",
-  #       "any NA: ", any(is.na(dat[[group_var]])), "\n",
-  #       "first few values: ", paste(utils::head(dat[[group_var]]), collapse = ", ")
-  #     )
-  #   )
-  #
-  # }
-
-
-
   if (!is.factor(dat[[facet_name]])) {
     stop("facet_var must be a factor.")
   }
@@ -627,8 +609,6 @@ OME_stacked_bar_ = function(dat, response_var,
   } else {
     colo <- colo[levels_var]
   }
-
-
 
 
 
@@ -745,9 +725,6 @@ OME_stacked_bar_ = function(dat, response_var,
     } else {
       # Global counts (no real faceting)
 
-
-
-
       group_counts <- dat |>
         dplyr::summarise(
           non_na = sum(!is.na(.data[[response_name]])),
@@ -778,24 +755,6 @@ OME_stacked_bar_ = function(dat, response_var,
           )
         )
 
-
-
-      # group_counts <- dat2 |>
-      #   dplyr::summarise(
-      #     non_na = sum(!is.na(.data[[response_name]])),
-      #     total  = dplyr::n(),
-      #     .by = var_subdivide
-      #   ) |>
-      #   #dplyr::mutate(label = sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total)))
-      #   dplyr::mutate(label =
-      #                   if (na.rm) {
-      #                     sprintf("(%s)", scales::comma(non_na))
-      #                   } else {
-      #                     sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total))
-      #                   }
-      #   )
-
-
       idx <- match(group_levels, group_counts$var_subdivide)
       right_labels <- stats::setNames(group_counts$label[idx], group_levels)
 
@@ -824,47 +783,6 @@ OME_stacked_bar_ = function(dat, response_var,
     }
   )
 
-
-  # if (horiz) {
-  #
-  #   # Horizontal: group labels on y-axis
-  #   if (exists("show_counts") && show_counts) {
-  #     thePlot <- thePlot +
-  #       ggplot2::scale_x_discrete(
-  #         labels = left_labeller,
-  #         sec.axis = ggplot2::dup_axis(
-  #           labels = right_labels,
-  #           breaks = group_levels,
-  #           name = NULL
-  #         )
-  #       )
-  #   } else {
-  #     thePlot <- thePlot +
-  #       ggplot2::scale_x_discrete(labels = left_labeller)
-  #   }
-  #
-  # } else {
-  #
-  #   # Vertical: group labels on x-axis
-  #   if (exists("show_counts") && show_counts) {
-  #     thePlot <- thePlot +
-  #       ggplot2::scale_x_discrete(
-  #         labels = left_labeller,
-  #         sec.axis = ggplot2::dup_axis(
-  #           labels = right_labels,
-  #           breaks = group_levels,
-  #           name = NULL
-  #         )
-  #       )
-  #   } else {
-  #     thePlot <- thePlot +
-  #       ggplot2::scale_x_discrete(labels = left_labeller)
-  #   }
-  # }
-
-
-
-
   # Labels and scales - other
 
   thePlot <- thePlot +
@@ -876,6 +794,11 @@ OME_stacked_bar_ = function(dat, response_var,
 
 
   # --- Calculate and annotate with the (n) labels ------------------------
+  #
+  # OLD METHOD PLOTTING AT y = 1.02
+  #
+  # may need reviving if desired to work with facetting
+  #
   # dat_sum <-
   #   dat2 |>
   #   dplyr::summarise(
@@ -923,33 +846,6 @@ OME_stacked_bar_ = function(dat, response_var,
       colour = "white",
       size = 3 * text_scale
     )
-
-
-
-  # suppressing warning that arises by doing stat_prop(geom=text) rather than
-  # stat_geom() with after_stat(prop)
-  # viz "Ignoring unknown parameters: `orientation`"
-
-  # thePlot <- suppress_specific_warning(
-  #   {
-  #     thePlot +
-  #       ggstats::stat_prop(
-  #         ggplot2::aes(
-  #           x = var_subdivide,
-  #           group = var_subdivide,
-  #           label = ifelse(ggplot2::after_stat(prop) < percCut,
-  #                          "",
-  #                          scales::percent(ggplot2::after_stat(prop), accuracy = 1))
-  #         ),
-  #         geom = "text",
-  #         position = ggplot2::position_fill(vjust = 0.5),
-  #         colour = "white",
-  #         size = 3 * text_scale,
-  #         show.legend = FALSE
-  #       )
-  #   },
-  #   pattern = "Ignoring unknown parameters: `orientation`"
-  # )$value
 
 
   # --- Faceting ---------------------------------------------------------------
@@ -1042,6 +938,7 @@ OME_stacked_bar <- function(dat, response_var,
 #' Make a horizontal stacked bar chart to summarise several survey questions,
 #' with questions ordered according to the proportion of responses that fit a
 #' particular pattern.
+#' @author Dave Sirl
 #'
 #' @param dat A tibble/data.frame containing survey responses.
 #'
@@ -1245,8 +1142,6 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
   }
 
 
-
-
   # identify value columns
   value_cols <- names(dat)[grepl("_value$", names(dat))]
 
@@ -1288,29 +1183,8 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
 
 
 
-
-  # pivot the many questions/variables to long question&response form,
-  # reorder questions according to order_values
-
-  # OLD LOGCI
-  # dat <-
-  #   dat |>
-  #   tidyr::pivot_longer(dplyr::everything(),
-  #                       names_to = "question",
-  #                       values_to = "Response") |>
-  #   dplyr::mutate(question = forcats::fct_inorder(question),
-  #                 order_flag = dplyr::case_when(
-  #                   length(order_values) == 1 &&
-  #                     trimws(order_values) == "mean(as.numeric())" ~ as.numeric(Response),
-  #
-  #                   TRUE ~ as.character(Response) %in% order_values
-  #                 ),
-  #                 question = forcats::fct_reorder(question, order_flag, .fun=mean, .na_rm=TRUE))
-
-
-
   dat <- dat |>
-    # pivot to long format, keeping _value, _plot, _include groups of variables together
+    # pivot to long question/value format, keeping _value, _plot, _include groups of variables together
     tidyr::pivot_longer(
       cols = everything(),
       names_to = c("question", ".value"),
@@ -1515,31 +1389,9 @@ OME_boxplot_ <- function(data,
     stop("group_var and value_var must be columns in `data`.")
   }
 
-  # if (!is.factor(data[[group_var]])) {
-  #   stop("group_var must be a factor.")
-  # }
-  #
-
   if (!is.factor(data[[group_var]])) {
-
-    stop(
-      paste0(
-        "group_var must be a factor.\n",
-        "group_var name: ", group_var, "\n",
-        "class: ", paste(class(data[[group_var]]), collapse = ", "), "\n",
-        "typeof: ", typeof(data[[group_var]]), "\n",
-        "n rows: ", nrow(data), "\n",
-        "n unique: ", length(unique(data[[group_var]])), "\n",
-        "any NA: ", any(is.na(data[[group_var]])), "\n",
-        "first few values: ", paste(utils::head(data[[group_var]]), collapse = ", "), "\n",
-        "value_var name: ", value_var, "\n",
-        "class: ", paste(class(data[[value_var]]), collapse = ", "), "\n",
-        "typeof: ", typeof(data[[value_var]]), "\n"
-      )
-    )
-
+    stop("group_var must be a factor.")
   }
-
 
   if (!is.numeric(data[[value_var]])) {
     stop("value_var must be numeric.")
@@ -1736,6 +1588,8 @@ OME_boxplot <- function(data,
 #' Make a horizontal boxplot to summarise several numeric survey questions, with
 #' questions ordered according to a summary statistic (by default the median of
 #' observed responses).
+#'
+#' @author Dave Sirl
 #'
 #' @param dat A tibble/data.frame containing survey responses.
 #'
@@ -1992,6 +1846,8 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
 #' the whole plot. (As opposed to centred under the axis area only.) If the
 #' \pkg{cowplot} package is not installed, the plot is returned unchanged.
 #'
+#' @author Dave Sirl
+#'
 #' @param p A ggplot object whose legend should be centred beneath the plot.
 #' @param rel_heights A numeric vector of length two giving the relative
 #'   heights of the plot area and the legend area when stacked vertically.
@@ -2053,6 +1909,8 @@ centre_legend_below <- function(p, rel_heights=c(1,0.1)) {
 #' Mainly kept for backwards-compatibility - in most contexts this function
 #' SHOULD NOT BE USED, as `OMESurvey::get_OME_colours()` is more direct &
 #'  transparent and less hard-coded.
+#'
+#' @author Dave Sirl
 #'
 #' @param colo `NULL`, a character vector of colour hex codes, or a single
 #'   character keyword. If it is a character of length 1 it is expanded into a
@@ -2151,6 +2009,8 @@ suppress_specific_warning <- function(expr, pattern) {
 #' Parses character strings of the form `"a/b"` and returns their numeric
 #' value \eqn{a/b}. Intended for ordering or comparing simple fractions.
 #'
+#' @author Dave Sirl
+#'
 #' @param x A character vector of fractions written as `"a/b"`.
 #'
 #' @return A numeric vector of the same length as `x`.
@@ -2170,6 +2030,8 @@ frac_to_num <- function(x) {
 #' `NA` values in that column with a specified label (default: "Missing").
 #' Intended for use after `tabyl()` and related janitor formatting steps,
 #' once the object has been converted to a plain data frame.
+#'
+#' @author Dave Sirl
 #'
 #' @param df A data frame whose first column may contain `NA` values.
 #' @param missing_label A character string used to replace `NA` values
@@ -2209,6 +2071,8 @@ rename_NA_first_col <- function(df, missing_label = "Missing") {
 #' Returns `preferred` if it is detected by `systemfonts`; otherwise returns
 #' `fallback`. If `systemfonts` is not installed, returns `fallback`.
 #'
+#' @author Dave Sirl
+#'
 #' @param preferred Character. Preferred font family.
 #' @param fallback Character. Fallback font family.
 #'
@@ -2233,6 +2097,9 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #' An OME ggplot2 theme (based on `ggplot2::theme_bw()`).
 #'
 #' !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
+#' !!! -> Maybe we could/should just edit ROME_ggtheme, but that might impact old code too... ???
+#'
+#' @author Dave Sirl
 #'
 #' @param base_size Numeric. Base font size for the theme. Defaults to 16.
 #' @param base_family Base font family for plot text. Defaults to Arial when
@@ -2257,9 +2124,14 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #' @export
 #' @importFrom ggplot2 %+replace%
 
-theme_OME <- function(base_size = 16, base_family = choose_font_family("Arial")) {
+theme_OME <- function(base_size = 16,
+                      base_family = choose_font_family("Arial"),
+                      legend_placement = c("right", "bottom")
+                      ) {
   ggplot2::theme_bw(base_size = base_size, base_family = base_family) %+replace%
     ggplot2::theme(
+      complete = TRUE, # helpful with expected use (see https://ggplot2-book.org/extensions#complete-themes)
+
       # set text font family
       text = ggplot2::element_text(family = base_family),
 
@@ -2279,10 +2151,10 @@ theme_OME <- function(base_size = 16, base_family = choose_font_family("Arial"))
       ),
 
       #panel (the plot area)
-      panel.grid.major = ggplot2::element_line(colour = "grey60"),
+      panel.grid.major = ggplot2::element_line(colour = "grey85"),
       panel.grid.minor = ggplot2::element_blank(),
       panel.background = ggplot2::element_rect(fill = "transparent", color = NA),
-      panel.border = ggplot2::element_blank(),
+      panel.border     = ggplot2::element_blank(),
 
       #axis
       axis.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
@@ -2290,14 +2162,15 @@ theme_OME <- function(base_size = 16, base_family = choose_font_family("Arial"))
       axis.line  = ggplot2::element_line(color = "black"),
 
       #legend
-      legend.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
-      legend.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
-      legend.key   = ggplot2::element_rect(fill = "transparent", colour = NA),
-      legend.key.size = grid::unit(1.5, "lines"),
-      legend.position  = "bottom",
-      legend.box       = "vertical", # changed from horizontal
-      legend.direction = "horizontal",
+      legend.title      = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
+      legend.text       = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      legend.key        = ggplot2::element_rect(fill = "transparent", colour = NA),
+      legend.key.size   = grid::unit(1.5, "lines"),
+      legend.position   = "bottom",
+      legend.box        = "vertical", # changed from horizontal
+      legend.direction  = "horizontal",
       legend.background = ggplot2::element_rect(fill = "transparent", colour = NA),
+      legend.location   = 'plot',
 
       # strip (headings of facet elements)
       strip.background = ggplot2::element_blank(),
@@ -2321,6 +2194,8 @@ theme_OME <- function(base_size = 16, base_family = choose_font_family("Arial"))
 #' Provides OME palettes for use with colour and fill aesthetics.
 #' (Convenience wrapper around [`ggplot2::discrete_scale()`] using
 #' the standard OME colour palette.)
+#'
+#' @author Dave Sirl
 #'
 #' @param type Character string specifying which palette to use.
 #' Passed to [`get_OME_colours`]; see that function for available options.
@@ -2419,6 +2294,8 @@ scale_fill_OME <- function(type = "distinct", ...) {
 #' preparation & validation of the dictionary. [`survey_data_prepare`] is
 #' designed to take the output of this function and validate & coerce-to-type
 #' the data.
+#'
+#' @author Dave Sirl
 #'
 #' @param data_path Character string. Path to the survey data file (csv, xls, or
 #'   xlsx).
@@ -2728,7 +2605,6 @@ survey_read_inputs <- function(
               )
           }
 
-
           get_est_xiles <- function(est_stats, var, type_label, label_max_num, sheet_name) {
 
             # check variable exists
@@ -2830,9 +2706,6 @@ survey_read_inputs <- function(
           }
 
 
-
-
-
           if (is.na(type_suffix)) {
             stop(
               "Unknown numeric type in est_char_types for variable '",
@@ -2883,7 +2756,7 @@ survey_read_inputs <- function(
   }
 
 
-  #Compute ordering within each section
+  # Compute ordering within each section
   dict <-
     dict |>
     dplyr::mutate(report_sec = ifelse(is.na(report_sec) | stringr::str_trim(report_sec) == "",
@@ -2894,7 +2767,7 @@ survey_read_inputs <- function(
                                                   dplyr::row_number()),
                   .by = report_sec)
 
-  #Normalize grouping_var to logical
+  # Normalize grouping_var to logical
   if (!is.logical(dict$grouping_var)){
     dict <- dict |>
       dplyr::mutate(grouping_var = dplyr::case_when(
@@ -2919,6 +2792,8 @@ survey_read_inputs <- function(
 #'
 #' Replaces symbols in a parsed expression with their corresponding
 #' `raw_` variable names when those raw columns exist in the data.
+#'
+#' @author Dave Sirl
 #'
 #' @param expr A parsed R expression, typically from `rlang::parse_expr()`.
 #' @param data_names Character vector of column names available in the data.
@@ -2966,6 +2841,8 @@ rewrite_cond_to_raw <- function(expr, data_names) {
 #' This function operates on in-memory data and a dictionary, usually the output
 #' from [`survey_read_inputs`]. That function reads files and validates the
 #' dictionary, this one uses the dictionary to transform & validate the data.
+#'
+#' @author Dave Sirl
 #'
 #' @param data A tibble containing the survey data, typically the `data`
 #'   component returned by [`survey_read_inputs`]. This may already include
@@ -3164,7 +3041,8 @@ survey_data_prepare <- function(
   }
 
 
-
+  # helper: make diagnostic frequency table of
+  #  allowed values / sentinel codes / non-allowed / missing
   make_diagnostic_table <- function(class_vec, meet_mask = NULL, has_valid_cond = FALSE) {
 
     # fixed row order
@@ -3217,6 +3095,7 @@ survey_data_prepare <- function(
   }
 
 
+  # Start of actual function
 
   # initialise validation_log and messages list
   validation_log <- vector("list", nrow(dict))
@@ -3274,7 +3153,6 @@ survey_data_prepare <- function(
       if (grepl("^numeric", dtype, ignore.case = TRUE)) {
         data[[var]][sentinel_999 | sentinel_888 | sentinel_777] <- NA
       }
-
 
 
       # initialise some things - check location (& if others should be here too) later!
@@ -3379,14 +3257,6 @@ survey_data_prepare <- function(
         fail_mask <- NULL
       }
 
-      # cat("DEBUG: has_valid_cond:", has_valid_cond, "\n")
-      #
-      # cat("DEBUG: first 10 values of meet_mask:\n")
-      # print(head(meet_mask, 10))
-      # cat("DEBUG: first 10 values of fail_mask:\n")
-      # print(head(fail_mask, 10))
-
-
       # compute condition counts
       if (has_valid_cond) {
         n_meet_cond <- sum(meet_mask)
@@ -3406,7 +3276,7 @@ survey_data_prepare <- function(
 
 
 
-      #  factors processing...
+      #  factors processing
       if (grepl("^factor-", stringr::str_squish(dtype), ignore.case = TRUE)) {
 
         # they use allowed; compute non_allowed_mask from raw_chr
@@ -3486,8 +3356,6 @@ survey_data_prepare <- function(
 
         names(colo) <- allowed
         colo <- list(colo)
-
-        # cat("\nDEBUG FINAL COUNTS: meet =", n_meet_cond, " fail =", n_fail_cond, "\n")
 
 
         names(validation_log)[i] <- var
@@ -3631,7 +3499,7 @@ survey_data_prepare <- function(
         }
 
 
-                class_vec[sentinel_999] <- "-999"
+        class_vec[sentinel_999] <- "-999"
         class_vec[sentinel_888] <- "-888"
         class_vec[sentinel_777] <- "-777"
 
@@ -3640,10 +3508,6 @@ survey_data_prepare <- function(
 
         # make diagnostic table
         diag_df <- make_diagnostic_table(class_vec, meet_mask, has_valid_cond)
-
-
-
-
 
 
         names(validation_log)[i] <- var
@@ -3763,7 +3627,6 @@ survey_data_prepare <- function(
         }
 
 
-
         # generic fallback classification
         class_vec[sentinel_999] <- "-999"
         class_vec[sentinel_888] <- "-888"
@@ -3798,41 +3661,6 @@ survey_data_prepare <- function(
           n_meet_cond_non_allowed = n_meet_cond_non_allowed
         )
       }
-
-      # checking validation_log entries/construction
-
-      # message(">>> Names in validation_log entry")
-      # print(names(validation_log[[var]]))
-      #
-      # message(">>> Size of validation_log entry")
-      # print(object.size(validation_log[[var]]), units = "MB")
-      #
-      # message(">>> Size of whole validation_log so far")
-      # print(object.size(validation_log), units = "MB")
-
-      # message(">>> non_allowed_mask length and summary")
-      # mask <- validation_log[[var]]$non_allowed_mask
-      # if (is.null(mask)) {
-      #   message("non_allowed_mask is NULL")
-      # } else {
-      #   message("length(mask) = ", length(mask))
-      #   message("sum(mask) = ", sum(mask, na.rm = TRUE))
-      #   message("sum(!mask) = ", sum(!mask, na.rm = TRUE))
-      # }
-
-
-    # }, error = function(e) {
-    #
-    #   stop(
-    #     paste0(
-    #       "\nError while processing variable '", var, "':\n",
-    #       e$message
-    #     ),
-    #     call. = FALSE
-    #   )
-    #
-    # })
-
 
   }
 
@@ -3922,6 +3750,8 @@ survey_data_prepare <- function(
 #' merging establishment characteristics (if supplied), validating and
 #' coercing variables according to the data dictionary, and returning
 #' both processed data and diagnostic outputs.
+#'
+#' @author Dave Sirl
 #'
 #' @param data_path Character string. Path to the survey data file
 #'   (csv, xls, or xlsx).
@@ -4034,6 +3864,8 @@ survey_prepare_data <- function(
 #' of messages, returning the updated list. Intended for internal use
 #' within survey data preparation functions.
 #'
+#' @author Dave Sirl
+#'
 #' @param messages A list of message objects.
 #' @param text Character string giving the message text.
 #' @param level Character string indicating severity (e.g. "NOTE",
@@ -4062,6 +3894,8 @@ add_message <- function(messages, text, level = "NOTE", var = NULL) {
 #' [`kableExtra::kable_styling()`] with sensible defaults for
 #' compact, centred tables in reports.
 #'
+#' @author Dave Sirl
+#'
 #' @param x An object to be converted to a table by `knitr::kable()`.
 #' @param ... Additional arguments passed to `knitr::kable()`.
 #' @param full_width Logical; whether the table should span the full
@@ -4086,6 +3920,8 @@ kable_narrow <- function(x, ..., full_width = FALSE, position = "center") {
 #' severity level (e.g. NOTE or WARNING), suitable for use in
 #' R Markdown documents with `results = 'asis'`.
 #'
+#' @author Dave Sirl
+#'
 #' @param ... Character content of the message (concatenated).
 #' @param level Character string indicating message severity.
 #'   One of `"WARNING"` or `"NOTE"` (default).
@@ -4107,4 +3943,134 @@ report_notice <- function(..., level = c("WARNING", "NOTE")) {
     paste0(..., collapse = ""),
     "\n\n"
   )
+}
+
+
+
+#' Prepare data for extended summary plots
+#'
+#' Constructs the extended data structure required by
+#' `summary_plot_stacked_bar()` and `summary_plot_boxplot()` from the `data` and
+#' `validation_df` outputs of `survey_prepare_data()`.
+#'
+#' The returned data frame contains the variable values together with logical
+#' indicators defining which records should be included in denominators and
+#' plotted counts for each variable.
+#'
+#' @param data A data frame containing validated variables and their associated
+#'   raw variables (for example, `q1` and `q1_raw`).
+#' @param validation_df Validation metadata data frame containing at least the
+#'   columns `variable`, `condition`, and `allowed_technical`.
+#' @param vars Character vector of variable names to process.
+#'
+#' @return A tibble with one row per row of `data`. For each variable `v` in
+#'   `vars`, the output contains three variables:
+#'   \describe{
+#'     \item{`v_value`}{The variable values.}
+#'     \item{`v_include`}{Logical indicator for inclusion in the denominator.}
+#'     \item{`v_plot`}{Logical indicator for inclusion in plotted counts.}
+#'   }
+#'
+#' @details See the package vignette \code{dave_plotting_functions} for a
+#'   complete example showing how this function is used to prepare data for
+#'   extended stacked bar plots.
+#'
+
+#' @examples
+#' \dontrun{
+#' # Prepare survey data
+#' data_prep <- survey_prepare_data(
+#'   "<path_to_data>",
+#'   "<path_to_dictionary>",
+#'   "<sheet_in_dictionary>"
+#' )
+#'
+#' data <- data_prep$data
+#' validation_df <- data_prep$validation_df
+#'
+#' # Construct the extended plotting data
+#' plot_data <- make_extended_summary_plot_data(
+#'   data,
+#'   validation_df,
+#'   vars = c("q_satisfaction", "q_confidence")
+#' )
+#' }
+#'
+#' @export
+make_extended_summary_plot_data <- function(data, validation_df, vars) {
+
+  missing_vars <- setdiff(vars, names(data))
+  if (length(missing_vars) > 0) {
+    stop(
+      "The following variables are not present in `data`: ",
+      paste(missing_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  missing_validation <- setdiff(vars, validation_df$variable)
+  if (length(missing_validation) > 0) {
+    stop(
+      "The following variables are not present in `validation_df`: ",
+      paste(missing_validation, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  raw_vars <- paste0(vars, "_raw")
+  missing_raw <- setdiff(raw_vars, names(data))
+  if (length(missing_raw) > 0) {
+    stop(
+      "The following raw companion variables are not present in `data`: ",
+      paste(missing_raw, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  out <- tibble::tibble(.row_id = seq_len(nrow(data)))
+
+  for (v in vars) {
+
+    meta_v <- validation_df |>
+      dplyr::filter(variable == v)
+
+    if (nrow(meta_v) != 1) {
+      stop(
+        "Expected exactly one validation row for variable `", v, "`.",
+        call. = FALSE
+      )
+    }
+
+    raw_name <- paste0(v, "_raw")
+    allowed_vals <- meta_v$allowed_technical[[1]]
+    cond <- meta_v$condition[[1]]
+
+    include_vec <- rep(TRUE, nrow(data))
+
+    if (!is.na(cond) && nzchar(cond)) {
+
+      cond_expr <- rlang::parse_expr(cond)
+
+      # Prefer the package helper if available in this context.
+      # It rewrites e.g. q_used_finance_support == "Yes"
+      # to q_used_finance_support_raw == "Yes", where possible.
+      cond_expr_raw <- rewrite_cond_to_raw(cond_expr, names(data))
+
+      include_vec <- rlang::eval_tidy(cond_expr_raw, data = data)
+      include_vec[is.na(include_vec)] <- FALSE
+    }
+
+    plot_vec <- if (!is.null(allowed_vals) && length(allowed_vals) > 0) {
+      data[[raw_name]] %in% allowed_vals
+    } else {
+      !is.na(data[[v]])
+    }
+
+    out[[paste0(v, "_value")]] <- data[[v]]
+    out[[paste0(v, "_include")]] <- include_vec
+    out[[paste0(v, "_plot")]] <- plot_vec
+  }
+
+  out |>
+    dplyr::select(-.row_id)
 }

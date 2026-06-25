@@ -38,3 +38,6 @@ heights of the two components can be controlled via \code{rel_heights}.
 }
 
 }
+\author{
+Dave Sirl
+}

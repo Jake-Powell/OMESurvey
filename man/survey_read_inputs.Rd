@@ -81,3 +81,6 @@ details/examples.
 \seealso{
 \code{\link{survey_data_prepare}}
 }
+\author{
+Dave Sirl
+}

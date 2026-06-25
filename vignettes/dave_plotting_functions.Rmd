@@ -1,0 +1,918 @@
+---
+title: "dave_plotting_functions"
+output:
+  rmarkdown::html_vignette:
+    code_folding: show
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{dave_plotting_functions}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5,
+  fig.align = "center",
+  dpi = 96
+)
+```
+
+First load the `OMESurvey` package and a couple of other packages (nice, inoffensive ones hopefully) that are useful.
+```{r setup}
+library(OMESurvey)
+library(tibble)
+library(dplyr)
+```
+
+
+First create some dummy survey data and a corresponding data dictionary to use in the vignette. The data contains the following variables:
+
+- `respondent_id`: a unique respondent identifier (included in the raw data but deliberately omitted from the dictionary to demonstrate handling of extra variables).
+- `StartDate`: a survey start date (also omitted from the dictionary so that extra_vars behaviour can be illustrated).
+- `school_type`: a categorical grouping variable with values Type A and Type B.
+- `gender`: a second categorical grouping variable (included to demonstrate grouped summaries and plots).
+- `q_satisfaction`, `q_belonging`, and `q_support`: three Likert-style attitude questions with the same response scale (to demonstrate categorical summaries and `summary_plot_stacked_bar()`).
+- `study_hours`: a numeric survey response giving estimated weekly study hours.
+- `wellbeing_score` and `confidence_score`: numeric score variables on a 0–10 scale (used to demonstrate `OME_boxplot()` and `summary_plot_boxplot()`).
+- `q_used_support`: a yes/no branching variable indicating whether the respondent used support services.
+- `q_extra_support`: a conditional follow-up question, only relevant where `q_used_support == "Yes"`.
+- `q_other_comments`: a free-text response variable (used to demonstrate how text fields are handled in the report).
+
+The dummy data also includes a small number of sentinel or deliberately problematic values, such as -999, -888, -777, an out-of-range numeric value, and a non-allowed categorical response. These are included so that the validation and diagnostic parts of the report have something meaningful to show and the examples of plotting functions can show their capabilities.
+
+```{r make_dummy_data_and_dict, echo=FALSE}
+set.seed(123)
+
+n <- 80
+
+likert_levels <- c(
+  "Strongly disagree",
+  "Disagree",
+  "Neither",
+  "Agree",
+  "Strongly agree"
+)
+
+
+helpful_levels <- c(
+  "Very helpful",
+  "Somewhat helpful",
+  "Not very helpful"
+)
+
+
+
+# 1. Dummy survey data
+
+example_data <- tibble(
+  respondent_id = sprintf("R%03d", seq_len(n)),  # deliberately not in dictionary
+  StartDate = as.Date("2026-01-01") + sample(0:30, n, replace = TRUE), # extra var
+
+  school_type = sample(c("Type A", "Type B"), n, replace = TRUE),
+  gender = sample(
+    c("Female", "Male", "Another gender", "Prefer not to say"),
+    n,
+    replace = TRUE,
+    prob = c(0.45, 0.45, 0.04, 0.06)
+  ),
+
+  q_satisfaction = sample(likert_levels, n, replace = TRUE,
+                          prob = c(0.08, 0.12, 0.20, 0.35, 0.25)),
+  q_belonging = sample(likert_levels, n, replace = TRUE,
+                       prob = c(0.10, 0.15, 0.25, 0.30, 0.20)),
+  q_support = sample(likert_levels, n, replace = TRUE,
+                     prob = c(0.06, 0.14, 0.20, 0.35, 0.25)),
+
+  study_hours = round(pmax(0, rnorm(n, mean = 12, sd = 5)), 1),
+  wellbeing_score = sample(0:10, n, replace = TRUE),
+  confidence_score = sample(0:10, n, replace = TRUE),
+
+
+q_finance_support_used = sample(
+  c("Yes", "No"),
+  n,
+  replace = TRUE,
+  prob = c(0.30, 0.70)
+),
+q_finance_support_helpful = NA_character_,
+
+q_academic_support_used = sample(
+  c("Yes", "No"),
+  n,
+  replace = TRUE,
+  prob = c(0.45, 0.55)
+),
+q_academic_support_helpful = NA_character_,
+
+q_welcome_support_helpful = sample(
+  c(helpful_levels, "-999"),
+  n,
+  replace = TRUE,
+  prob = c(0.42, 0.36, 0.14, 0.08)
+),
+
+q_other_comments = sample(
+  c(
+    "More worked examples would help.",
+    "I like the sessions.",
+    "Timetabling is difficult.",
+    "More advance notice would be useful.",
+    "No comment.",
+    "-999"
+  ),
+  n,
+  replace = TRUE,
+  prob = c(0.22, 0.22, 0.18, 0.16, 0.14, 0.08)
+)
+
+)
+
+# Fill routed finance support follow-up:
+# If q_finance_support_used == "Yes", provide a helpfulness response.
+# Otherwise use -888 = not branched.
+example_data <- example_data |>
+  dplyr::mutate(
+    q_finance_support_helpful = dplyr::if_else(
+      q_finance_support_used == "Yes",
+      sample(
+        c(helpful_levels, "-999"),
+        dplyr::n(),
+        replace = TRUE,
+        prob = c(0.40, 0.35, 0.15, 0.10)
+      ),
+      "-888"
+    )
+  )
+
+# Fill routed academic support follow-up:
+# If q_academic_support_used == "Yes", provide a helpfulness response.
+# Otherwise use -888 = not branched.
+example_data <- example_data |>
+  dplyr::mutate(
+    q_academic_support_helpful = dplyr::if_else(
+      q_academic_support_used == "Yes",
+      sample(
+        c(helpful_levels, "-999"),
+        dplyr::n(),
+        replace = TRUE,
+        prob = c(0.45, 0.35, 0.12, 0.08)
+      ),
+      "-888"
+    )
+  )
+
+
+
+# Add a few deliberate edge cases for the validation/report examples
+
+# General categorical examples
+example_data$q_support[3] <- "Not sure"       # non-allowed factor value
+example_data$q_belonging[7] <- "-999"         # explicit missing
+example_data$q_satisfaction[10] <- "-777"     # invalid response
+
+# Numeric examples
+example_data$study_hours[4] <- 45             # out of allowed numeric range
+example_data$wellbeing_score[8] <- -999       # explicit numeric missing
+example_data$confidence_score[12] <- -777     # invalid numeric sentinel
+
+# Branching variable sentinel examples
+example_data$q_finance_support_used[15] <- "-999"  # missing branching variable
+example_data$q_finance_support_helpful[15] <- "-999"       # follow-up also missing/unknown
+
+example_data$q_academic_support_used[20] <- "-777"      # invalid branching variable
+example_data$q_academic_support_helpful[20] <- "-999"      # follow-up missing/unknown
+
+# Branched/follow-up question sentinel and non-allowed examples
+example_data$q_finance_support_helpful[25] <- "-999"       # missing routed follow-up
+example_data$q_academic_support_helpful[30] <- "-777"      # invalid routed follow-up
+
+# Unrouted helpfulness question examples
+example_data$q_welcome_support_helpful[45] <- "-999"       # missing response
+example_data$q_welcome_support_helpful[50] <- "-777"       # invalid response
+
+
+
+
+example_dictionary <- tibble(
+  variable_name = c(
+    "school_type",
+    "gender",
+    "q_satisfaction",
+    "q_belonging",
+    "q_support",
+    "study_hours",
+    "wellbeing_score",
+    "confidence_score",
+    
+    "q_finance_support_used",
+    "q_finance_support_helpful",
+    "q_academic_support_used",
+    "q_academic_support_helpful",
+    "q_welcome_support_helpful",
+    "q_other_comments"
+  ),
+
+  data_type = c(
+    "factor-unordered",
+    "factor-unordered",
+    "factor-neg-pos",
+    "factor-neg-pos",
+    "factor-neg-pos",
+    "numeric",
+    "numeric",
+    "numeric",
+
+    "factor-unordered",
+    "factor-lo-hi",
+    "factor-unordered",
+    "factor-lo-hi",
+    "factor-lo-hi",
+    "text"
+  ),
+
+  allowed_values = c(
+    "Type A; Type B",
+    "Female; Male; Another gender; Prefer not to say",
+    paste(likert_levels, collapse = "; "),
+    paste(likert_levels, collapse = "; "),
+    paste(likert_levels, collapse = "; "),
+    "[0,40]",
+    "[0,10]",
+    "[0,10]",
+
+    "Yes; No",
+    paste(helpful_levels, collapse = "; "),
+    "Yes; No",
+    paste(helpful_levels, collapse = "; "),
+    paste(helpful_levels, collapse = "; "),
+    NA_character_
+
+  ),
+
+  item_statement = c(
+    "School type",
+    "Gender",
+    "I am satisfied with the programme.",
+    "I feel that I belong on the programme.",
+    "I know where to get support if I need it.",
+    "How many hours do you usually study outside sessions each week?",
+    "Overall wellbeing score",
+    "Confidence score",
+
+    "Have you used financial support this term?",
+    "How helpful was the financial support?",
+    "Have you used academic support this term?",
+    "How helpful was the academic support?",
+    "How helpful was welcome week support?",
+
+    "Please add any other comments about the programme."
+    ),
+
+  report_sec = c(
+    "Grouping variables",
+    "Grouping variables",
+    "A: Attitudes",
+    "A: Attitudes",
+    "A: Attitudes",
+    "B: Study habits",
+    "B: Study habits",
+    "B: Study habits",
+
+    "C: Support use",
+    "C: Support use",
+    "C: Support use",
+    "C: Support use",
+    "C: Support use",
+    "D: Free-text comments"
+  ),
+
+
+  grouping_var = c(
+    TRUE,
+    TRUE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE,
+    FALSE
+  ),
+
+  condition = c(
+    NA_character_,
+    NA_character_,
+    NA_character_,
+    NA_character_,
+    NA_character_,
+    NA_character_,
+    NA_character_,
+    NA_character_,
+
+    NA_character_,
+    'q_finance_support_used == "Yes"',
+    NA_character_,
+    'q_academic_support_used == "Yes"',
+    NA_character_,
+    NA_character_
+  )
+)
+```
+
+
+
+## Preview the example inputs
+
+Before rendering a report or preparing the data, it is useful to inspect both the raw survey data and the dictionary.
+
+Preparing the data and dictionary is part of pre-processing, so this should need doing once only. Guidance on doing that is in the Preprocessing SOP (which, at time of writing, is the Word document `20260408_SOP_Pre-processing` in the/a folder of SOPs). This includes information about constructing the data dictionary and what the -999/-888/-777 missing codes mean / are used for.
+
+```{r preview-data, echo=FALSE}
+if (requireNamespace("reactable", quietly = TRUE)) {
+
+  reactable::reactable(
+    example_data,
+    wrap = TRUE,
+    showPageSizeOptions = TRUE,
+    pageSizeOptions = c(10, 25, 50, 100),
+    defaultPageSize = 10,
+    fullWidth = FALSE,
+    striped = TRUE,
+    compact = TRUE,
+    filterable = TRUE,
+    resizable = TRUE
+  )
+
+} else {
+  dplyr::glimpse(example_data)
+}
+```
+
+```{r preview-dictionary, echo=FALSE}
+
+if (requireNamespace("reactable", quietly = TRUE)) {
+
+  example_dictionary |>
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::where(is.character),
+        ~ stringr::str_replace_all(.x, "\\r?\\n", "  ")
+      )
+    ) |>
+    reactable::reactable(
+      wrap = TRUE,
+      showPageSizeOptions = TRUE,
+      pageSizeOptions = c(10, 25, 50, 100),
+      defaultPageSize = 10,
+      fullWidth = FALSE,
+      striped = TRUE,
+      compact = TRUE,
+      filterable = TRUE,
+      resizable = TRUE
+    )
+
+} else {
+  dplyr::glimpse(example_dictionary)
+}
+```
+
+
+## Save example inputs to temporary files
+
+For the purposes of the vignette, we save the dummy data as a CSV file and the corresponding dictionary as an Excel workbook. The dictionary is written to a sheet called "example_survey", which is the sheet name we will pass to `render_survey_summary()` and `survey_prepare_data()` below.
+
+```{r save_data_and_dict, echo=FALSE}
+data_path <- tempfile(pattern = "example_data_", fileext = ".csv")
+dict_path <- tempfile(pattern = "example_survey_dictionary_", fileext = ".xlsx")
+
+readr::write_csv(example_data, data_path)
+
+openxlsx::write.xlsx(
+  x = list(example_survey = example_dictionary),
+  file = dict_path,
+  overwrite = TRUE
+)
+
+data_path
+dict_path
+```
+
+
+## Render the automated summary report
+
+One can now use `render_survey_summary()` to create an HTML summary report from the dummy survey data and dictionary, using code along the lines of the following. This isn't done here as it's tricky and not the main point of the document.
+
+```{r render_report, eval=FALSE}
+render_survey_summary(
+  data_path = <path to data file>,
+  dict_path = <path to dictionary file>,
+  dict_sheet = "example_survey",
+  output_file = <filename for output file, e.g. 'year_X_summary.html'>,
+  output_dir = <path to folder for output file>,
+  output_title = "Year X pupil survey summary",
+  output_author = "A Nonymous"
+)
+```
+
+The returned value of this function is the path to the generated HTML file. Open it in a browser to view the automated report.
+
+
+## Prepare the data for further analysis
+
+The report function prepares the data internally, but it is often useful to prepare the data directly for further analysis and plotting. Here we use `survey_prepare_data()` to read the same CSV data and Excel dictionary, validate/coerce the dictionary-backed variables, and return a prepared data frame.
+
+We use `extra_vars = "suffix_asis"` so that variables present in the raw data but absent from the dictionary, such as `respondent_id` and `StartDate`, are retained with an `_asis` suffix.
+
+```{r width=60}
+prep <- survey_prepare_data(
+  data_path = data_path,
+  dict_path = dict_path,
+  dict_sheet = "example_survey",
+  extra_vars = "suffix_asis"
+)
+
+survey_data <- prep$data
+validation_df <- prep$validation_df
+```
+
+We can take a quick look at the prepared data; noting particularly the names of the variables: those in the dictionary have the raw character-based version of the variable with the `_raw` suffix and the original variable name containing the tidied-and-coerced-to-type variable, and those not mentioned in the dictionary are appended with `_asis` (in accordance with the `extra_vars` option).
+
+```{r}
+dplyr::glimpse(survey_data)
+```
+
+If `reactable` is available, we can preview the prepared data interactively.
+
+```{r echo=FALSE}
+if (requireNamespace("reactable", quietly = TRUE)) {
+  reactable::reactable(
+    survey_data,
+    wrap = TRUE,
+    showPageSizeOptions = TRUE,
+    pageSizeOptions = c(5, 10, 25, 50, 100),
+    defaultPageSize = 5,
+    fullWidth = FALSE,
+    striped = TRUE,
+    compact = TRUE,
+    filterable = TRUE,
+    resizable = TRUE
+  )
+}
+```
+
+The validation output summarises the checks carried out for each dictionary-backed variable.
+
+```{r echo=FALSE}
+if (requireNamespace("reactable", quietly = TRUE)) {
+  validation_df |>
+    dplyr::select(
+      variable,
+      type,
+      allowed_specified,
+      allowed_display,
+      condition,
+      report_sec
+    ) |>
+    reactable::reactable(
+      wrap = TRUE,
+      showPageSizeOptions = TRUE,
+      pageSizeOptions = c(10, 25, 50, 100),
+      defaultPageSize = 25,
+      fullWidth = FALSE,
+      striped = TRUE,
+      compact = TRUE,
+      filterable = TRUE,
+      resizable = TRUE
+    )
+} else {
+  validation_df |>
+    dplyr::select(
+      variable,
+      type,
+      allowed_specified,
+      allowed_display,
+      condition,
+      report_sec
+    )
+}
+```
+
+## Single-question categorical plot with `OME_stacked_bar()`
+
+`OME_stacked_bar()` is useful for plotting one categorical survey response, optionally broken down by a grouping variable. Here we show satisfaction by school type
+
+```{r}
+OME_stacked_bar(
+  dat = survey_data,
+  response_var = q_satisfaction,
+  group_var = school_type,
+  count_style = "both",
+  titleText = "Satisfaction by year group"
+)
+```
+
+The default fill colours for the bars are designed to be as distinct as possible (the 'distinct' or 'qualitative' type of palette from `OMESurvey::get_OME_colours()`). This could be modified manually by passing `OMESurvey::get_OME_colours(n=5, type='divergent')` as the `colo` argument of the plotting function; but the validation output has that set up and ready to be passed along:
+
+```{r}
+validation_df |> filter(variable=="q_satisfaction") |> pull(colo) |> unlist()
+```
+
+
+Passing this to `OME_stacked_bar()` we get
+```{r}
+OME_stacked_bar(
+  dat = survey_data,
+  response_var = q_satisfaction,
+  group_var = school_type,
+  colo = validation_df |> filter(variable=="q_satisfaction") |> pull(colo) |> unlist(),
+  count_style = "both",
+  titleText = "Satisfaction by year group"
+)
+```
+
+This is a common recurring theme for factors and stacked bar charts: you need to tell the plotting function what colour palette to use, but the appropriate one is always available through the validation data frame:
+```{r eval=FALSE}
+validation_df |> filter(variable=="appropriate_variable_name") |> pull(colo) |> unlist()
+```
+
+(This method is preferable to passing OMESurvey::get_OME_colours(n=5, type='divergent') to the plotting function's colo argument because it also uses a named vector, which makes the matchup of levels and colours a little less likely to go wrong in some unlikely-but-possible edge-case scanarios.)
+
+
+
+
+We can use the same method to lookat another Likert-scale type question, here grouped by a different variable.
+
+```{r}
+OME_stacked_bar(
+  dat = survey_data,
+  response_var = q_support,
+  group_var = gender,
+  colo = validation_df |> filter(variable=="q_support") |> pull(colo) |> unlist(),
+  count_style = "both",
+  titleText = "Knowing where to get support, by gender"
+)
+```
+
+
+## Multi-question categorical plot with `summary_plot_stacked_bar()`
+
+`summary_plot_stacked_bar()` summarises several categorical questions in one horizontal stacked bar chart. The variables representing the questions must share the same response scale. Here the three attitude questions all use the same Likert scale.
+
+```{r}
+attitude_labels <- c(
+  q_satisfaction = "I am satisfied with the programme",
+  q_belonging = "I feel that I belong on the programme",
+  q_support = "I know where to get support if I need it"
+)
+
+survey_data |>
+  dplyr::select(q_satisfaction, q_belonging, q_support) |>
+  summary_plot_stacked_bar(
+    colo = validation_df |> filter(variable=="q_satisfaction") |> pull(colo) |> unlist(),
+    labels_vec = attitude_labels,
+    count_style = "both",
+    titleText = "Attitudes to the programme"
+  )
+```
+
+A couple of things to note here:
+
+- The vector of colours for `colo` is simply taken from one of the questions. (I could have something fancier, but it would have been hard.)
+- We need to select() the variables to use in the data frame and then pass that to the plotting function. The function treats every variable in the dataframe it receives as a question to be plotted, hence the need to select() them first. Or, of course, use a base R equivalent: `survey_data[,c("q_satisfaction", "q_belonging", "q_support")] |> summary_plot_stacked_bar(...)`.
+
+The questions can also be ordered according to a response pattern using the `order_values` option. For example, we can order by the proportion of respondents answering `"Agree"` or `"Strongly agree"`. In this example we also show how to extract some more details (the question labels as well as the colour palette) from the `validation_df` rather than hard-coding them.
+
+```{r}
+attitude_vars <- c("q_satisfaction", "q_belonging", "q_support")
+
+# find labels that match vars
+attitude_labels <- validation_df |>
+  dplyr::filter(variable %in% attitude_vars) |>
+  dplyr::arrange(match(variable, attitude_vars)) |>
+  dplyr::pull(item_statement) |>
+  stats::setNames(attitude_vars)
+
+# find colour palette
+attitude_colo <- validation_df |>
+  dplyr::filter(variable == attitude_vars[1]) |>
+  dplyr::pull(colo) |>
+  unlist()
+
+# plot
+survey_data |>
+  dplyr::select(dplyr::all_of(attitude_vars)) |>
+  summary_plot_stacked_bar(
+    colo = attitude_colo,
+    labels_vec = attitude_labels,
+    count_style = "both",
+    order_values = c("Agree", "Strongly agree"),
+    titleText = "Attitudes ordered by positive responses"
+  )
+```
+
+### Dealing with survey routing
+
+The three helpfulness questions use the same response scale, but they do not all have the same denominator. Financial-support helpfulness is only relevant to respondents who used financial support, academic-support helpfulness is only relevant to respondents who used academic support, while welcome-week helpfulness is asked of everyone. Just plotting these variables is a bit misleading as we do not respect the conditions/routing.
+
+```{r}
+survey_data |>
+  janitor::tabyl(q_finance_support_helpful, q_finance_support_used) |>
+  janitor::adorn_title() |>
+  kable_narrow()
+```
+
+
+
+```{r}
+helpful_vars <- c(
+  "q_finance_support_helpful",
+  "q_academic_support_helpful",
+  "q_welcome_support_helpful"
+)
+
+# Get labels and colours from validation_df
+helpful_labels <-
+  validation_df |>
+  dplyr::filter(variable %in% helpful_vars) |>
+  dplyr::arrange(match(variable, helpful_vars)) |>
+  dplyr::pull(item_statement) |>
+  stats::setNames(helpful_vars)
+
+helpful_colo <-
+  validation_df |>
+  dplyr::filter(variable == helpful_vars[1]) |>
+  dplyr::pull(colo) |>
+  (\(x) x[[1]])()
+
+# plot
+survey_data |>
+  dplyr::select(dplyr::all_of(helpful_vars)) |>
+  summary_plot_stacked_bar(
+    labels_vec = helpful_labels,
+    colo = helpful_colo,
+    count_style = "both",
+    titleText = "Helpfulness of support",
+  )
+```
+
+Simply removing missing values with the `na.rm=TRUE` option gives a nicer-looking plot but misses the point somewhat: most missing / non-allowed values are because of routing, but several are not.
+
+```{r}
+survey_data |>
+  dplyr::select(dplyr::all_of(helpful_vars)) |>
+  summary_plot_stacked_bar(
+    labels_vec = helpful_labels,
+    colo = helpful_colo,
+    na.rm = TRUE,
+    count_style = "both",
+    titleText = "Helpfulness of support"
+  )
+```
+
+The plot is an improvement, but does not properly capture the 20 substantive responses, 5 missing/invalid responses, 55 non-routed non-responses.
+
+The `summary_plot_stacked_bar()` function supports an “extended” data format to deal with this, where each plotted variable has a name ending `_value` and companion variables ending `_include`, and `_plot`:
+
+- `*_value`: the response value to plot;
+- `*_include`: whether the respondent should be included in that question’s denominator;
+- `*_plot`: whether the response is a valid substantive value to show.
+
+You can construct these these `_value`, `_include`, `_plot` variables yourself if you like, but there's a function `make_extended_summary_plot_data()` to do so automatically. Provide it with the data, the validation information and the variables you want to work with and it gives you a dataframe ready for passing to `summary_plot_stacked_bar()`.
+
+Here's how we can set this up for these helpfulness questions.
+
+```{r}
+# set up variables to work with
+helpful_vars <- c(
+  "q_finance_support_helpful",
+  "q_academic_support_helpful",
+  "q_welcome_support_helpful"
+)
+
+# build the extended data for plotting
+helpful_ext <- make_extended_summary_plot_data(
+  data = survey_data,
+  validation_df = validation_df,
+  vars = helpful_vars
+)
+
+
+#plot
+helpful_ext |>
+  summary_plot_stacked_bar(
+    dat_format = "extended",
+    labels_vec = helpful_labels,
+    colo = helpful_colo,
+    na.rm = TRUE,
+    count_style = "both",
+    titleText = "Helpfulness of support"
+  )
+
+```
+
+Note especially the label "(20/25)" for the financial support question, capturing the 20 substantive responses (and 5 missing/invalid/non-allowed responses) amongst the 25 respondents who were routed to this question. And the same is true for the academic support question. And the welcome week support question, which was asked to everyone, still has the full number of respondents indicated, reflecting it being asked to everyone and thus not having a condition in the data dictionary.
+
+
+
+```{r}
+knitr::knit_exit()
+```
+
+
+## Single-question numeric plot with `OME_boxplot()`
+
+`OME_boxplot()` is the numeric equivalent of `OME_stacked_bar()`. It plots one numeric variable, optionally broken down by a factor grouping variable.
+
+```{r}
+OME_boxplot(
+  data = survey_data,
+  value_var = study_hours,
+  group_var = school_type,
+  titleText = "Weekly study hours by year group"
+)
+```
+
+The same numeric variable can be plotted by a different grouping variable.
+
+```{r}
+OME_boxplot(
+  data = survey_data,
+  value_var = wellbeing_score,
+  group_var = gender,
+  titleText = "Wellbeing score by gender"
+)
+```
+
+## Multi-question numeric plot with `summary_plot_boxplot()`
+
+`summary_plot_boxplot()` summarises several numeric questions in one horizontal boxplot. Here we compare study hours, wellbeing, and confidence.
+
+```{r}
+numeric_labels <- c(
+  study_hours = "Weekly study hours",
+  wellbeing_score = "Wellbeing score",
+  confidence_score = "Confidence score"
+)
+
+survey_data |>
+  dplyr::select(study_hours, wellbeing_score, confidence_score) |>
+  summary_plot_boxplot(
+    labels_vec = numeric_labels,
+    titleText = "Numeric survey measures"
+  )
+```
+
+By default, the questions are ordered by their median value. To keep the original variable order instead, set `order_fun = NULL`.
+
+```{r}
+survey_data |>
+  dplyr::select(study_hours, wellbeing_score, confidence_score) |>
+  summary_plot_boxplot(
+    labels_vec = numeric_labels,
+    order_fun = NULL,
+    titleText = "Numeric survey measures in original order"
+  )
+```
+
+## Using `theme_OME()`, `scale_colour_OME()`, and `scale_fill_OME()`
+
+The OME theme and colour scales can also be used directly with ordinary `ggplot2` plots. For vignette examples, we explicitly use `base_family = "sans"` so that the plots render reliably across different systems.
+
+```{r}
+survey_data |>
+  ggplot2::ggplot(
+    ggplot2::aes(
+      x = study_hours,
+      y = wellbeing_score,
+      colour = school_type
+    )
+  ) +
+  ggplot2::geom_point(size = 2, alpha = 0.8) +
+  scale_colour_OME() +
+  theme_OME(base_family = "sans") +
+  ggplot2::labs(
+    title = "Wellbeing and study hours",
+    x = "Weekly study hours",
+    y = "Wellbeing score",
+    colour = "School type"
+  )
+```
+
+The fill scale works similarly for filled geoms. Here we use a proportional bar chart to show satisfaction by year group.
+
+```{r}
+survey_data |>
+  ggplot2::ggplot(
+    ggplot2::aes(
+      x = school_type,
+      fill = q_satisfaction
+    )
+  ) +
+  ggplot2::geom_bar(position = "fill") +
+  scale_fill_OME() +
+  theme_OME(base_family = "sans") +
+  ggplot2::labs(
+    title = "Satisfaction by year group",
+    x = "Year group",
+    y = "Proportion of responses",
+    fill = "Satisfaction"
+  )
+```
+
+The US-spelling alias `scale_color_OME()` can be used in place of `scale_colour_OME()`.
+
+```{r}
+survey_data |>
+  ggplot2::ggplot(
+    ggplot2::aes(
+      x = confidence_score,
+      y = wellbeing_score,
+      color = gender
+    )
+  ) +
+  ggplot2::geom_jitter(width = 0.15, height = 0.15, alpha = 0.8) +
+  scale_color_OME() +
+  theme_OME(base_family = "sans") +
+  ggplot2::labs(
+    title = "Confidence and wellbeing",
+    x = "Confidence score",
+    y = "Wellbeing score",
+    color = "Gender"
+  )
+```
+
+
+## Extra variables and naming conventions
+
+Because we prepared the data with `extra_vars = "suffix_asis"`, variables present in the source data but absent from the dictionary are retained with an `_asis` suffix.
+
+```{r}
+names(survey_data)[grepl("_asis$", names(survey_data))]
+```
+
+Dictionary-backed variables also have `_raw` companions. These preserve the raw values used during validation and condition checking.
+
+```{r}
+names(survey_data)[grepl("_raw$", names(survey_data))]
+```
+
+For example, we can compare a prepared factor variable with its raw version.
+
+```{r}
+survey_data |>
+  dplyr::select(q_support, q_support_raw) |>
+  dplyr::distinct() |>
+  dplyr::arrange(q_support_raw)
+```
+
+The raw variable reveals the deliberately inserted non-allowed value `"Not sure"`, while the prepared variable is coerced according to the dictionary-defined allowed values.
+
+## Text responses
+
+The dummy data includes a free-text field. In the automated report, text variables are shown as an interactive table rather than plotted. For direct analysis, the prepared data can be filtered to remove sentinel values.
+
+```{r}
+survey_data |>
+  dplyr::filter(!(q_other_comments %in% c("-999", "-888", "-777"))) |>
+  dplyr::select(school_type, gender, q_other_comments) |>
+  dplyr::slice_head(n = 10)
+```
+
+If `reactable` is installed, we can show the text responses interactively.
+
+```{r echo=FALSE}
+if (requireNamespace("reactable", quietly = TRUE)) {
+  survey_data |>
+    dplyr::filter(!(q_other_comments %in% c("-999", "-888", "-777"))) |>
+    dplyr::select(school_type, gender, q_other_comments) |>
+    reactable::reactable(
+      wrap = TRUE,
+      showPageSizeOptions = TRUE,
+      pageSizeOptions = c(10, 25, 50, 100),
+      defaultPageSize = 10,
+      fullWidth = FALSE,
+      striped = TRUE,
+      compact = TRUE,
+      filterable = TRUE,
+      resizable = TRUE
+    )
+}
+```
+
+## Cleaning up temporary files
+
+The example files were written to temporary locations. They will usually be removed automatically at the end of the R session, but they can also be deleted manually.
+
+```{r}
+#unlink(c(data_path, dict_path, report_path))
+```

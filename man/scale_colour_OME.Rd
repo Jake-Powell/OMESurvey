@@ -68,3 +68,6 @@ mtcars_small |>
     title = "Fuel efficiency vs weight,\ncoloured by cylinders"
   )
 }
+\author{
+Dave Sirl
+}
