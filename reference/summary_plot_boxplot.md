@@ -121,6 +121,10 @@ their treatment in the plot itself is controlled by `na.rm`.
 If `dat` is supplied in simple format, it is internally converted to the
 extended format with all `*_plot` and `*_include` values set to `TRUE`.
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r

@@ -1,12 +1,12 @@
-# ROME ggplot2 theme
+# OME ggplot2 theme
 
-An OME ggplot2 theme (based on
-[`ggplot2::theme_bw()`](https://ggplot2.tidyverse.org/reference/ggtheme.html)).
+OME house style theme for `ggplot2`, based on
+[`ggplot2::theme_bw()`](https://ggplot2.tidyverse.org/reference/ggtheme.html).
 
 ## Usage
 
 ``` r
-theme_OME(base_size = 16, base_family = choose_font_family("Arial"))
+theme_OME(base_size = 16, legend_placement = c("right", "bottom"))
 ```
 
 ## Arguments
@@ -15,19 +15,18 @@ theme_OME(base_size = 16, base_family = choose_font_family("Arial"))
 
   Numeric. Base font size for the theme. Defaults to 16.
 
-- base_family:
+- legend_placement:
 
-  Base font family for plot text. Defaults to Arial when available via
-  `systemfonts`; otherwise falls back to `"sans"`.
+  Character. Controls position/orientation/etc of legends. One of
+  `"right"` or `"bottom"`. Defaults to `"right"`.
 
 ## Value
 
 A `ggplot2` theme object that can be added to a ggplot with `+`.
 
-## Details
+## Author
 
-!!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few
-tweaks !!!
+Dave Sirl
 
 ## Examples
 
@@ -38,8 +37,11 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
     ggplot2::labs(
       title = "A plot with non-OME-relevant data,",
       subtitle = "but which demos using theme_OME"
-      ) +
-   theme_OME()
+      )
+
+  p + theme_OME()
+
+  p + theme_OME(legend_placement = "bottom")
 
   # Set as the global default for the current session:
   ggplot2::theme_set(theme_OME())

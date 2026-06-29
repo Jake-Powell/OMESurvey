@@ -133,6 +133,10 @@ details as in the data dictionary. See example below.
 See also the info about how to use this function in the Pre-processing
 SOP.
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r

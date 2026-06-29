@@ -19,6 +19,10 @@ frac_to_num(x)
 
 A numeric vector of the same length as `x`.
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r

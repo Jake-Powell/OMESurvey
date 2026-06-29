@@ -105,3 +105,7 @@ for details/examples.
 ## See also
 
 [`survey_data_prepare`](https://jake-powell.github.io/OMESurvey/reference/survey_data_prepare.md)
+
+## Author
+
+Dave Sirl

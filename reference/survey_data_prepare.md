@@ -101,3 +101,7 @@ In the returned `data`:
 ## See also
 
 [`survey_read_inputs`](https://jake-powell.github.io/OMESurvey/reference/survey_read_inputs.md)
+
+## Author
+
+Dave Sirl

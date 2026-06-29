@@ -32,3 +32,7 @@ add_message(messages, text, level = "NOTE", var = NULL)
 ## Value
 
 The updated list of messages.
+
+## Author
+
+Dave Sirl

@@ -24,3 +24,7 @@ report_notice(..., level = c("WARNING", "NOTE"))
 ## Value
 
 A character string containing HTML-formatted message text.
+
+## Author
+
+Dave Sirl

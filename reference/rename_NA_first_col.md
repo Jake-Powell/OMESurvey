@@ -27,6 +27,10 @@ rename_NA_first_col(df, missing_label = "Missing")
 A data frame with the first column converted to character and any `NA`
 values replaced by `missing_label`.
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r

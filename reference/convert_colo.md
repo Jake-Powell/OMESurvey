@@ -55,6 +55,10 @@ The following single-string keywords are recognised and expanded:
 Any other single string is returned as-is, i.e. it DOESN'T throw an
 error/warning!
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r

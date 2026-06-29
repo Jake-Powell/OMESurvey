@@ -31,6 +31,10 @@ scale_fill_OME(type = "distinct", ...)
 
 A ggplot2 scale for colours.
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r
@@ -61,7 +65,6 @@ mtcars_small |>
   ggplot(aes(x = wt, y = mpg, colour = am)) +
   geom_point() +
   scale_colour_OME() +
-  theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
   labs(
     x = "Weight (/1,000 lb)",
     y = "Miles per gallon",
@@ -75,7 +78,6 @@ mtcars_small |>
   ggplot(aes(x = wt, y = mpg, colour = cyl)) +
   geom_point() +
   scale_colour_OME(type = "sequential") +
-  theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
   labs(
     x = "Weight (/1,000 lb)",
     y = "Miles per gallon",

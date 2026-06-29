@@ -38,6 +38,10 @@ legend vertically using
 The relative heights of the two components can be controlled via
 `rel_heights`.
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r

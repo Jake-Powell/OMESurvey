@@ -37,3 +37,7 @@ kable_narrow(x, ..., full_width = FALSE, position = "center")
 ## Value
 
 A styled `kableExtra` table object.
+
+## Author
+
+Dave Sirl

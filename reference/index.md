@@ -87,6 +87,8 @@
   : Section-level summary plot for categorical questions
 - [`summary_plot_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_boxplot.md)
   : Section-level summary plot for numeric questions
+- [`make_extended_summary_plot_data()`](https://jake-powell.github.io/OMESurvey/reference/make_extended_summary_plot_data.md)
+  : Prepare data for extended summary plots
 - [`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)
   : Centre a ggplot legend beneath the plot using cowplot
 - [`add_message()`](https://jake-powell.github.io/OMESurvey/reference/add_message.md)
@@ -94,7 +96,7 @@
 - [`report_notice()`](https://jake-powell.github.io/OMESurvey/reference/report_notice.md)
   : Format a NOTE or WARNING message for report output
 - [`theme_OME()`](https://jake-powell.github.io/OMESurvey/reference/theme_OME.md)
-  : ROME ggplot2 theme
+  : OME ggplot2 theme
 - [`scale_colour_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
   [`scale_color_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)
   [`scale_fill_OME()`](https://jake-powell.github.io/OMESurvey/reference/scale_colour_OME.md)

@@ -23,3 +23,7 @@ rewrite_cond_to_raw(expr, data_names)
 ## Value
 
 A modified expression object.
+
+## Author
+
+Dave Sirl

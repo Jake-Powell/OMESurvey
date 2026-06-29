@@ -131,3 +131,7 @@ A list with components:
 
 [`survey_read_inputs`](https://jake-powell.github.io/OMESurvey/reference/survey_read_inputs.md),
 [`survey_data_prepare`](https://jake-powell.github.io/OMESurvey/reference/survey_data_prepare.md)
+
+## Author
+
+Dave Sirl

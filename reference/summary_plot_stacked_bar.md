@@ -179,6 +179,10 @@ width of the final figure, the helper function
 can be used after plotting. (This must be done after any tweaks to the
 ggplot theme, annotations, etc)
 
+## Author
+
+Dave Sirl
+
 ## Examples
 
 ``` r
