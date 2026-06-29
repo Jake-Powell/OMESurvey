@@ -55,6 +55,7 @@ reference:
   - plot_many_questions
   - summary_plot_stacked_bar
   - summary_plot_boxplot
+  - make_extended_summary_plot_data
 
   - centre_legend_below
 

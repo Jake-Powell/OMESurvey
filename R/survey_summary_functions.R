@@ -2092,18 +2092,21 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 }
 
 
-#' ROME ggplot2 theme
+
+#' OME ggplot2 theme
 #'
-#' An OME ggplot2 theme (based on `ggplot2::theme_bw()`).
+#' OME house style theme for `ggplot2`, based on `ggplot2::theme_bw()`.
 #'
-#' !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
-#' !!! -> Maybe we could/should just edit ROME_ggtheme, but that might impact old code too... ???
+# !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks
+# !!! -> Maybe we could/should just edit ROME_ggtheme, but that might impact old code too... ???
 #'
 #' @author Dave Sirl
 #'
 #' @param base_size Numeric. Base font size for the theme. Defaults to 16.
-#' @param base_family Base font family for plot text. Defaults to Arial when
-#'   available via `systemfonts`; otherwise falls back to `"sans"`.
+# @param base_family Base font family for plot text. Defaults to Arial when
+#   available via `systemfonts`; otherwise falls back to `"sans"`.
+#' @param legend_placement Character. Controls position/orientation/etc of
+#'   legends. One of `"right"` or `"bottom"`. Defaults to `"right"`.
 #'
 #' @return A `ggplot2` theme object that can be added to a ggplot with `+`.
 #'
@@ -2114,8 +2117,11 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #'     ggplot2::labs(
 #'       title = "A plot with non-OME-relevant data,",
 #'       subtitle = "but which demos using theme_OME"
-#'       ) +
-#'    theme_OME()
+#'       )
+#'
+#'   p + theme_OME()
+#'
+#'   p + theme_OME(legend_placement = "bottom")
 #'
 #'   # Set as the global default for the current session:
 #'   ggplot2::theme_set(theme_OME())
@@ -2125,15 +2131,21 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #' @importFrom ggplot2 %+replace%
 
 theme_OME <- function(base_size = 16,
-                      base_family = choose_font_family("Arial"),
+                      #base_family = choose_font_family("Arial"),
                       legend_placement = c("right", "bottom")
                       ) {
-  ggplot2::theme_bw(base_size = base_size, base_family = base_family) %+replace%
+
+  legend_placement <- match.arg(legend_placement)
+
+
+  ggplot2::theme_bw(#base_family = base_family,
+                    base_size = base_size
+                    ) %+replace%
     ggplot2::theme(
       complete = TRUE, # helpful with expected use (see https://ggplot2-book.org/extensions#complete-themes)
 
       # set text font family
-      text = ggplot2::element_text(family = base_family),
+      #text = ggplot2::element_text(family = base_family),
 
       # title/subtitle
       plot.title = ggplot2::element_text(
@@ -2166,11 +2178,15 @@ theme_OME <- function(base_size = 16,
       legend.text       = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
       legend.key        = ggplot2::element_rect(fill = "transparent", colour = NA),
       legend.key.size   = grid::unit(1.5, "lines"),
-      legend.position   = "bottom",
-      legend.box        = "vertical", # changed from horizontal
-      legend.direction  = "horizontal",
+      legend.position   = switch(legend_placement,
+                                 right = "right",
+                                 bottom = "bottom"),
+      legend.box        = "vertical",
+      legend.direction  = switch(legend_placement,
+                                 right = "vertical",
+                                 bottom = "horizontal"),
       legend.background = ggplot2::element_rect(fill = "transparent", colour = NA),
-      legend.location   = 'plot',
+      legend.location   = "plot",
 
       # strip (headings of facet elements)
       strip.background = ggplot2::element_blank(),
@@ -2223,7 +2239,7 @@ theme_OME <- function(base_size = 16,
 #'   ggplot(aes(x = wt, y = mpg, colour = am)) +
 #'   geom_point() +
 #'   scale_colour_OME() +
-#'   theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
+#   theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
 #'   labs(
 #'     x = "Weight (/1,000 lb)",
 #'     y = "Miles per gallon",
@@ -2236,7 +2252,7 @@ theme_OME <- function(base_size = 16,
 #'   ggplot(aes(x = wt, y = mpg, colour = cyl)) +
 #'   geom_point() +
 #'   scale_colour_OME(type = "sequential") +
-#'   theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
+#   theme_OME(base_family = "sans") + # need to alter base_family here to avoid problems in package-checking
 #'   labs(
 #'     x = "Weight (/1,000 lb)",
 #'     y = "Miles per gallon",

@@ -2,29 +2,21 @@
 % Please edit documentation in R/survey_summary_functions.R
 \name{theme_OME}
 \alias{theme_OME}
-\title{ROME ggplot2 theme}
+\title{OME ggplot2 theme}
 \usage{
-theme_OME(
-  base_size = 16,
-  base_family = choose_font_family("Arial"),
-  legend_placement = c("right", "bottom")
-)
+theme_OME(base_size = 16, legend_placement = c("right", "bottom"))
 }
 \arguments{
 \item{base_size}{Numeric. Base font size for the theme. Defaults to 16.}
 
-\item{base_family}{Base font family for plot text. Defaults to Arial when
-available via \code{systemfonts}; otherwise falls back to \code{"sans"}.}
+\item{legend_placement}{Character. Controls position/orientation/etc of
+legends. One of \code{"right"} or \code{"bottom"}. Defaults to \code{"right"}.}
 }
 \value{
 A \code{ggplot2} theme object that can be added to a ggplot with \code{+}.
 }
 \description{
-An OME ggplot2 theme (based on \code{ggplot2::theme_bw()}).
-}
-\details{
-!!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks !!!
-!!! -> Maybe we could/should just edit ROME_ggtheme, but that might impact old code too... ???
+OME house style theme for \code{ggplot2}, based on \code{ggplot2::theme_bw()}.
 }
 \examples{
 if (requireNamespace("ggplot2", quietly = TRUE)) {
@@ -33,8 +25,11 @@ if (requireNamespace("ggplot2", quietly = TRUE)) {
     ggplot2::labs(
       title = "A plot with non-OME-relevant data,",
       subtitle = "but which demos using theme_OME"
-      ) +
-   theme_OME()
+      )
+
+  p + theme_OME()
+
+  p + theme_OME(legend_placement = "bottom")
 
   # Set as the global default for the current session:
   ggplot2::theme_set(theme_OME())
