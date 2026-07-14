@@ -1,5 +1,5 @@
 pandoc: 3.8.3
-pkgdown: 2.2.0
+pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
   articles/Create-OME-branded-excel-output: Create-OME-branded-excel-output.html
@@ -7,7 +7,7 @@ articles:
   dave_plotting_functions: dave_plotting_functions.html
   help: help.html
   articles/Preparation-and-initial-survey-analysis: Preparation-and-initial-survey-analysis.html
-last_built: 2026-06-29T15:57Z
+last_built: 2026-07-14T15:18Z
 urls:
   reference: https://jake-powell.github.io/OMESurvey/reference
   article: https://jake-powell.github.io/OMESurvey/articles

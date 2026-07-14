@@ -29,6 +29,7 @@ OME_stacked_bar_(
   facet_layout = NULL,
   separate_at = NULL,
   fill_label_width = 20,
+  bar_width = 0.9,
   omitGroupLabels = FALSE,
   group_label_width = NULL,
   group_labels = NULL
@@ -151,6 +152,10 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   with
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is 20.
+
+- bar_width:
+
+  bar width used in geom_bar().
 
 - omitGroupLabels:
 
