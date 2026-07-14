@@ -398,7 +398,7 @@ render_survey_summary <- function(data_path,
 #'   labels for the grouping variable. Should be of the form
 #'   `c(level1 = "Label 1", level2 = "Label 2")`. Default is `NULL`, which
 #'   uses the factor's existing levels.
-#'
+#' @param bar_width bar width used in geom_bar().
 #' @param ... Additional arguments passed from [`OME_stacked_bar()`] to
 #'   `OME_stacked_bar_()`. Not used when calling `OME_stacked_bar_()`
 #'   directly.
@@ -460,6 +460,7 @@ OME_stacked_bar_ = function(dat, response_var,
                            facet_labels=NULL, facet_layout=NULL,
                            separate_at = NULL,
                            fill_label_width=20,
+                           bar_width = 0.9,
                            omitGroupLabels = FALSE,
                            group_label_width = NULL,
                            group_labels = NULL){
@@ -618,7 +619,7 @@ OME_stacked_bar_ = function(dat, response_var,
     #ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, by=var_subdivide, fill=var_name)) +
     #ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, group = interaction(var_subdivide, var_name), fill=var_name)) +
     ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, fill=var_name)) +
-    ggplot2::geom_bar(position = "fill") +
+    ggplot2::geom_bar(position = "fill", width = bar_width) +
     OMESurvey::ROME_ggtheme(base_size = 12) +
     ggplot2::theme(
       axis.ticks = ggplot2::element_blank(),
