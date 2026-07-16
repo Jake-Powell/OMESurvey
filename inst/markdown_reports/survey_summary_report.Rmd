@@ -436,7 +436,7 @@ miss_table |>
   kable_narrow()
 ```
 
-```{r fig.height=6, fig.width=8}
+```{r}
 
 # ---- Plot ----
 
@@ -482,7 +482,7 @@ ggplot2::ggsave(
   fname,
   p_missing,
   width = 8,
-  height = 4,
+  height = 6,
   units = "in",
   dpi = 300
 )
