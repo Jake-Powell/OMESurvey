@@ -26,6 +26,7 @@ OME_stacked_bar_(
   facet_layout = NULL,
   separate_at = NULL,
   fill_label_width = 20,
+  bar_width = 0.9,
   omitGroupLabels = FALSE,
   group_label_width = NULL,
   group_labels = NULL
@@ -102,6 +103,8 @@ Default \code{NULL} or 0 omits the line.
 
 \item{fill_label_width}{Optional integer. Width (in characters) used when
 wrapping fill labels with \code{stringr::str_wrap()}. Default is 20.}
+
+\item{bar_width}{bar width used in geom_bar().}
 
 \item{omitGroupLabels}{Optional logical controlling whether to omit group labels.
 Helpful when group_var=NULL. Default FALSE.}
