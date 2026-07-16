@@ -440,8 +440,8 @@ miss_table |>
 
 # ---- Plot ----
 
-
-miss_summary |>
+p_missing <-
+  miss_summary |>
   ggplot2::ggplot(
     ggplot2::aes(
       x = sec,
@@ -471,6 +471,23 @@ miss_summary |>
     )
   )
 
+fig_dir <- knitr::opts_chunk$get("fig.path")
+if (is.null(fig_dir) || fig_dir == "") fig_dir <- "figure/"
+if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
+
+fname <- file.path(fig_dir, "missingness_summary.png")
+fname <- normalizePath(fname, winslash = "/", mustWork = FALSE)
+
+ggplot2::ggsave(
+  fname,
+  p_missing,
+  width = 8,
+  height = 4,
+  units = "in",
+  dpi = 300
+)
+
+cat(sprintf("%s{width=100%%}\n\n", fname))
 ```
 
 
