@@ -2145,22 +2145,30 @@ theme_OME <- function(base_size = 16,
     ggplot2::theme(
       complete = TRUE, # helpful with expected use (see https://ggplot2-book.org/extensions#complete-themes)
 
-      # set text font family
+      # set text defaults
       #text = ggplot2::element_text(family = base_family),
+      text = element_text(
+        colour = "black",
+        face = "plain"
+      ),
+
+
+      #set outer margins
+      plot.margin = margin(
+        t = 3, r = 3, b = 3, l = 3,
+        unit = "mm"
+      ),
 
       # title/subtitle
       plot.title = ggplot2::element_text(
         size = ggplot2::rel(1),
-        face = "plain",
         hjust = 0,
-        color = "black",
         margin = ggplot2::margin(t=0, r=0, b=5, l=0)
       ),
       plot.subtitle = ggplot2::element_text(
         size = ggplot2::rel(0.7),
-        face = "plain",
         hjust = 0,
-        color = "black"
+        margin = ggplot2::margin(t=0, r=0, b=5, l=0)
       ),
 
       #panel (the plot area)
@@ -2170,13 +2178,13 @@ theme_OME <- function(base_size = 16,
       panel.border     = ggplot2::element_blank(),
 
       #axis
-      axis.title = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
-      axis.text  = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      axis.title = ggplot2::element_text(size = ggplot2::rel(0.85)),
+      axis.text  = ggplot2::element_text(size = ggplot2::rel(0.70)),
       axis.line  = ggplot2::element_line(color = "black"),
 
       #legend
-      legend.title      = ggplot2::element_text(size = ggplot2::rel(0.85), face = "plain"),
-      legend.text       = ggplot2::element_text(size = ggplot2::rel(0.70), face = "plain"),
+      legend.title      = ggplot2::element_text(size = ggplot2::rel(0.85)),
+      legend.text       = ggplot2::element_text(size = ggplot2::rel(0.70)),
       legend.key        = ggplot2::element_rect(fill = "transparent", colour = NA),
       legend.key.size   = grid::unit(1.5, "lines"),
       legend.position   = switch(legend_placement,
@@ -2193,8 +2201,6 @@ theme_OME <- function(base_size = 16,
       strip.background = ggplot2::element_blank(),
       strip.text = ggplot2::element_text(
         size = ggplot2::rel(0.85),
-        face = "plain",
-        color = "black",
         hjust = 0.5,
         margin = ggplot2::margin(t=5, r=0, b=5, l=0)
       )
