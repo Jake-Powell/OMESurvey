@@ -2149,7 +2149,8 @@ theme_OME <- function(base_size = 16,
       #text = ggplot2::element_text(family = base_family),
       text = element_text(
         colour = "black",
-        face = "plain"
+        face = "plain",
+        size = base_size
       ),
 
 
