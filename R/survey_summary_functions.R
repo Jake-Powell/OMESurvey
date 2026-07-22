@@ -455,7 +455,7 @@ OME_stacked_bar_ = function(dat, response_var,
                            count_style = if (na.rm) "non-missing" else "both",
                            horiz=FALSE, text_scale=1,
                            fillLabText=NULL, groupLabText=NULL,
-                           propLabText="Proportion of responses",
+                           propLabText=NULL, #"Proportion of responses",
                            titleText=NULL,
                            facet_labels=NULL, facet_layout=NULL,
                            separate_at = NULL,
@@ -1249,10 +1249,11 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
 
 
 
-#' @title Deprecated: Make a stacked bar chart summarising many survey questions
+#' @title Deprecated. Use [`summary_plot_stacked_bar`] instead.
 #' @description
 #' This function is deprecated.
 #' Use [`summary_plot_stacked_bar`] instead.
+#' (Makes a stacked bar chart summarising many survey questions.)
 #'
 #' @inheritParams summary_plot_stacked_bar
 #' @param ... Additional arguments passed to `summary_plot_stacked_bar()`.
@@ -2147,7 +2148,7 @@ theme_OME <- function(base_size = 16,
 
       # set text defaults
       #text = ggplot2::element_text(family = base_family),
-      text = element_text(
+      text = ggplot2::element_text(
         colour = "black",
         face = "plain",
         size = base_size
@@ -2155,7 +2156,7 @@ theme_OME <- function(base_size = 16,
 
 
       #set outer margins
-      plot.margin = margin(
+      plot.margin = ggplot2::margin(
         t = 3, r = 3, b = 3, l = 3,
         unit = "mm"
       ),
@@ -3766,7 +3767,7 @@ survey_data_prepare <- function(
 
 
 
-#' Read, merge, validate, and prepare survey data
+#' Prepare survey data (read, merge, validate) from raw data and dictionary
 #'
 #' Convenience wrapper that performs the full survey data preparation
 #' pipeline by combining [`survey_read_inputs`] and
