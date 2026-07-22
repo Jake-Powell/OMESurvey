@@ -20,7 +20,7 @@ OME_stacked_bar_(
   text_scale = 1,
   fillLabText = NULL,
   groupLabText = NULL,
-  propLabText = "Proportion of responses",
+  propLabText = NULL,
   titleText = NULL,
   facet_labels = NULL,
   facet_layout = NULL,
@@ -81,7 +81,7 @@ percentage labels.}
 \item{groupLabText}{Optional label for the bar/group axis. If \code{NULL} the label is
 removed; if \code{""} the name of \code{group_var} is used.}
 
-\item{propLabText}{Label for the proportion axis. Default \code{"Proportion of responses"}.}
+\item{propLabText}{Label for the proportion axis. Default \code{NULL} so the label is removed.}
 
 \item{titleText}{Optional plot title. Default \code{NULL} removes the title.}
 

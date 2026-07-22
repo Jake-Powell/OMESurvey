@@ -369,7 +369,7 @@ render_survey_summary <- function(data_path,
 #' @param groupLabText Optional label for the bar/group axis. If `NULL` the label is
 #'   removed; if `""` the name of `group_var` is used.
 #'
-#' @param propLabText Label for the proportion axis. Default `"Proportion of responses"`.
+#' @param propLabText Label for the proportion axis. Default `NULL` so the label is removed.
 #'
 #' @param titleText Optional plot title. Default `NULL` removes the title.
 #'

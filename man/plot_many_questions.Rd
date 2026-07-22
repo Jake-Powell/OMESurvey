@@ -2,7 +2,7 @@
 % Please edit documentation in R/survey_summary_functions.R
 \name{plot_many_questions}
 \alias{plot_many_questions}
-\title{Deprecated: Make a stacked bar chart summarising many survey questions}
+\title{Deprecated. Use \code{\link{summary_plot_stacked_bar}} instead.}
 \usage{
 plot_many_questions(...)
 }
@@ -12,6 +12,7 @@ plot_many_questions(...)
 \description{
 This function is deprecated.
 Use \code{\link{summary_plot_stacked_bar}} instead.
+(Makes a stacked bar chart summarising many survey questions.)
 }
 \seealso{
 summary_plot_stacked_bar

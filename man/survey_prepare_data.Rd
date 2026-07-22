@@ -2,7 +2,7 @@
 % Please edit documentation in R/survey_summary_functions.R
 \name{survey_prepare_data}
 \alias{survey_prepare_data}
-\title{Read, merge, validate, and prepare survey data}
+\title{Prepare survey data (read, merge, validate) from raw data and dictionary}
 \usage{
 survey_prepare_data(
   data_path,
