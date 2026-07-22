@@ -78,8 +78,8 @@ and
 [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
 below.
 
-    #> [1] "/tmp/Rtmp2YlM6H/example_data_1d321fac917b.csv"
-    #> [1] "/tmp/Rtmp2YlM6H/example_survey_dictionary_1d3235feeae7.xlsx"
+    #> [1] "/tmp/RtmpBe6KM3/example_data_1c692aa6e288.csv"
+    #> [1] "/tmp/RtmpBe6KM3/example_survey_dictionary_1c6936feb281.xlsx"
 
 ## Render the automated summary report
 

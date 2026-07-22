@@ -69,7 +69,8 @@
 - [`render_survey_summary()`](https://jake-powell.github.io/OMESurvey/reference/render_survey_summary.md)
   : Produce html document summarising a single survey
 - [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
-  : Read, merge, validate, and prepare survey data
+  : Prepare survey data (read, merge, validate) from raw data and
+  dictionary
 - [`OME_stacked_bar_()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   [`OME_stacked_bar()`](https://jake-powell.github.io/OMESurvey/reference/OME_stacked_bar_.md)
   : Stacked proportional bar chart in OME style (Dave's version.)
@@ -93,28 +94,41 @@
 
 - [`survey_read_inputs()`](https://jake-powell.github.io/OMESurvey/reference/survey_read_inputs.md)
   : Read and assemble survey data and dictionary inputs
+
 - [`survey_data_prepare()`](https://jake-powell.github.io/OMESurvey/reference/survey_data_prepare.md)
   : Validate and coerce survey data according to a data dictionary
+
 - [`plot_many_questions()`](https://jake-powell.github.io/OMESurvey/reference/plot_many_questions.md)
-  : Deprecated: Make a stacked bar chart summarising many survey
-  questions
+  :
+
+  Deprecated. Use `summary_plot_stacked_bar` instead.
+
 - [`centre_legend_below()`](https://jake-powell.github.io/OMESurvey/reference/centre_legend_below.md)
   : Centre a ggplot legend beneath the plot using cowplot
+
 - [`add_message()`](https://jake-powell.github.io/OMESurvey/reference/add_message.md)
   : Append a message to a message list
+
 - [`report_notice()`](https://jake-powell.github.io/OMESurvey/reference/report_notice.md)
   : Format a NOTE or WARNING message for report output
+
 - [`kable_narrow()`](https://jake-powell.github.io/OMESurvey/reference/kable_narrow.md)
   : Narrow kable table with standard styling
+
 - [`safe_read_excel()`](https://jake-powell.github.io/OMESurvey/reference/safe_read_excel.md)
   : Safely read Excel files, including when open or locked
+
 - [`suppress_specific_warning()`](https://jake-powell.github.io/OMESurvey/reference/suppress_specific_warning.md)
   : Suppress warnings matching a specific pattern
+
 - [`frac_to_num()`](https://jake-powell.github.io/OMESurvey/reference/frac_to_num.md)
   : Convert simple text fractions to numeric values
+
 - [`convert_colo()`](https://jake-powell.github.io/OMESurvey/reference/convert_colo.md)
   : Convert shorthand colour name to a colour vector
+
 - [`rename_NA_first_col()`](https://jake-powell.github.io/OMESurvey/reference/rename_NA_first_col.md)
   : Relabel NA values in the first column of a data frame
+
 - [`rewrite_cond_to_raw()`](https://jake-powell.github.io/OMESurvey/reference/rewrite_cond_to_raw.md)
   : Rewrite a condition expression to use raw survey variables

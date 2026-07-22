@@ -1,8 +1,8 @@
-# Deprecated: Make a stacked bar chart summarising many survey questions
+# Deprecated. Use [`summary_plot_stacked_bar`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_stacked_bar.md) instead.
 
 This function is deprecated. Use
 [`summary_plot_stacked_bar`](https://jake-powell.github.io/OMESurvey/reference/summary_plot_stacked_bar.md)
-instead.
+instead. (Makes a stacked bar chart summarising many survey questions.)
 
 ## Usage
 

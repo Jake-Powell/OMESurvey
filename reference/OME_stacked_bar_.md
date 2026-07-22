@@ -23,7 +23,7 @@ OME_stacked_bar_(
   text_scale = 1,
   fillLabText = NULL,
   groupLabText = NULL,
-  propLabText = "Proportion of responses",
+  propLabText = NULL,
   titleText = NULL,
   facet_labels = NULL,
   facet_layout = NULL,
@@ -118,7 +118,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - propLabText:
 
-  Label for the proportion axis. Default `"Proportion of responses"`.
+  Label for the proportion axis. Default `NULL` so the label is removed.
 
 - titleText:
 

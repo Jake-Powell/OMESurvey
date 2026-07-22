@@ -1,4 +1,4 @@
-# Read, merge, validate, and prepare survey data
+# Prepare survey data (read, merge, validate) from raw data and dictionary
 
 Convenience wrapper that performs the full survey data preparation
 pipeline by combining
