@@ -20,7 +20,8 @@ OME_stacked_bar_(
   show_counts = TRUE,
   count_style = if (na.rm) "non-missing" else "both",
   horiz = FALSE,
-  text_scale = 1,
+  base_size = 12,
+  text_scale = 0.7,
   fillLabText = NULL,
   groupLabText = NULL,
   propLabText = NULL,
@@ -102,9 +103,16 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
   Logical (default `FALSE`). If `TRUE`, flip coordinates so bars are
   horizontal and place the legend below the plot.
 
+- base_size:
+
+  Positive number (default `12`) being the base size (in points) of text
+  in the plot, passed to underlying theme.
+
 - text_scale:
 
-  Positive number (default `1`) scaling the size of percentage labels.
+  Positive number (default `0.7`) scaling the size of percentage labels.
+  (Similar in spirit to
+  [`ggplot2::rel()`](https://ggplot2.tidyverse.org/reference/element.html).)
 
 - fillLabText:
 
@@ -237,11 +245,20 @@ OME_stacked_bar(dat, Response, Group, na.rm=TRUE)
 
 # Horizontal version with a title
 OME_stacked_bar(
-   dat,
-   response_var = Response,
-   group_var = Group,
-   horiz = TRUE,
-   titleText = "Example bar chart"
+  dat,
+  response_var = Response,
+  group_var = Group,
+  horiz = TRUE,
+  titleText = "Example bar chart"
+)
+
+
+# Change base font size (e.g. for a presentation)
+OME_stacked_bar(
+  dat,
+  Response,
+  Group,
+  base_size = 18
 )
 
 

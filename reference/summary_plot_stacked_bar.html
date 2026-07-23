@@ -68,6 +68,8 @@ particular pattern.</p>
 <span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fill_label_width <span class="op">=</span> <span class="fl">20</span>,</span>
 <span>  group_label_width <span class="op">=</span> <span class="fl">30</span>,</span>
+<span>  base_size <span class="op">=</span> <span class="fl">12</span>,</span>
+<span>  text_scale <span class="op">=</span> <span class="fl">0.7</span>,</span>
 <span>  show_counts <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  count_style <span class="op">=</span> <span class="st">"both"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -157,6 +159,16 @@ wrapping fill labels with <code><a href="https://stringr.tidyverse.org/reference
 <dd><p>Optional integer. Width (in characters) used when
 wrapping vertical (group/question) axis labels with <code><a href="https://stringr.tidyverse.org/reference/str_wrap.html" class="external-link">stringr::str_wrap()</a></code>.
 Default is 30.</p></dd>
+
+
+<dt id="arg-base-size">base_size<a class="anchor" aria-label="anchor" href="#arg-base-size"></a></dt>
+<dd><p>Positive number (default <code>12</code>) being the base size
+(in points) of text in the plot, passed to underlying theme.</p></dd>
+
+
+<dt id="arg-text-scale">text_scale<a class="anchor" aria-label="anchor" href="#arg-text-scale"></a></dt>
+<dd><p>Positive number (default <code>0.7</code>) scaling the size of
+percentage labels. (Similar in spirit to <code><a href="https://ggplot2.tidyverse.org/reference/element.html" class="external-link">ggplot2::rel()</a></code>.)</p></dd>
 
 
 <dt id="arg-show-counts">show_counts<a class="anchor" aria-label="anchor" href="#arg-show-counts"></a></dt>

@@ -18,6 +18,7 @@ OME_boxplot_(
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
+  base_size = 12,
   colour = OMESurvey::get_OME_colours(1),
   separate_at = NULL,
   group_label_width = NULL,
@@ -71,6 +72,11 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 - titleText:
 
   Optional plot title.
+
+- base_size:
+
+  Positive number (default `12`) being the base size (in points) of text
+  in the plot, passed to underlying theme.
 
 - colour:
 
@@ -163,7 +169,17 @@ OME_boxplot(
 )
 
 
-# Example programmatic use
+# Change base font size (e.g. for a presentation)
+OME_boxplot(
+  dat,
+  Score,
+  Group,
+  base_size = 18
+)
+
+
+# Example programmatic use,
+# supposing here that dat includes variables Score, Group and Grouping2
 if (FALSE) { # \dontrun{
   group_vars <- c("Group", "Grouping2")
   for (v in group_vars) {

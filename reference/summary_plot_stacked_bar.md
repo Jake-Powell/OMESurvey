@@ -19,6 +19,8 @@ summary_plot_stacked_bar(
   titleText = NULL,
   fill_label_width = 20,
   group_label_width = 30,
+  base_size = 12,
+  text_scale = 0.7,
   show_counts = TRUE,
   count_style = "both"
 )
@@ -122,6 +124,17 @@ summary_plot_stacked_bar(
   (group/question) axis labels with
   [`stringr::str_wrap()`](https://stringr.tidyverse.org/reference/str_wrap.html).
   Default is 30.
+
+- base_size:
+
+  Positive number (default `12`) being the base size (in points) of text
+  in the plot, passed to underlying theme.
+
+- text_scale:
+
+  Positive number (default `0.7`) scaling the size of percentage labels.
+  (Similar in spirit to
+  [`ggplot2::rel()`](https://ggplot2.tidyverse.org/reference/element.html).)
 
 - show_counts:
 

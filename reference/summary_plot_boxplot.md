@@ -15,6 +15,7 @@ summary_plot_boxplot(
   order_fun = median,
   titleText = NULL,
   group_label_width = 30,
+  base_size = 12,
   ...
 )
 ```
@@ -93,6 +94,11 @@ summary_plot_boxplot(
   labels on the axis. Passed to
   [`OME_boxplot_()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot_.md).
   Default is 30.
+
+- base_size:
+
+  Positive number (default `12`) being the base size (in points) of text
+  in the plot, passed to underlying theme.
 
 - ...:
 
