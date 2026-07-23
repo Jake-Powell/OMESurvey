@@ -360,8 +360,11 @@ render_survey_summary <- function(data_path,
 #' @param horiz Logical (default `FALSE`). If `TRUE`, flip coordinates so bars
 #'   are horizontal and place the legend below the plot.
 #'
-#' @param text_scale Positive number (default `1`) scaling the size of
-#'   percentage labels.
+#' @param base_size Positive number (default `12`) being the base size
+#'  (in points) of text in the plot, passed to underlying theme.
+#'
+#' @param text_scale Positive number (default `0.7`) scaling the size of
+#'   percentage labels. (Similar in spirit to `ggplot2::rel()`.)
 #'
 #' @param fillLabText Optional legend title for the fill variable. If `NULL`
 #'   (default) the title is removed; if `""` the name of `response_var` is used.
@@ -425,11 +428,19 @@ render_survey_summary <- function(data_path,
 #'
 #' # Horizontal version with a title
 #' OME_stacked_bar(
-#'    dat,
-#'    response_var = Response,
-#'    group_var = Group,
-#'    horiz = TRUE,
-#'    titleText = "Example bar chart"
+#'   dat,
+#'   response_var = Response,
+#'   group_var = Group,
+#'   horiz = TRUE,
+#'   titleText = "Example bar chart"
+#' )
+#'
+#' # Change base font size (e.g. for a presentation)
+#' OME_stacked_bar(
+#'   dat,
+#'   Response,
+#'   Group,
+#'   base_size = 18
 #' )
 #'
 #' # Example programmatic use
@@ -453,7 +464,8 @@ OME_stacked_bar_ = function(dat, response_var,
                            na.rm=FALSE, NA_label="Missing",
                            show_counts=TRUE,
                            count_style = if (na.rm) "non-missing" else "both",
-                           horiz=FALSE, text_scale=1,
+                           horiz=FALSE,
+                           base_size=12, text_scale=0.7,
                            fillLabText=NULL, groupLabText=NULL,
                            propLabText=NULL, #"Proportion of responses",
                            titleText=NULL,
@@ -620,7 +632,7 @@ OME_stacked_bar_ = function(dat, response_var,
     #ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, group = interaction(var_subdivide, var_name), fill=var_name)) +
     ggplot2::ggplot(dat2, ggplot2::aes(x=var_subdivide, fill=var_name)) +
     ggplot2::geom_bar(position = "fill", width = bar_width) +
-    OMESurvey::ROME_ggtheme(base_size = 12) +
+    OMESurvey::ROME_ggtheme(base_size = base_size) +
     ggplot2::theme(
       axis.ticks = ggplot2::element_blank(),
       panel.border = ggplot2::element_blank(),
@@ -845,7 +857,7 @@ OME_stacked_bar_ = function(dat, response_var,
       ),
       position = ggplot2::position_stack(vjust = 0.5),
       colour = "white",
-      size = 3 * text_scale
+      size = base_size / 2.835 * text_scale
     )
 
 
@@ -1009,6 +1021,11 @@ OME_stacked_bar <- function(dat, response_var,
 #'     \item `"both"`: show both as "(non-missing/total)"
 #'   }
 #'   Defaults to `"both"`.
+#' @param base_size Positive number (default `12`) being the base size
+#'  (in points) of text in the plot, passed to underlying theme.
+#'
+#' @param text_scale Positive number (default `0.7`) scaling the size of
+#'   percentage labels. (Similar in spirit to `ggplot2::rel()`.)
 #'
 #' @returns A `ggplot` object, a horizontal stacked bar chart summarising the
 #'   survey questions.
@@ -1085,6 +1102,8 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
                                      titleText=NULL,
                                      fill_label_width=20,
                                      group_label_width=30,
+                                     base_size = 12,
+                                     text_scale = 0.70,
                                      show_counts = TRUE,
                                      count_style = "both"){
 
@@ -1242,7 +1261,10 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
                     titleText = titleText,
                     fill_label_width = fill_label_width,
                     group_label_width = group_label_width,
-                    group_labels = labels_vec)
+                    group_labels = labels_vec,
+                    base_size = base_size,
+                    text_scale = text_scale
+    )
   return(thePlot)
 }
 
@@ -1305,6 +1327,8 @@ plot_many_questions <- function(...) {
 #' @param omitGroupLabels Optional logical controlling whether to omit group labels.
 #'   Helpful when group_var=NULL. Default FALSE.
 #' @param titleText Optional plot title.
+#' @param base_size Positive number (default `12`) being the base size
+#'  (in points) of text in the plot, passed to underlying theme.
 #' @param colour Boxplot outline colour (any valid R colour). Defaults to [get_OME_colours](1).
 #'
 #' @param separate_at Optional integer specifying where to draw a horizontal
@@ -1350,7 +1374,16 @@ plot_many_questions <- function(...) {
 #'   title = "Example boxplot"
 #' )
 #'
-#' # Example programmatic use
+#' # Change base font size (e.g. for a presentation)
+#' OME_boxplot(
+#'   dat,
+#'   Score,
+#'   Group,
+#'   base_size = 18
+#' )
+#'
+#' # Example programmatic use,
+#' # supposing here that dat includes variables Score, Group and Grouping2
 #' \dontrun{
 #'   group_vars <- c("Group", "Grouping2")
 #'   for (v in group_vars) {
@@ -1374,6 +1407,7 @@ OME_boxplot_ <- function(data,
                          groupLabText = NULL,
                          omitGroupLabels = FALSE,
                          titleText = NULL,
+                         base_size = 12,
                          colour = OMESurvey::get_OME_colours(1),
                          separate_at = NULL,
                          group_label_width = NULL,
@@ -1443,7 +1477,7 @@ OME_boxplot_ <- function(data,
     ) +
     ggplot2::labs(x=groupLabText, y=valueLabText,
                   title=titleText) +
-    OMESurvey::ROME_ggtheme(base_size = 12) +
+    OMESurvey::ROME_ggtheme(base_size = base_size) +
     ggplot2::theme(
       axis.line = ggplot2::element_blank(),
       axis.ticks = ggplot2::element_blank(),
@@ -1644,6 +1678,9 @@ OME_boxplot <- function(data,
 #'   wrapping question labels on the axis. Passed to `OME_boxplot_()`. Default
 #'   is 30.
 #'
+#' @param base_size Positive number (default `12`) being the base size
+#'  (in points) of text in the plot, passed to underlying theme.
+#'
 #' @param ... Additional arguments passed to `OME_boxplot_()`.
 #'
 #' @returns A `ggplot` object, a horizontal boxplot summarising the survey
@@ -1717,6 +1754,7 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
                                  order_fun = median,
                                  titleText = NULL,
                                  group_label_width = 30,
+                                 base_size = 12,
                                  ...) {
 
   dat_format <- match.arg(dat_format, c("auto", "simple", "extended"))
@@ -1832,6 +1870,7 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
       titleText = titleText,
       group_label_width = group_label_width,
       group_labels = labels_vec,
+      base_size = base_size,
       na.rm = na.rm,
       ...)
 

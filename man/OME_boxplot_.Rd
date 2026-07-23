@@ -15,6 +15,7 @@ OME_boxplot_(
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
+  base_size = 12,
   colour = OMESurvey::get_OME_colours(1),
   separate_at = NULL,
   group_label_width = NULL,
@@ -47,6 +48,9 @@ when \code{na.rm = FALSE}, labels show non-missing and total number of observati
 Helpful when group_var=NULL. Default FALSE.}
 
 \item{titleText}{Optional plot title.}
+
+\item{base_size}{Positive number (default \code{12}) being the base size
+(in points) of text in the plot, passed to underlying theme.}
 
 \item{colour}{Boxplot outline colour (any valid R colour). Defaults to \href{1}{get_OME_colours}.}
 
@@ -118,7 +122,16 @@ OME_boxplot(
   title = "Example boxplot"
 )
 
-# Example programmatic use
+# Change base font size (e.g. for a presentation)
+OME_boxplot(
+  dat,
+  Score,
+  Group,
+  base_size = 18
+)
+
+# Example programmatic use,
+# supposing here that dat includes variables Score, Group and Grouping2
 \dontrun{
   group_vars <- c("Group", "Grouping2")
   for (v in group_vars) {

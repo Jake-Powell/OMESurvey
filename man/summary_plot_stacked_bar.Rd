@@ -16,6 +16,8 @@ summary_plot_stacked_bar(
   titleText = NULL,
   fill_label_width = 20,
   group_label_width = 30,
+  base_size = 12,
+  text_scale = 0.7,
   show_counts = TRUE,
   count_style = "both"
 )
@@ -90,6 +92,12 @@ wrapping fill labels with \code{stringr::str_wrap()}. Passed to
 \item{group_label_width}{Optional integer. Width (in characters) used when
 wrapping vertical (group/question) axis labels with \code{stringr::str_wrap()}.
 Default is 30.}
+
+\item{base_size}{Positive number (default \code{12}) being the base size
+(in points) of text in the plot, passed to underlying theme.}
+
+\item{text_scale}{Positive number (default \code{0.7}) scaling the size of
+percentage labels. (Similar in spirit to \code{ggplot2::rel()}.)}
 
 \item{show_counts}{Logical; whether to display (n) type counts for each bar.
 Defaults to TRUE. Needs care if used with faceting.}
