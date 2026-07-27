@@ -17,7 +17,7 @@ OME_stacked_bar_(
   show_counts = TRUE,
   count_style = if (na.rm) "non-missing" else "both",
   horiz = FALSE,
-  base_size = 12,
+  base_size = 14,
   text_scale = 0.7,
   fillLabText = NULL,
   groupLabText = NULL,
@@ -73,7 +73,7 @@ Defaults to \code{"non-missing"} if \code{na.rm = TRUE}, otherwise \code{"both"}
 \item{horiz}{Logical (default \code{FALSE}). If \code{TRUE}, flip coordinates so bars
 are horizontal and place the legend below the plot.}
 
-\item{base_size}{Positive number (default \code{12}) being the base size
+\item{base_size}{Positive number (default \code{14}) being the base size
 (in points) of text in the plot, passed to underlying theme.}
 
 \item{text_scale}{Positive number (default \code{0.7}) scaling the size of

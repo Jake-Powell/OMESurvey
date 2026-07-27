@@ -15,7 +15,7 @@ OME_boxplot_(
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
-  base_size = 12,
+  base_size = 14,
   colour = OMESurvey::get_OME_colours(1, type = "sequential"),
   separate_at = NULL,
   group_label_width = NULL,
@@ -49,7 +49,7 @@ Helpful when group_var=NULL. Default FALSE.}
 
 \item{titleText}{Optional plot title.}
 
-\item{base_size}{Positive number (default \code{12}) being the base size
+\item{base_size}{Positive number (default \code{14}) being the base size
 (in points) of text in the plot, passed to underlying theme.}
 
 \item{colour}{Boxplot outline colour (any valid R colour). Defaults to \href{1}{get_OME_colours}.}

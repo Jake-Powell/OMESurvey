@@ -12,7 +12,7 @@ summary_plot_boxplot(
   order_fun = median,
   titleText = NULL,
   group_label_width = 30,
-  base_size = 12,
+  base_size = 14,
   ...
 )
 }
@@ -71,7 +71,7 @@ same as that of the variables in the data. Defaults to \code{median}.}
 wrapping question labels on the axis. Passed to \code{OME_boxplot_()}. Default
 is 30.}
 
-\item{base_size}{Positive number (default \code{12}) being the base size
+\item{base_size}{Positive number (default \code{14}) being the base size
 (in points) of text in the plot, passed to underlying theme.}
 
 \item{...}{Additional arguments passed to \code{OME_boxplot_()}.}

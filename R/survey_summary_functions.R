@@ -360,7 +360,7 @@ render_survey_summary <- function(data_path,
 #' @param horiz Logical (default `FALSE`). If `TRUE`, flip coordinates so bars
 #'   are horizontal and place the legend below the plot.
 #'
-#' @param base_size Positive number (default `12`) being the base size
+#' @param base_size Positive number (default `14`) being the base size
 #'  (in points) of text in the plot, passed to underlying theme.
 #'
 #' @param text_scale Positive number (default `0.7`) scaling the size of
@@ -465,7 +465,7 @@ OME_stacked_bar_ = function(dat, response_var,
                            show_counts=TRUE,
                            count_style = if (na.rm) "non-missing" else "both",
                            horiz=FALSE,
-                           base_size=12, text_scale=0.7,
+                           base_size=14, text_scale=0.7,
                            fillLabText=NULL, groupLabText=NULL,
                            propLabText=NULL, #"Proportion of responses",
                            titleText=NULL,
@@ -1021,7 +1021,7 @@ OME_stacked_bar <- function(dat, response_var,
 #'     \item `"both"`: show both as "(non-missing/total)"
 #'   }
 #'   Defaults to `"both"`.
-#' @param base_size Positive number (default `12`) being the base size
+#' @param base_size Positive number (default `14`) being the base size
 #'  (in points) of text in the plot, passed to underlying theme.
 #'
 #' @param text_scale Positive number (default `0.7`) scaling the size of
@@ -1102,7 +1102,7 @@ summary_plot_stacked_bar <- function(dat, dat_format = "auto",
                                      titleText=NULL,
                                      fill_label_width=20,
                                      group_label_width=30,
-                                     base_size = 12,
+                                     base_size = 14,
                                      text_scale = 0.70,
                                      show_counts = TRUE,
                                      count_style = "both"){
@@ -1327,7 +1327,7 @@ plot_many_questions <- function(...) {
 #' @param omitGroupLabels Optional logical controlling whether to omit group labels.
 #'   Helpful when group_var=NULL. Default FALSE.
 #' @param titleText Optional plot title.
-#' @param base_size Positive number (default `12`) being the base size
+#' @param base_size Positive number (default `14`) being the base size
 #'  (in points) of text in the plot, passed to underlying theme.
 #' @param colour Boxplot outline colour (any valid R colour). Defaults to [get_OME_colours](1).
 #'
@@ -1407,7 +1407,7 @@ OME_boxplot_ <- function(data,
                          groupLabText = NULL,
                          omitGroupLabels = FALSE,
                          titleText = NULL,
-                         base_size = 12,
+                         base_size = 14,
                          colour = OMESurvey::get_OME_colours(1, type='sequential'),
                          separate_at = NULL,
                          group_label_width = NULL,
@@ -1678,7 +1678,7 @@ OME_boxplot <- function(data,
 #'   wrapping question labels on the axis. Passed to `OME_boxplot_()`. Default
 #'   is 30.
 #'
-#' @param base_size Positive number (default `12`) being the base size
+#' @param base_size Positive number (default `14`) being the base size
 #'  (in points) of text in the plot, passed to underlying theme.
 #'
 #' @param ... Additional arguments passed to `OME_boxplot_()`.
@@ -1754,7 +1754,7 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
                                  order_fun = median,
                                  titleText = NULL,
                                  group_label_width = 30,
-                                 base_size = 12,
+                                 base_size = 14,
                                  ...) {
 
   dat_format <- match.arg(dat_format, c("auto", "simple", "extended"))
@@ -2143,7 +2143,7 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #'
 #' @author Dave Sirl
 #'
-#' @param base_size Numeric. Base font size for the theme. Defaults to 16.
+#' @param base_size Numeric. Base font size for the theme. Defaults to 14.
 # @param base_family Base font family for plot text. Defaults to Arial when
 #   available via `systemfonts`; otherwise falls back to `"sans"`.
 #' @param legend_placement Character. Controls position/orientation/etc of
@@ -2171,7 +2171,7 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #' @export
 #' @importFrom ggplot2 %+replace%
 
-theme_OME <- function(base_size = 16,
+theme_OME <- function(base_size = 14,
                       #base_family = choose_font_family("Arial"),
                       legend_placement = c("right", "bottom")
                       ) {

@@ -4,10 +4,10 @@
 \alias{theme_OME}
 \title{OME ggplot2 theme}
 \usage{
-theme_OME(base_size = 16, legend_placement = c("right", "bottom"))
+theme_OME(base_size = 14, legend_placement = c("right", "bottom"))
 }
 \arguments{
-\item{base_size}{Numeric. Base font size for the theme. Defaults to 16.}
+\item{base_size}{Numeric. Base font size for the theme. Defaults to 14.}
 
 \item{legend_placement}{Character. Controls position/orientation/etc of
 legends. One of \code{"right"} or \code{"bottom"}. Defaults to \code{"right"}.}
