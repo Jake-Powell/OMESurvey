@@ -9,7 +9,7 @@ summary_plot_stacked_bar(
   dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
-  NA_label = "Missing",
+  NA_label = "Missing/Invalid",
   percCut = 5,
   colo = NULL,
   order_values = NULL,
@@ -65,7 +65,7 @@ created via *_plot = FALSE) are included in the plot as a separate
 category. If \code{TRUE}, remove \code{NA} responses; if \code{FALSE} (default), convert
 them to \code{NA_label} and treat as an additional response level.}
 
-\item{NA_label}{Character, default \code{"Missing"}. Label to use for \code{NA}
+\item{NA_label}{Character, default \code{"Missing/Invalid"}. Label to use for \code{NA}
 responses.}
 
 \item{percCut}{numeric scalar (0-100). Cutoff below which percentages are not

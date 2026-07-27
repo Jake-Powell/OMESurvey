@@ -6,16 +6,19 @@
 \alias{scale_fill_OME}
 \title{OME colour scales for ggplot2}
 \usage{
-scale_colour_OME(type = "distinct", ...)
+scale_colour_OME(type = "distinct", name = NULL, ...)
 
-scale_color_OME(type = "distinct", ...)
+scale_color_OME(type = "distinct", name = NULL, ...)
 
-scale_fill_OME(type = "distinct", ...)
+scale_fill_OME(type = "distinct", name = NULL, ...)
 }
 \arguments{
 \item{type}{Character string specifying which palette to use.
 Passed to \code{\link{get_OME_colours}}; see that function for available options.
 Default is \code{"distinct"}.}
+
+\item{name}{Character string specifying the title of the legend for this aesthetic.
+Default is \code{NULL}, for no title.}
 
 \item{...}{Additional arguments passed to \code{ggplot2::discrete}.}
 }

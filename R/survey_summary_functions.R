@@ -990,7 +990,7 @@ OME_stacked_bar <- function(dat, response_var,
 #'   created via *_plot = FALSE) are included in the plot as a separate
 #'   category. If `TRUE`, remove `NA` responses; if `FALSE` (default), convert
 #'   them to `NA_label` and treat as an additional response level.
-#' @param NA_label Character, default `"Missing"`. Label to use for `NA`
+#' @param NA_label Character, default `"Missing/Invalid"`. Label to use for `NA`
 #'   responses.
 #' @param percCut numeric scalar (0-100). Cutoff below which percentages are not
 #'   shown in bar segments. Default `5`.
@@ -1096,7 +1096,7 @@ OME_stacked_bar <- function(dat, response_var,
 
 summary_plot_stacked_bar <- function(dat, dat_format = "auto",
                                      labels_vec=NULL,
-                                     na.rm=FALSE, NA_label="Missing",
+                                     na.rm=FALSE, NA_label="Missing/Invalid",
                                      percCut=5,
                                      colo=NULL, order_values = NULL,
                                      titleText=NULL,
@@ -2138,9 +2138,6 @@ choose_font_family <- function(preferred = "Arial", fallback = "sans") {
 #'
 #' OME house style theme for `ggplot2`, based on `ggplot2::theme_bw()`.
 #'
-# !!! CURRENTLY COPIED FROM JAKE'S ROME_ggtheme(), with some-but-very-few tweaks
-# !!! -> Maybe we could/should just edit ROME_ggtheme, but that might impact old code too... ???
-#'
 #' @author Dave Sirl
 #'
 #' @param base_size Numeric. Base font size for the theme. Defaults to 14.
@@ -2193,10 +2190,9 @@ theme_OME <- function(base_size = 14,
         size = base_size
       ),
 
-
       #set outer margins
       plot.margin = ggplot2::margin(
-        t = 3, r = 3, b = 3, l = 3,
+        t = 5, r = 5, b = 5, l = 5,
         unit = "mm"
       ),
 
@@ -2238,7 +2234,7 @@ theme_OME <- function(base_size = 14,
                                  right = "vertical",
                                  bottom = "horizontal"),
       legend.background = ggplot2::element_rect(fill = "transparent", colour = NA),
-      legend.location   = "plot",
+      legend.location   = "panel",
 
       # strip (headings of facet elements)
       strip.background = ggplot2::element_blank(),
@@ -2266,6 +2262,8 @@ theme_OME <- function(base_size = 14,
 #' @param type Character string specifying which palette to use.
 #' Passed to [`get_OME_colours`]; see that function for available options.
 #' Default is `"distinct"`.
+#' @param name Character string specifying the title of the legend for this aesthetic.
+#' Default is `NULL`, for no title.
 #' @param ... Additional arguments passed to `ggplot2::discrete`.
 #'
 #' @return A ggplot2 scale for colours.
@@ -2315,10 +2313,11 @@ NULL
 
 #' @rdname scale_colour_OME
 #' @export
-scale_colour_OME <- function(type = "distinct", ...) {
+scale_colour_OME <- function(type = "distinct", name = NULL, ...) {
   ggplot2::discrete_scale(
     aesthetics = "colour",
     palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
+    name = name,
     ...
   )
 }
@@ -2332,10 +2331,11 @@ scale_color_OME <- scale_colour_OME
 
 #' @rdname scale_colour_OME
 #' @export
-scale_fill_OME <- function(type = "distinct", ...) {
+scale_fill_OME <- function(type = "distinct", name = NULL, ...) {
   ggplot2::discrete_scale(
     aesthetics = "fill",
     palette = function(n) OMESurvey::get_OME_colours(n = n, type = type),
+    name = name,
     ...
   )
 }

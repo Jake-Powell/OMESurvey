@@ -58,7 +58,22 @@ In the plots in this document the following approach is used with regard to deal
 - Only allowed values are plotted - non-allowed values as well as -999 (missing) and -777 (invalid) values indicated via the numbers in brackets.
 - The numbers in brackets are of the form '(n/N)'. n is the number of allowed values plotted and N is the number of respondents shown the question (either everyone or everyone who satisfied the condition for branching to the question).
 
-For example, suppose that in a survey with 100 respondents, a particular question has responses as follows: 25 Yes, 25 No, 25 don't answer(coded -999), 25 weren't branched to the question (coded -888). Then the plot will show 50% Yes, 50% No and have (50/75) at the side; to indicate that 50 allowed responses are plotted out of 75 respondents who were shown the question.
+For example, suppose that in a survey with 100 respondents, a particular question has responses as follows: 25 Yes, 25 No, 25 don't answer (coded -999), 25 weren't branched to the question (coded -888). The plot will show 50% Yes, 50% No and have (50/75) at the side; to indicate that 50 allowed responses are plotted out of 75 respondents who were shown the question.
+
+## Getting prepared data
+
+Preparation of data using the dictionary can be done using the following command.
+````markdown
+`r paste0(
+  "data_prep <-\n",
+  "  survey_prepare_data(\n",
+  "  data_path = \"", normalizePath(params$data_path, winslash = "/", mustWork = FALSE),"\",\n",
+  "  dict_path = \"", normalizePath(params$dict_path, winslash = "/", mustWork = FALSE),"\",\n",
+  "  dict_sheet = \"", params$dict_sheet,"\",\n",
+  ")"
+)`
+````
+Note that this will work directly only for the person who made this summary report. The intention of having this here is that it should (hopefully!) give enough information to allow someone else to find the relevant files.
 
 
 ```{r results='asis'}
