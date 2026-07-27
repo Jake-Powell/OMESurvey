@@ -20,7 +20,7 @@ OME_stacked_bar_(
   show_counts = TRUE,
   count_style = if (na.rm) "non-missing" else "both",
   horiz = FALSE,
-  base_size = 12,
+  base_size = 14,
   text_scale = 0.7,
   fillLabText = NULL,
   groupLabText = NULL,
@@ -106,7 +106,7 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - base_size:
 
-  Positive number (default `12`) being the base size (in points) of text
+  Positive number (default `14`) being the base size (in points) of text
   in the plot, passed to underlying theme.
 
 - text_scale:

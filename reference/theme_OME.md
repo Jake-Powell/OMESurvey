@@ -6,14 +6,14 @@ OME house style theme for `ggplot2`, based on
 ## Usage
 
 ``` r
-theme_OME(base_size = 16, legend_placement = c("right", "bottom"))
+theme_OME(base_size = 14, legend_placement = c("right", "bottom"))
 ```
 
 ## Arguments
 
 - base_size:
 
-  Numeric. Base font size for the theme. Defaults to 16.
+  Numeric. Base font size for the theme. Defaults to 14.
 
 - legend_placement:
 

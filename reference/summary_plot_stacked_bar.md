@@ -19,7 +19,7 @@ summary_plot_stacked_bar(
   titleText = NULL,
   fill_label_width = 20,
   group_label_width = 30,
-  base_size = 12,
+  base_size = 14,
   text_scale = 0.7,
   show_counts = TRUE,
   count_style = "both"
@@ -127,7 +127,7 @@ summary_plot_stacked_bar(
 
 - base_size:
 
-  Positive number (default `12`) being the base size (in points) of text
+  Positive number (default `14`) being the base size (in points) of text
   in the plot, passed to underlying theme.
 
 - text_scale:

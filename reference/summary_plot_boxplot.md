@@ -15,7 +15,7 @@ summary_plot_boxplot(
   order_fun = median,
   titleText = NULL,
   group_label_width = 30,
-  base_size = 12,
+  base_size = 14,
   ...
 )
 ```
@@ -97,7 +97,7 @@ summary_plot_boxplot(
 
 - base_size:
 
-  Positive number (default `12`) being the base size (in points) of text
+  Positive number (default `14`) being the base size (in points) of text
   in the plot, passed to underlying theme.
 
 - ...:

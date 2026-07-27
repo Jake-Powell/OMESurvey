@@ -18,7 +18,7 @@ OME_boxplot_(
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
-  base_size = 12,
+  base_size = 14,
   colour = OMESurvey::get_OME_colours(1, type = "sequential"),
   separate_at = NULL,
   group_label_width = NULL,
@@ -75,7 +75,7 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 
 - base_size:
 
-  Positive number (default `12`) being the base size (in points) of text
+  Positive number (default `14`) being the base size (in points) of text
   in the plot, passed to underlying theme.
 
 - colour:
