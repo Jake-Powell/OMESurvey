@@ -1408,7 +1408,7 @@ OME_boxplot_ <- function(data,
                          omitGroupLabels = FALSE,
                          titleText = NULL,
                          base_size = 12,
-                         colour = OMESurvey::get_OME_colours(1),
+                         colour = OMESurvey::get_OME_colours(1, type='sequential'),
                          separate_at = NULL,
                          group_label_width = NULL,
                          group_labels = NULL) {
