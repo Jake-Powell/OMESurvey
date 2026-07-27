@@ -24,7 +24,7 @@ the standard OME colour palette.)"><meta property="og:image" content="https://ja
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/Create-OME-branded-excel-output.html">Create OME branded excel output</a></li>
     <li><a class="dropdown-item" href="../articles/Create-survey-figures.html">Create survey figures</a></li>
-    <li><a class="dropdown-item" href="../articles/dave_plotting_functions.html">dave_plotting_functions</a></li>
+    <li><a class="dropdown-item" href="../articles/dave_plotting_functions.html">Dave's plotting (and other) functions</a></li>
     <li><a class="dropdown-item" href="../articles/help.html">help</a></li>
     <li><a class="dropdown-item" href="../articles/Preparation-and-initial-survey-analysis.html">Preparation and initial survey analysis</a></li>
   </ul></li>
@@ -56,11 +56,11 @@ the standard OME colour palette.)</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">scale_colour_OME</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"distinct"</span>, <span class="va">...</span><span class="op">)</span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">scale_colour_OME</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"distinct"</span>, name <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">scale_color_OME</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"distinct"</span>, <span class="va">...</span><span class="op">)</span></span>
+<span><span class="fu">scale_color_OME</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"distinct"</span>, name <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu">scale_fill_OME</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"distinct"</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">scale_fill_OME</span><span class="op">(</span>type <span class="op">=</span> <span class="st">"distinct"</span>, name <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -71,6 +71,11 @@ the standard OME colour palette.)</p>
 <dd><p>Character string specifying which palette to use.
 Passed to <code><a href="get_OME_colours.html">get_OME_colours</a></code>; see that function for available options.
 Default is <code>"distinct"</code>.</p></dd>
+
+
+<dt id="arg-name">name<a class="anchor" aria-label="anchor" href="#arg-name"></a></dt>
+<dd><p>Character string specifying the title of the legend for this aesthetic.
+Default is <code>NULL</code>, for no title.</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

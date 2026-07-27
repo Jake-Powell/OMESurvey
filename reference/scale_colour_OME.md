@@ -8,11 +8,11 @@ using the standard OME colour palette.)
 ## Usage
 
 ``` r
-scale_colour_OME(type = "distinct", ...)
+scale_colour_OME(type = "distinct", name = NULL, ...)
 
-scale_color_OME(type = "distinct", ...)
+scale_color_OME(type = "distinct", name = NULL, ...)
 
-scale_fill_OME(type = "distinct", ...)
+scale_fill_OME(type = "distinct", name = NULL, ...)
 ```
 
 ## Arguments
@@ -22,6 +22,11 @@ scale_fill_OME(type = "distinct", ...)
   Character string specifying which palette to use. Passed to
   [`get_OME_colours`](https://jake-powell.github.io/OMESurvey/reference/get_OME_colours.md);
   see that function for available options. Default is `"distinct"`.
+
+- name:
+
+  Character string specifying the title of the legend for this
+  aesthetic. Default is `NULL`, for no title.
 
 - ...:
 

@@ -12,7 +12,7 @@ summary_plot_stacked_bar(
   dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
-  NA_label = "Missing",
+  NA_label = "Missing/Invalid",
   percCut = 5,
   colo = NULL,
   order_values = NULL,
@@ -81,7 +81,8 @@ summary_plot_stacked_bar(
 
 - NA_label:
 
-  Character, default `"Missing"`. Label to use for `NA` responses.
+  Character, default `"Missing/Invalid"`. Label to use for `NA`
+  responses.
 
 - percCut:
 
