@@ -2213,7 +2213,7 @@ theme_OME <- function(base_size = 16,
       ),
 
       #panel (the plot area)
-      panel.grid.major = ggplot2::element_line(colour = "grey85"),
+      panel.grid.major = ggplot2::element_line(colour = "grey85", linewidth = 0.7),
       panel.grid.minor = ggplot2::element_blank(),
       panel.background = ggplot2::element_rect(fill = "transparent", color = NA),
       panel.border     = ggplot2::element_blank(),
@@ -2221,7 +2221,9 @@ theme_OME <- function(base_size = 16,
       #axis
       axis.title = ggplot2::element_text(size = ggplot2::rel(0.85)),
       axis.text  = ggplot2::element_text(size = ggplot2::rel(0.70)),
-      axis.line  = ggplot2::element_line(color = "black"),
+      #axis.line  = ggplot2::element_line(color = "black"),
+      axis.line  = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
 
       #legend
       legend.title      = ggplot2::element_text(size = ggplot2::rel(0.85)),
