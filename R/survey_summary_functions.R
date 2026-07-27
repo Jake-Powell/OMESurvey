@@ -343,7 +343,7 @@ render_survey_summary <- function(data_path,
 #' @param na.rm Logical. If `TRUE`, remove `NA` responses; if `FALSE` (default)
 #'   convert them to `"Missing"` and treat as an additional response level.
 #'
-#' @param NA_label Character, default `"Missing"`. Label to use for `NA` responses.
+#' @param NA_label Character, default `"Missing/Invalid"`. Label to use for `NA` responses.
 #'
 #' @param show_counts Logical; whether to display (n) counts for each bar.
 #'  Defaults to TRUE. Needs care if used with faceting.
@@ -461,7 +461,7 @@ render_survey_summary <- function(data_path,
 OME_stacked_bar_ = function(dat, response_var,
                            group_var=NULL, facet_var=NULL,
                            percCut=NULL, colo=NULL,
-                           na.rm=FALSE, NA_label="Missing",
+                           na.rm=FALSE, NA_label="Missing/Invalid",
                            show_counts=TRUE,
                            count_style = if (na.rm) "non-missing" else "both",
                            horiz=FALSE,
