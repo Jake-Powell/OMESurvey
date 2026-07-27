@@ -16,7 +16,7 @@ OME_stacked_bar_(
   percCut = NULL,
   colo = NULL,
   na.rm = FALSE,
-  NA_label = "Missing",
+  NA_label = "Missing/Invalid",
   show_counts = TRUE,
   count_style = if (na.rm) "non-missing" else "both",
   horiz = FALSE,
@@ -78,7 +78,8 @@ OME_stacked_bar(dat, response_var, group_var = NULL, facet_var = NULL, ...)
 
 - NA_label:
 
-  Character, default `"Missing"`. Label to use for `NA` responses.
+  Character, default `"Missing/Invalid"`. Label to use for `NA`
+  responses.
 
 - show_counts:
 
