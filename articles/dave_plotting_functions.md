@@ -1,15 +1,15 @@
 # Dave's plotting (and other) functions
 
+Readers who just want to see how the plotting functions work should have
+a quick look at Section 1.2 to get some sense of the example/dummy data
+used in this vignette and then skip to Section 4 or later.
+
 This vignette aims to show the main functionality of the functions that
 I (Dave) have developed around survey data summaries - doing those
 summaries, using the data and dictionary from those summaries to prepare
 survey data for further analysis/exploration, making plots in the same
 style (and, coming later, making other kinds of plots using the same
 theme and/or colour palettes).
-
-Readers who just want to see how the plotting functions work should have
-a quick look at Section 1.2 to get some sense of the example/dummy data
-used in this vignette and then skip to Section 4 or later.
 
 ## Setup
 
@@ -110,8 +110,8 @@ and
 [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
 below.
 
-    #> [1] "/tmp/Rtmpq9O6hQ/example_data_1d793a15166c.csv"
-    #> [1] "/tmp/Rtmpq9O6hQ/example_survey_dictionary_1d7965cfe450.xlsx"
+    #> [1] "/tmp/RtmpvGQ0Dv/example_data_1dcc77e7a3e4.csv"
+    #> [1] "/tmp/RtmpvGQ0Dv/example_survey_dictionary_1dcc487da357.xlsx"
 
 ## Automated summary report
 
@@ -863,7 +863,7 @@ survey_data |>
   ggplot(aes(x = confidence_score,
              y = wellbeing_score)) +
   geom_point(position = 'jitter',
-             alpha = 0.6) +
+             alpha = 0.8) +
   labs(x = "Confidence score",
        y = "Wellbeing score") +
   coord_cartesian(xlim=c(0,10), ylim=c(0,10)) +
@@ -873,6 +873,14 @@ survey_data |>
 ```
 
 ![](dave_plotting_functions_files/figure-html/unnamed-chunk-29-1.png)
+
+The theme is not meant to be prescriptive, but equally it is intended to
+be a strong steer re plot formatting. It should be fine most of the
+time, but certainly there will be some situations where it needs
+changing. Change should be avoided unless it’s necessary, but equally if
+it’s necessary to change then do it!
+
+### Colour and fill scales `scale_colour_OME()` and `scale_fill_OME()`
 
 And if I use colour then I can set the colour scale to be on-brand too.
 (This scale also encourages the OME-ey style by removing the title in
@@ -885,7 +893,7 @@ survey_data |>
              y = wellbeing_score,
              colour = school_type)) +
   geom_point(position = 'jitter',
-             alpha = 0.6) +
+             alpha = 0.8) +
   labs(x = "Confidence score",
        y = "Wellbeing score") +
   coord_cartesian(xlim=c(0,10), ylim=c(0,10)) +
@@ -939,11 +947,100 @@ survey_data |>
 
 ## Other useful things
 
+### Advice re saving plots
+
+Broadly speaking, I suggest saving in .svg (a vector graphics format)
+rather than .png/.jpeg (or a similar raster graphics format). Vector
+graphics are usually much smaller files, they can cope with moderate
+amounts of resizing without much complaint, and they contain the actual
+info needed to draw the plot not just a list of pixels and what colour
+they should be. The exception is for something with loads of different
+elements like a scatter plot with thousands of points - then a vector
+graphics file might be unreasonably large.
+
+For plots made using `ggplot`,
+
+``` r
+
+ggsave("some_file_name.svg", width=4, height=5, units="in")
+```
+
+will save the current plot in RStudio, or if you have the plot saved in
+R (through something like `my_plot <- make_plot(…)` then
+
+``` r
+
+ggsave("some_file_name.svg", my_plot, width=4, height=5, units="in")
+```
+
+will do the job. The units can be changed to “cm” (or “mm” or “px”
+\[pixels\]) if you prefer.
+
+If you need to use . png then you just need to (a) change the filename
+to end “.png” instead of “.svg” and (b) add the option `dpi = 300`. I.e.
+
+``` r
+
+ggsave("some_file_name.png", width=4, height=5, units="in", dpi=300)
+```
+
+(And there’s the same ability to use the version with `my_plot` if you
+have saved the plot in your R session.)
+
+Note that these files will be saved in the current working directory. If
+you use an RStudio project structure then this will probably be the same
+directory that the .Rproj project file is in; but if in doubt you can
+check using [`getwd()`](https://rdrr.io/r/base/getwd.html) or provide a
+specific path to
+[`ggsave()`](https://ggplot2.tidyverse.org/reference/ggsave.html),
+e.g. `"C:/<all sorts of stuff>/some_file_name.svg"`, instead of just a
+file name.
+
+### Sizing
+
+When you make a plot you don’t know exactly how big you’ll want it to
+be - pagination in a document (especially a large one like RoME!) is
+often fluid right until the end. I suggest, in the first instance,
+relatively quickly picking a size that looks reasonable - accepting
+that, later on, re-saving with a different sizing might well be needed.
+All the more reason to keep code well-organised so it can easily be
+found/reviewed/tweaked/re-run.
+
+### Reordering factors
+
+There is a nice way of reordering factors which is sometimes very handy
+when making plots. For example, suppose we want (for some reason) to do
+a catterpillar plot of every individual’s wellbeing score. A caterpillar
+plot is just a scatterplot with fancy ordering (noting the need to
+[`filter()`](https://dplyr.tidyverse.org/reference/filter.html) to avoid
+`NA`s messing things up):
+
+``` r
+
+survey_data |>
+  filter(!is.na(wellbeing_score)) |>
+  ggplot(aes(x = forcats::fct_reorder(respondent_id_asis, wellbeing_score),
+             y = wellbeing_score)) +
+  geom_point() +
+  labs(x = "Respondent",
+       y = "Wellbeing score") +
+  theme_OME() +
+  theme(panel.grid.major.x = element_blank()) +
+  scale_x_discrete(breaks=NULL)
+```
+
+![](dave_plotting_functions_files/figure-html/unnamed-chunk-36-1.png)
+
+The `fct_reorder()` function can also do lots of other cool things - the
+help provides a couple of examples.
+
+### more…
+
 … more to come here soon, including
 
-- using `r`forcats::fct_reorder()\` to reorder factors
-- using patchwork to put plots together (and consolidating legends)
-- saving advice
+- general plot design/formatting principles (from RoME ’25 planning)
+- using patchwork and/or cowplot to put plots together and consolidate
+  legends (as appropriate)
 - other things too maybe…
 
 ## Still coming…
