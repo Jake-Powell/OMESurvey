@@ -62,7 +62,10 @@ designed for use when column names are supplied as <strong>strings</strong> or <
 <span>  group_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  show_counts <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  na.rm <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  count_style <span class="op">=</span> <span class="kw">if</span> <span class="op">(</span><span class="va">na.rm</span><span class="op">)</span> <span class="st">"non-missing"</span> <span class="kw">else</span> <span class="st">"both"</span>,</span>
 <span>  valueLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  value_percent_labels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  value_percent_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"percent"</span>, <span class="st">"proportion"</span><span class="op">)</span>,</span>
 <span>  groupLabText <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  omitGroupLabels <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  titleText <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -98,14 +101,38 @@ right-hand axis. Defaults to TRUE.</p></dd>
 
 
 <dt id="arg-na-rm">na.rm<a class="anchor" aria-label="anchor" href="#arg-na-rm"></a></dt>
-<dd><p>Logical; whether to remove/ignore missing values.
-When <code>na.rm = TRUE</code>, count labels show the number of plotted (i.e. non-missing) observations;
-when <code>na.rm = FALSE</code>, labels show non-missing and total number of observations.</p></dd>
+<dd><p>Logical. Simpler determination of the value of <code>count_style</code>.
+When <code>TRUE</code>, <code>count_style</code> defaults to<code>"non-missing"</code>; when <code>FALSE</code> it
+defaults to <code>"both"</code>.</p>
+<p>(Missing values of <code>value_var</code> do not contribute to the boxplot itself,
+irrespective of this argument.)</p></dd>
+
+
+<dt id="arg-count-style">count_style<a class="anchor" aria-label="anchor" href="#arg-count-style"></a></dt>
+<dd><p>Character string controlling how counts are displayed
+when <code>show_counts = TRUE</code>. Options are:</p><ul><li><p><code>"non-missing"</code>: show number of non-missing responses</p></li>
+<li><p><code>"total"</code>: show total number of responses</p></li>
+<li><p><code>"both"</code>: show both as "(non-missing/total)"</p></li>
+</ul><p>Defaults to <code>"non-missing"</code> if <code>na.rm = TRUE</code>, otherwise <code>"both"</code>.</p></dd>
 
 
 <dt id="arg-valuelabtext">valueLabText<a class="anchor" aria-label="anchor" href="#arg-valuelabtext"></a></dt>
 <dd><p>Optional title for the value variable axis. If <code>NULL</code>
 (default) the title is removed; if <code>""</code> the name of <code>value_var</code> is used.</p></dd>
+
+
+<dt id="arg-value-percent-labels">value_percent_labels<a class="anchor" aria-label="anchor" href="#arg-value-percent-labels"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, format labels on the numeric
+value axis as percentages. Defaults to <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-value-percent-scale">value_percent_scale<a class="anchor" aria-label="anchor" href="#arg-value-percent-scale"></a></dt>
+<dd><p>Character string controlling the interpretation
+of values when <code>value_percent_labels = TRUE</code>. One of:</p><ul><li><p><code>"percent"</code> (default): values are already percentages on a 0–100 scale,
+so a percentage sign is appended without rescaling;</p></li>
+<li><p><code>"proportion"</code>: values are proportions on a 0–1 scale and are
+multiplied by 100 for display.</p></li>
+</ul><p>This argument has no effect when <code>value_percent_labels = FALSE</code>.</p></dd>
 
 
 <dt id="arg-grouplabtext">groupLabText<a class="anchor" aria-label="anchor" href="#arg-grouplabtext"></a></dt>
@@ -196,23 +223,17 @@ programmatic workflows.</p>
 <span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">dat</span>, <span class="va">Score</span>, <span class="va">Group</span>, show_counts <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="OME_boxplot_-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># With a title</span></span></span>
-<span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">dat</span>,</span></span>
-<span class="r-in"><span>  value_var <span class="op">=</span> <span class="va">Score</span>,</span></span>
-<span class="r-in"><span>  group_var <span class="op">=</span> <span class="va">Group</span>,</span></span>
-<span class="r-in"><span>  title <span class="op">=</span> <span class="st">"Example boxplot"</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># Show only the number of non-missing values contributing to each box</span></span></span>
+<span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">dat</span>, <span class="va">Score</span>, <span class="va">Group</span>, count_style <span class="op">=</span> <span class="st">"non-missing"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="OME_boxplot_-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Change base font size (e.g. for a presentation)</span></span></span>
-<span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span></span></span>
-<span class="r-in"><span>  <span class="va">dat</span>,</span></span>
-<span class="r-in"><span>  <span class="va">Score</span>,</span></span>
-<span class="r-in"><span>  <span class="va">Group</span>,</span></span>
-<span class="r-in"><span>  base_size <span class="op">=</span> <span class="fl">18</span></span></span>
-<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># With a title</span></span></span>
+<span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">dat</span>, <span class="va">Score</span>, <span class="va">Group</span>, title <span class="op">=</span> <span class="st">"Example boxplot"</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="OME_boxplot_-4.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Change base font size (e.g. for a presentation)</span></span></span>
+<span class="r-in"><span><span class="fu">OME_boxplot</span><span class="op">(</span><span class="va">dat</span>, <span class="va">Score</span>, <span class="va">Group</span>, base_size <span class="op">=</span> <span class="fl">18</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="OME_boxplot_-5.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Example programmatic use,</span></span></span>
 <span class="r-in"><span><span class="co"># supposing here that dat includes variables Score, Group and Grouping2</span></span></span>

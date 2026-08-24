@@ -12,8 +12,11 @@ summary_plot_boxplot(
   dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
+  count_style = if (na.rm) "non-missing" else "both",
   order_fun = median,
   titleText = NULL,
+  value_percent_labels = FALSE,
+  value_percent_scale = c("present", "proportion"),
   group_label_width = 30,
   base_size = 14,
   ...
@@ -69,13 +72,26 @@ summary_plot_boxplot(
 
 - na.rm:
 
-  Logical. Controls how missing values are handled in the plot. Missing
-  values (including those created via `*_plot = FALSE`) are:
+  Logical. Determines the default value of `count_style`. When `TRUE`,
+  `count_style` defaults to `"non-missing"`; when `FALSE`, it defaults
+  to `"both"`.
 
-  - removed if `TRUE`
+  (Missing values do not contribute to the boxplot itself.)
 
-  - retained (and therefore reflected in the displayed count) if `FALSE`
-    (default).
+- count_style:
+
+  Character string controlling how counts are displayed. One of:
+
+  - `"non-missing"`: show the number of records with a non-missing
+    value, i.e. contributing to the boxplot;
+
+  - `"total"`: show the total number of included records;
+
+  - `"both"`: show both as `"(non-missing/total)"`.
+
+  Defaults to `"non-missing"` when `na.rm = TRUE`, and `"both"`
+  otherwise. Records for which `*_include = FALSE` are excluded from
+  both counts.
 
 - order_fun:
 
@@ -87,6 +103,24 @@ summary_plot_boxplot(
 - titleText:
 
   Optional text to use as the plot title.
+
+- value_percent_labels:
+
+  Logical. If `TRUE`, format labels on the numeric value axis as
+  percentages. Defaults to `FALSE`.
+
+- value_percent_scale:
+
+  Character string controlling the interpretation of values when
+  `value_percent_labels = TRUE`. One of:
+
+  - `"percent"` (default): values are already percentages on a 0–100
+    scale, so a percentage sign is appended without rescaling;
+
+  - `"proportion"`: values are proportions on a 0–1 scale and are
+    multiplied by 100 for display.
+
+  This argument has no effect when `value_percent_labels = FALSE`.
 
 - group_label_width:
 
@@ -120,9 +154,16 @@ TRUE\`).
 The original column order of `dat` is preserved as a stable tie-breaker
 when multiple questions have identical ordering statistics.
 
-Missing-value handling for ordering and for plotting are intentionally
-separated: missing responses are ignored for ordering purposes, but
-their treatment in the plot itself is controlled by `na.rm`.
+Missing-value handling for ordering and count display are intentionally
+separated. Missing responses are ignored when calculating the ordering
+statistic and do not contribute to the boxplot itself. Their
+representation in the displayed count labels is controlled by
+`count_style`.
+
+In extended format, records with `*_include = FALSE` are removed before
+counts are calculated. Records with `*_plot = FALSE` are retained as
+included records but their values are set to missing. They therefore
+contribute to `"total"` counts but not to `"non-missing"` counts.
 
 If `dat` is supplied in simple format, it is internally converted to the
 extended format with all `*_plot` and `*_include` values set to `TRUE`.
@@ -177,6 +218,7 @@ dat |> summary_plot_boxplot(na.rm = TRUE)
 
 
 # Extended format example
+# (recalling that omitted *_plot and *_include variables are assumed TRUE)
 dat_ext <- tibble::tibble(
   Q1_value = dat$Q1,
   Q1_plot = c(TRUE, TRUE, TRUE, FALSE),

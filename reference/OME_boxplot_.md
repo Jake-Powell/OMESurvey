@@ -14,7 +14,10 @@ OME_boxplot_(
   group_var = NULL,
   show_counts = TRUE,
   na.rm = FALSE,
+  count_style = if (na.rm) "non-missing" else "both",
   valueLabText = NULL,
+  value_percent_labels = FALSE,
+  value_percent_scale = c("percent", "proportion"),
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
@@ -49,15 +52,48 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 
 - na.rm:
 
-  Logical; whether to remove/ignore missing values. When `na.rm = TRUE`,
-  count labels show the number of plotted (i.e. non-missing)
-  observations; when `na.rm = FALSE`, labels show non-missing and total
-  number of observations.
+  Logical. Simpler determination of the value of `count_style`. When
+  `TRUE`, `count_style` defaults to`"non-missing"`; when `FALSE` it
+  defaults to `"both"`.
+
+  (Missing values of `value_var` do not contribute to the boxplot
+  itself, irrespective of this argument.)
+
+- count_style:
+
+  Character string controlling how counts are displayed when
+  `show_counts = TRUE`. Options are:
+
+  - `"non-missing"`: show number of non-missing responses
+
+  - `"total"`: show total number of responses
+
+  - `"both"`: show both as "(non-missing/total)"
+
+  Defaults to `"non-missing"` if `na.rm = TRUE`, otherwise `"both"`.
 
 - valueLabText:
 
   Optional title for the value variable axis. If `NULL` (default) the
   title is removed; if `""` the name of `value_var` is used.
+
+- value_percent_labels:
+
+  Logical. If `TRUE`, format labels on the numeric value axis as
+  percentages. Defaults to `FALSE`.
+
+- value_percent_scale:
+
+  Character string controlling the interpretation of values when
+  `value_percent_labels = TRUE`. One of:
+
+  - `"percent"` (default): values are already percentages on a 0–100
+    scale, so a percentage sign is appended without rescaling;
+
+  - `"proportion"`: values are proportions on a 0–1 scale and are
+    multiplied by 100 for display.
+
+  This argument has no effect when `value_percent_labels = FALSE`.
 
 - groupLabText:
 
@@ -160,22 +196,16 @@ OME_boxplot(dat, Score, Group)
 OME_boxplot(dat, Score, Group, show_counts = FALSE)
 
 
+# Show only the number of non-missing values contributing to each box
+OME_boxplot(dat, Score, Group, count_style = "non-missing")
+
+
 # With a title
-OME_boxplot(
-  dat,
-  value_var = Score,
-  group_var = Group,
-  title = "Example boxplot"
-)
+OME_boxplot(dat, Score, Group, title = "Example boxplot")
 
 
 # Change base font size (e.g. for a presentation)
-OME_boxplot(
-  dat,
-  Score,
-  Group,
-  base_size = 18
-)
+OME_boxplot(dat, Score, Group, base_size = 18)
 
 
 # Example programmatic use,
