@@ -23,21 +23,15 @@ Load the `OMESurvey` package and a couple of other packages
 library(OMESurvey)
 library(tibble)
 library(dplyr)
-#> 
-#> Attaching package: 'dplyr'
-#> The following objects are masked from 'package:stats':
-#> 
-#>     filter, lag
-#> The following objects are masked from 'package:base':
-#> 
-#>     intersect, setdiff, setequal, union
 library(ggplot2)
 ```
 
 ### Some dummy data
 
 Now create some dummy survey data and a corresponding data dictionary to
-use in the vignette. The data contains the following variables:
+use in the vignette. The data contains the following variables,
+corresponding to an imagined survey that has hastily-thought-of
+questions that probably don’t overall fit together all that well:
 
 - `respondent_id`: a unique respondent identifier (included in the raw
   data but deliberately omitted from the dictionary to demonstrate
@@ -71,7 +65,7 @@ use in the vignette. The data contains the following variables:
 
 The dummy data has been set up to
 
-- use the -888 branching sentinel/missing code as should be the case for
+- use the -888 missing-due-to-branching code as should be the case for
   real OME survey data,
 - include some -999 missing values,
 - include a few -777 invalid values, an out-of-range numeric value, and
@@ -90,14 +84,16 @@ Preparing the data and dictionary is part of pre-processing, so this
 should need doing once only and is something that readers of this
 document will not have to worry much about. Guidance on doing that is in
 the Preprocessing SOP (which, at time of writing, is the Word document
-`20260408_SOP_Pre-processing` in the/a folder of SOPs). This includes
-information about constructing the data dictionary and what the
--999/-888/-777 missing codes mean / are used for. An exception to this
-might be if you are doing a detailed data analysis (say, for a paper)
-and want to take a copy of the data dictionary to edit so that you can
-automatically prepare the data in a way that’s useful for your analysis
-(rather than in a way that’s useful for summarising the whole survey,
-which is the intention of the main data dictionary)
+`20260408_SOP_Pre-processing` in the/a folder of SOPs). An exception to
+this might be if you are doing a detailed data analysis (say, for a
+paper) and want to make a copy of the data dictionary to edit so that
+you can tweak the data preparation in a way that’s useful for your
+analysis (rather than in a way that’s useful for summarising the whole
+survey, which is the intention of the main data dictionary).
+
+**Data**
+
+**Data dictionary**
 
 ### Save example inputs to temporary files
 
@@ -110,8 +106,8 @@ and
 [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
 below.
 
-    #> [1] "/tmp/RtmpvGQ0Dv/example_data_1dcc77e7a3e4.csv"
-    #> [1] "/tmp/RtmpvGQ0Dv/example_survey_dictionary_1dcc487da357.xlsx"
+    #> [1] "/tmp/Rtmp3IDrv8/example_data_1e18236dbf30.csv"
+    #> [1] "/tmp/Rtmp3IDrv8/example_survey_dictionary_1e186c27131b.xlsx"
 
 ## Automated summary report
 
@@ -174,14 +170,18 @@ allowed/valid, etc. (One can also have establishment characteristics
 data merged into the survey data - see the SOP for info on how to do
 that, for now at least.)
 
-We can take a quick look at the prepared data; noting particularly the
-names of the variables: those in the dictionary have the raw
-character-based version of the variable with the `_raw` suffix and the
-original variable name containing the tidied-and-coerced-to-type
-variable, and those not mentioned in the dictionary are appended with
-`_asis` (emphasising that they’ve not be processed in any way, in
-accordance with the default for the `extra_vars` option for
-[`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)).
+We can take a quick look at the prepared data, noting particularly the
+names of the variables:
+
+- variables that are in the dictionary **and** have an assigned section
+  (i.e. a non-blank entry in `report_sec`) have the raw character-based
+  version of the variable with the `_raw` suffix and the original
+  variable name containing the tidied-and-coerced-to-type variable,
+- variables without both an entry in the dictionary and a non-blank
+  `report_sec` are appended with `_asis` (emphasising that they’ve not
+  be processed in any way, in accordance with the default for the
+  `extra_vars` option for
+  [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)).
 
 The validation output summarises the checks carried out for each
 dictionary-backed variable. (Here we show only some of the key columns
@@ -951,12 +951,13 @@ survey_data |>
 
 Broadly speaking, I suggest saving in .svg (a vector graphics format)
 rather than .png/.jpeg (or a similar raster graphics format). Vector
-graphics are usually much smaller files, they can cope with moderate
-amounts of resizing without much complaint, and they contain the actual
-info needed to draw the plot not just a list of pixels and what colour
-they should be. The exception is for something with loads of different
-elements like a scatter plot with thousands of points - then a vector
-graphics file might be unreasonably large.
+graphics (i) are usually much smaller files and (ii) can cope with
+moderate amounts of resizing without much complaint, since they contain
+the actual info needed to draw the plot rather than a list of pixels and
+what colour they should be, which can get untidy-looking if the size
+and/or proportions are changed. The exception is for something with
+loads of different elements like a scatter plot with thousands of
+points - then a vector graphics file might be unreasonably large.
 
 For plots made using `ggplot`,
 
