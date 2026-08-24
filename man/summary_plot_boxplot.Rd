@@ -9,8 +9,11 @@ summary_plot_boxplot(
   dat_format = "auto",
   labels_vec = NULL,
   na.rm = FALSE,
+  count_style = if (na.rm) "non-missing" else "both",
   order_fun = median,
   titleText = NULL,
+  value_percent_labels = FALSE,
+  value_percent_scale = c("present", "proportion"),
   group_label_width = 30,
   base_size = 14,
   ...
@@ -53,12 +56,22 @@ questions on the plot. Names should correspond to variable names (without
 \verb{_value} appended in extended format), and values are the labels to display
 on the axis.}
 
-\item{na.rm}{Logical. Controls how missing values are handled in the plot.
-Missing values (including those created via \verb{*_plot = FALSE}) are:
+\item{na.rm}{Logical. Determines the default value of \code{count_style}.
+When \code{TRUE}, \code{count_style} defaults to \code{"non-missing"}; when \code{FALSE},
+it defaults to \code{"both"}.
+
+(Missing values do not contribute to the boxplot itself.)}
+
+\item{count_style}{Character string controlling how counts are displayed.
+One of:
 \itemize{
-\item removed if \code{TRUE}
-\item retained (and therefore reflected in the displayed count) if \code{FALSE} (default).
-}}
+\item \code{"non-missing"}: show the number of records with a non-missing value,
+i.e. contributing to the boxplot;
+\item \code{"total"}: show the total number of included records;
+\item \code{"both"}: show both as \code{"(non-missing/total)"}.
+}
+Defaults to \code{"non-missing"} when \code{na.rm = TRUE}, and \code{"both"} otherwise.
+Records for which \verb{*_include = FALSE} are excluded from both counts.}
 
 \item{order_fun}{Function used to order questions in the plot, or \code{NULL}.
 This function should accept arguments \verb{(x, na.rm = TRUE)} and return a
@@ -66,6 +79,19 @@ single numeric value (e.g. \code{median}, \code{mean}). If \code{NULL} ordering 
 same as that of the variables in the data. Defaults to \code{median}.}
 
 \item{titleText}{Optional text to use as the plot title.}
+
+\item{value_percent_labels}{Logical. If \code{TRUE}, format labels on the numeric
+value axis as percentages. Defaults to \code{FALSE}.}
+
+\item{value_percent_scale}{Character string controlling the interpretation
+of values when \code{value_percent_labels = TRUE}. One of:
+\itemize{
+\item \code{"percent"} (default): values are already percentages on a 0--100 scale,
+so a percentage sign is appended without rescaling;
+\item \code{"proportion"}: values are proportions on a 0--1 scale and are
+multiplied by 100 for display.
+}
+This argument has no effect when \code{value_percent_labels = FALSE}.}
 
 \item{group_label_width}{Optional integer. Width (in characters) used when
 wrapping question labels on the axis. Passed to \code{OME_boxplot_()}. Default
@@ -92,9 +118,15 @@ according to the value returned by order_fun\verb{applied to each question's obs
 The original column order of \code{dat} is preserved as a stable tie-breaker when
 multiple questions have identical ordering statistics.
 
-Missing-value handling for ordering and for plotting are intentionally
-separated: missing responses are ignored for ordering purposes, but their
-treatment in the plot itself is controlled by \code{na.rm}.
+Missing-value handling for ordering and count display are intentionally
+separated. Missing responses are ignored when calculating the ordering
+statistic and do not contribute to the boxplot itself. Their representation
+in the displayed count labels is controlled by \code{count_style}.
+
+In extended format, records with \verb{*_include = FALSE} are removed before
+counts are calculated. Records with \verb{*_plot = FALSE} are retained as included
+records but their values are set to missing. They therefore contribute to
+\code{"total"} counts but not to \code{"non-missing"} counts.
 
 If \code{dat} is supplied in simple format, it is internally converted to the
 extended format with all \verb{*_plot} and \verb{*_include} values set to \code{TRUE}.
@@ -138,6 +170,7 @@ summary_plot_boxplot(
 dat |> summary_plot_boxplot(na.rm = TRUE)
 
 # Extended format example
+# (recalling that omitted *_plot and *_include variables are assumed TRUE)
 dat_ext <- tibble::tibble(
   Q1_value = dat$Q1,
   Q1_plot = c(TRUE, TRUE, TRUE, FALSE),

@@ -11,7 +11,10 @@ OME_boxplot_(
   group_var = NULL,
   show_counts = TRUE,
   na.rm = FALSE,
+  count_style = if (na.rm) "non-missing" else "both",
   valueLabText = NULL,
+  value_percent_labels = FALSE,
+  value_percent_scale = c("percent", "proportion"),
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
@@ -34,12 +37,37 @@ OME_boxplot(data, value_var, group_var = NULL, ...)
 \item{show_counts}{Logical; whether to display (valid/total) counts on the
 right-hand axis. Defaults to TRUE.}
 
-\item{na.rm}{Logical; whether to remove/ignore missing values.
-When \code{na.rm = TRUE}, count labels show the number of plotted (i.e. non-missing) observations;
-when \code{na.rm = FALSE}, labels show non-missing and total number of observations.}
+\item{na.rm}{Logical. Simpler determination of the value of \code{count_style}.
+When \code{TRUE}, \code{count_style} defaults to\code{"non-missing"}; when \code{FALSE} it
+defaults to \code{"both"}.
+
+(Missing values of \code{value_var} do not contribute to the boxplot itself,
+irrespective of this argument.)}
+
+\item{count_style}{Character string controlling how counts are displayed
+when \code{show_counts = TRUE}. Options are:
+\itemize{
+\item \code{"non-missing"}: show number of non-missing responses
+\item \code{"total"}: show total number of responses
+\item \code{"both"}: show both as "(non-missing/total)"
+}
+Defaults to \code{"non-missing"} if \code{na.rm = TRUE}, otherwise \code{"both"}.}
 
 \item{valueLabText}{Optional title for the value variable axis. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{value_var} is used.}
+
+\item{value_percent_labels}{Logical. If \code{TRUE}, format labels on the numeric
+value axis as percentages. Defaults to \code{FALSE}.}
+
+\item{value_percent_scale}{Character string controlling the interpretation
+of values when \code{value_percent_labels = TRUE}. One of:
+\itemize{
+\item \code{"percent"} (default): values are already percentages on a 0--100 scale,
+so a percentage sign is appended without rescaling;
+\item \code{"proportion"}: values are proportions on a 0--1 scale and are
+multiplied by 100 for display.
+}
+This argument has no effect when \code{value_percent_labels = FALSE}.}
 
 \item{groupLabText}{Optional title for the group variable axis. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{group_var} is used.}
@@ -114,21 +142,14 @@ OME_boxplot(dat, Score, Group)
 # Without counts
 OME_boxplot(dat, Score, Group, show_counts = FALSE)
 
+# Show only the number of non-missing values contributing to each box
+OME_boxplot(dat, Score, Group, count_style = "non-missing")
+
 # With a title
-OME_boxplot(
-  dat,
-  value_var = Score,
-  group_var = Group,
-  title = "Example boxplot"
-)
+OME_boxplot(dat, Score, Group, title = "Example boxplot")
 
 # Change base font size (e.g. for a presentation)
-OME_boxplot(
-  dat,
-  Score,
-  Group,
-  base_size = 18
-)
+OME_boxplot(dat, Score, Group, base_size = 18)
 
 # Example programmatic use,
 # supposing here that dat includes variables Score, Group and Grouping2

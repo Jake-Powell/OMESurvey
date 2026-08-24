@@ -1316,12 +1316,37 @@ plot_many_questions <- function(...) {
 #' @param group_var Optional grouping variable (factor).
 #' @param show_counts Logical; whether to display (valid/total) counts on the
 #'   right-hand axis. Defaults to TRUE.
-#' @param na.rm Logical; whether to remove/ignore missing values.
-#'   When `na.rm = TRUE`, count labels show the number of plotted (i.e. non-missing) observations;
-#'   when `na.rm = FALSE`, labels show non-missing and total number of observations.
+#' @param na.rm Logical. Simpler determination of the value of `count_style`.
+#'   When `TRUE`, `count_style` defaults to`"non-missing"`; when `FALSE` it
+#'   defaults to `"both"`.
+#'
+#' (Missing values of `value_var` do not contribute to the boxplot itself,
+#' irrespective of this argument.)
+#'
+#' @param count_style Character string controlling how counts are displayed
+#'   when `show_counts = TRUE`. Options are:
+#'   \itemize{
+#'     \item `"non-missing"`: show number of non-missing responses
+#'     \item `"total"`: show total number of responses
+#'     \item `"both"`: show both as "(non-missing/total)"
+#'   }
+#'   Defaults to `"non-missing"` if `na.rm = TRUE`, otherwise `"both"`.
 #'
 #' @param valueLabText Optional title for the value variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `value_var` is used.
+#'
+#' @param value_percent_labels Logical. If `TRUE`, format labels on the numeric
+#' value axis as percentages. Defaults to `FALSE`.
+#' @param value_percent_scale Character string controlling the interpretation
+#' of values when `value_percent_labels = TRUE`. One of:
+#' \itemize{
+#' \item `"percent"` (default): values are already percentages on a 0--100 scale,
+#' so a percentage sign is appended without rescaling;
+#' \item `"proportion"`: values are proportions on a 0--1 scale and are
+#' multiplied by 100 for display.
+#' }
+#' This argument has no effect when `value_percent_labels = FALSE`.
+#'
 #' @param groupLabText Optional title for the group variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `group_var` is used.
 #' @param omitGroupLabels Optional logical controlling whether to omit group labels.
@@ -1366,21 +1391,14 @@ plot_many_questions <- function(...) {
 #' # Without counts
 #' OME_boxplot(dat, Score, Group, show_counts = FALSE)
 #'
+#' # Show only the number of non-missing values contributing to each box
+#' OME_boxplot(dat, Score, Group, count_style = "non-missing")
+#'
 #' # With a title
-#' OME_boxplot(
-#'   dat,
-#'   value_var = Score,
-#'   group_var = Group,
-#'   title = "Example boxplot"
-#' )
+#' OME_boxplot(dat, Score, Group, title = "Example boxplot")
 #'
 #' # Change base font size (e.g. for a presentation)
-#' OME_boxplot(
-#'   dat,
-#'   Score,
-#'   Group,
-#'   base_size = 18
-#' )
+#' OME_boxplot(dat, Score, Group, base_size = 18)
 #'
 #' # Example programmatic use,
 #' # supposing here that dat includes variables Score, Group and Grouping2
@@ -1403,7 +1421,10 @@ OME_boxplot_ <- function(data,
                          group_var = NULL,
                          show_counts = TRUE,
                          na.rm = FALSE,
+                         count_style = if (na.rm) "non-missing" else "both",
                          valueLabText = NULL,
+                         value_percent_labels = FALSE,
+                         value_percent_scale = c("percent", "proportion"),
                          groupLabText = NULL,
                          omitGroupLabels = FALSE,
                          titleText = NULL,
@@ -1412,6 +1433,11 @@ OME_boxplot_ <- function(data,
                          separate_at = NULL,
                          group_label_width = NULL,
                          group_labels = NULL) {
+
+  count_style <- match.arg(count_style, c("non-missing", "total", "both"))
+
+  value_percent_scale <- match.arg(value_percent_scale, c("percent", "proportion"))
+
 
   # --- Handle NULL grouping (same as stacked-bar) -----------------------------
   if (is.null(group_var)) {
@@ -1448,14 +1474,18 @@ OME_boxplot_ <- function(data,
     group_counts <- data |>
       dplyr::summarise(
         non_na = sum(!is.na(.data[[value_var]])),
-        total  = dplyr::n(),
+        total = dplyr::n(),
         .by = dplyr::all_of(group_var)
       ) |>
-      dplyr::mutate(label = if (na.rm) {
-                              sprintf("(%d)", non_na)
-                            } else {
-                              sprintf("(%d/%d)", non_na, total)
-                            }
+      dplyr::mutate(
+        label = dplyr::case_when(
+          count_style == "non-missing" ~
+            sprintf("(%s)", scales::comma(non_na)),
+          count_style == "total" ~
+            sprintf("(%s)", scales::comma(total)),
+          count_style == "both" ~
+            sprintf("(%s/%s)", scales::comma(non_na), scales::comma(total))
+        )
       )
 
     idx <- match(group_levels, group_counts[[group_var]])
@@ -1484,6 +1514,17 @@ OME_boxplot_ <- function(data,
       panel.grid.major.y = ggplot2::element_blank(),
       panel.grid.minor.y = ggplot2::element_blank()
     )
+
+  if (value_percent_labels) {
+    value_labeller <- switch(
+      value_percent_scale,
+      percent = scales::label_number(suffix = "%"),
+      proportion = scales::label_percent()
+    )
+
+    p <- p +
+    ggplot2::scale_x_continuous(labels = value_labeller)
+  }
 
 
 
@@ -1662,10 +1703,22 @@ OME_boxplot <- function(data,
 #'   `_value` appended in extended format), and values are the labels to display
 #'   on the axis.
 #'
-#' @param na.rm Logical. Controls how missing values are handled in the plot.
-#'   Missing values (including those created via `*_plot = FALSE`) are:
-#'   - removed if `TRUE`
-#'   - retained (and therefore reflected in the displayed count) if `FALSE` (default).
+#' @param na.rm Logical. Determines the default value of `count_style`.
+#'   When `TRUE`, `count_style` defaults to `"non-missing"`; when `FALSE`,
+#'   it defaults to `"both"`.
+#'
+#' (Missing values do not contribute to the boxplot itself.)
+#'
+#' @param count_style Character string controlling how counts are displayed.
+#' One of:
+#' \itemize{
+#' \item `"non-missing"`: show the number of records with a non-missing value,
+#'  i.e. contributing to the boxplot;
+#' \item `"total"`: show the total number of included records;
+#' \item `"both"`: show both as `"(non-missing/total)"`.
+#' }
+#' Defaults to `"non-missing"` when `na.rm = TRUE`, and `"both"` otherwise.
+#' Records for which `*_include = FALSE` are excluded from both counts.
 #'
 #' @param order_fun Function used to order questions in the plot, or `NULL`.
 #'   This function should accept arguments `(x, na.rm = TRUE)` and return a
@@ -1673,6 +1726,18 @@ OME_boxplot <- function(data,
 #'   same as that of the variables in the data. Defaults to `median`.
 #'
 #' @param titleText Optional text to use as the plot title.
+#'
+#' @param value_percent_labels Logical. If `TRUE`, format labels on the numeric
+#' value axis as percentages. Defaults to `FALSE`.
+#' @param value_percent_scale Character string controlling the interpretation
+#' of values when `value_percent_labels = TRUE`. One of:
+#' \itemize{
+#' \item `"percent"` (default): values are already percentages on a 0--100 scale,
+#' so a percentage sign is appended without rescaling;
+#' \item `"proportion"`: values are proportions on a 0--1 scale and are
+#' multiplied by 100 for display.
+#' }
+#' This argument has no effect when `value_percent_labels = FALSE`.
 #'
 #' @param group_label_width Optional integer. Width (in characters) used when
 #'   wrapping question labels on the axis. Passed to `OME_boxplot_()`. Default
@@ -1693,9 +1758,15 @@ OME_boxplot <- function(data,
 #' The original column order of `dat` is preserved as a stable tie-breaker when
 #' multiple questions have identical ordering statistics.
 #'
-#' Missing-value handling for ordering and for plotting are intentionally
-#' separated: missing responses are ignored for ordering purposes, but their
-#' treatment in the plot itself is controlled by `na.rm`.
+#' Missing-value handling for ordering and count display are intentionally
+#' separated. Missing responses are ignored when calculating the ordering
+#' statistic and do not contribute to the boxplot itself. Their representation
+#' in the displayed count labels is controlled by `count_style`.
+#'
+#' In extended format, records with `*_include = FALSE` are removed before
+#' counts are calculated. Records with `*_plot = FALSE` are retained as included
+#' records but their values are set to missing. They therefore contribute to
+#' `"total"` counts but not to `"non-missing"` counts.
 #'
 #' If `dat` is supplied in simple format, it is internally converted to the
 #' extended format with all `*_plot` and `*_include` values set to `TRUE`.
@@ -1741,6 +1812,7 @@ OME_boxplot <- function(data,
 #' dat |> summary_plot_boxplot(na.rm = TRUE)
 #'
 #' # Extended format example
+#' # (recalling that omitted *_plot and *_include variables are assumed TRUE)
 #' dat_ext <- tibble::tibble(
 #'   Q1_value = dat$Q1,
 #'   Q1_plot = c(TRUE, TRUE, TRUE, FALSE),
@@ -1751,13 +1823,18 @@ OME_boxplot <- function(data,
 summary_plot_boxplot <- function(dat, dat_format = "auto",
                                  labels_vec = NULL,
                                  na.rm = FALSE,
+                                 count_style = if (na.rm) "non-missing" else "both",
                                  order_fun = median,
                                  titleText = NULL,
+                                 value_percent_labels = FALSE,
+                                 value_percent_scale = c("present", "proportion"),
                                  group_label_width = 30,
                                  base_size = 14,
                                  ...) {
 
   dat_format <- match.arg(dat_format, c("auto", "simple", "extended"))
+  count_style <- match.arg(count_style, c("non-missing", "total", "both"))
+  value_percent_scale <- match.arg(value_percent_scale, c("percent", "proportion"))
 
   # check if _value variables are present,
   # warn / auto-decide dat_format as appropriate
@@ -1872,6 +1949,9 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
       group_labels = labels_vec,
       base_size = base_size,
       na.rm = na.rm,
+      count_style = count_style,
+      value_percent_labels = value_percent_labels,
+      value_percent_scale = value_percent_scale,
       ...)
 
   return(p)
