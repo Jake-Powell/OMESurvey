@@ -2571,7 +2571,7 @@ survey_read_inputs <- function(
     messages <- add_message(messages, paste0(
       "The following variables are given a section in the dictionary but cannot be found in the data: ",
       paste(vars_not_in_data, collapse = ", "),
-      "They are being ignored for the rest of this report."
+      " They are being ignored for the purpose of data preparation."
     ),
     level = "WARNING"
     )
