@@ -1347,6 +1347,12 @@ plot_many_questions <- function(...) {
 #' }
 #' This argument has no effect when `value_percent_labels = FALSE`.
 #'
+#' @param value_axis_args Named list of additional arguments passed to
+#' `ggplot2::scale_x_continuous()` for the numeric value axis. This can be
+#' used to set `breaks`, `limits`, `expand`, `minor_breaks`, `oob`, and other
+#' continuous-scale options. If `labels` is supplied here, it overrides the
+#' labelling function selected by `value_percent_labels`.
+#'
 #' @param groupLabText Optional title for the group variable axis. If `NULL`
 #'   (default) the title is removed; if `""` the name of `group_var` is used.
 #' @param omitGroupLabels Optional logical controlling whether to omit group labels.
@@ -1425,6 +1431,7 @@ OME_boxplot_ <- function(data,
                          valueLabText = NULL,
                          value_percent_labels = FALSE,
                          value_percent_scale = "percent",
+                         value_axis_args = list(),
                          groupLabText = NULL,
                          omitGroupLabels = FALSE,
                          titleText = NULL,
@@ -1515,15 +1522,23 @@ OME_boxplot_ <- function(data,
       panel.grid.minor.y = ggplot2::element_blank()
     )
 
-  if (value_percent_labels) {
-    value_labeller <- switch(
+
+  value_scale_args <- value_axis_args
+
+  if (value_percent_labels && is.null(value_scale_args$labels)) {
+    value_scale_args$labels <- switch(
       value_percent_scale,
       percent = scales::label_number(suffix = "%"),
       proportion = scales::label_percent()
     )
+  }
 
+  if (value_percent_labels || length(value_scale_args) > 0L) {
     p <- p +
-    ggplot2::scale_x_continuous(labels = value_labeller)
+      do.call(
+        ggplot2::scale_x_continuous,
+        value_scale_args
+      )
   }
 
 
@@ -1739,6 +1754,12 @@ OME_boxplot <- function(data,
 #' }
 #' This argument has no effect when `value_percent_labels = FALSE`.
 #'
+#' @param value_axis_args Named list of additional arguments passed to
+#' `ggplot2::scale_x_continuous()` for the numeric value axis. This can be
+#' used to set `breaks`, `limits`, `expand`, `minor_breaks`, `oob`, and other
+#' continuous-scale options. If `labels` is supplied here, it overrides the
+#' labelling function selected by `value_percent_labels`.
+#'
 #' @param group_label_width Optional integer. Width (in characters) used when
 #'   wrapping question labels on the axis. Passed to `OME_boxplot_()`. Default
 #'   is 30.
@@ -1828,6 +1849,7 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
                                  titleText = NULL,
                                  value_percent_labels = FALSE,
                                  value_percent_scale = "percent",
+                                 value_axis_args = list(),
                                  group_label_width = 30,
                                  base_size = 14,
                                  ...) {
@@ -1952,6 +1974,7 @@ summary_plot_boxplot <- function(dat, dat_format = "auto",
       count_style = count_style,
       value_percent_labels = value_percent_labels,
       value_percent_scale = value_percent_scale,
+      value_axis_args = value_axis_args,
       ...)
 
   return(p)

@@ -13,7 +13,8 @@ summary_plot_boxplot(
   order_fun = median,
   titleText = NULL,
   value_percent_labels = FALSE,
-  value_percent_scale = c("present", "proportion"),
+  value_percent_scale = "percent",
+  value_axis_args = list(),
   group_label_width = 30,
   base_size = 14,
   ...
@@ -92,6 +93,12 @@ so a percentage sign is appended without rescaling;
 multiplied by 100 for display.
 }
 This argument has no effect when \code{value_percent_labels = FALSE}.}
+
+\item{value_axis_args}{Named list of additional arguments passed to
+\code{ggplot2::scale_x_continuous()} for the numeric value axis. This can be
+used to set \code{breaks}, \code{limits}, \code{expand}, \code{minor_breaks}, \code{oob}, and other
+continuous-scale options. If \code{labels} is supplied here, it overrides the
+labelling function selected by \code{value_percent_labels}.}
 
 \item{group_label_width}{Optional integer. Width (in characters) used when
 wrapping question labels on the axis. Passed to \code{OME_boxplot_()}. Default

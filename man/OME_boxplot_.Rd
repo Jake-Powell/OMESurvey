@@ -14,7 +14,8 @@ OME_boxplot_(
   count_style = if (na.rm) "non-missing" else "both",
   valueLabText = NULL,
   value_percent_labels = FALSE,
-  value_percent_scale = c("percent", "proportion"),
+  value_percent_scale = "percent",
+  value_axis_args = list(),
   groupLabText = NULL,
   omitGroupLabels = FALSE,
   titleText = NULL,
@@ -68,6 +69,12 @@ so a percentage sign is appended without rescaling;
 multiplied by 100 for display.
 }
 This argument has no effect when \code{value_percent_labels = FALSE}.}
+
+\item{value_axis_args}{Named list of additional arguments passed to
+\code{ggplot2::scale_x_continuous()} for the numeric value axis. This can be
+used to set \code{breaks}, \code{limits}, \code{expand}, \code{minor_breaks}, \code{oob}, and other
+continuous-scale options. If \code{labels} is supplied here, it overrides the
+labelling function selected by \code{value_percent_labels}.}
 
 \item{groupLabText}{Optional title for the group variable axis. If \code{NULL}
 (default) the title is removed; if \code{""} the name of \code{group_var} is used.}
