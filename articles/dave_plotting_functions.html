@@ -202,8 +202,8 @@ file and the corresponding dictionary as an Excel workbook. The
 dictionary is written to a sheet called “example_survey”, which is the
 sheet name we will pass to <code><a href="../reference/render_survey_summary.html">render_survey_summary()</a></code> and
 <code><a href="../reference/survey_prepare_data.html">survey_prepare_data()</a></code> below.</p>
-<pre><code><span><span class="co">#&gt; [1] "/tmp/RtmpNKkrov/example_data_1de957833792.csv"</span></span>
-<span><span class="co">#&gt; [1] "/tmp/RtmpNKkrov/example_survey_dictionary_1de91768f46c.xlsx"</span></span></code></pre>
+<pre><code><span><span class="co">#&gt; [1] "/tmp/RtmpMjmNVT/example_data_1c0a5ff268a.csv"</span></span>
+<span><span class="co">#&gt; [1] "/tmp/RtmpMjmNVT/example_survey_dictionary_1c0a38f6bf87.xlsx"</span></span></code></pre>
 </div>
 </div>
 <div class="section level2">
@@ -254,11 +254,14 @@ the source data but not in the dictionary.)</p>
 <span><span class="va">survey_data</span> <span class="op">&lt;-</span> <span class="va">prep</span><span class="op">$</span><span class="va">data</span></span>
 <span><span class="va">validation_df</span> <span class="op">&lt;-</span> <span class="va">prep</span><span class="op">$</span><span class="va">validation_df</span></span></code></pre></div>
 <p>In order to further customise the data this produces, one can make
-and edit a copy of the data dictionary. This allows full control over
-which variables are/aren’t included, which values are treated as
-allowed/valid, etc. (One can also have establishment characteristics
-data merged into the survey data - see the SOP for info on how to do
-that, for now at least.)</p>
+and edit a copy of the data dictionary (the Excel file). This allows
+full control over which variables are/aren’t included, which values are
+treated as allowed/valid, etc. (One can also have establishment
+characteristics data merged into the survey data - see the SOP for info
+on how to do that, for now at least.) If you want to do something
+different it’s important to make a copy of the data dictionary and edit
+that - so the one used for the summary is left as-is to be a version of
+record.</p>
 <p>We can take a quick look at the prepared data, noting particularly
 the names of the variables:</p>
 <ul>
@@ -836,16 +839,19 @@ and options are very similar to those in <code><a href="../reference/OME_boxplot
 <p><img src="dave_plotting_functions_files/figure-html/unnamed-chunk-22-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 <p>As with stacked bars, the data can be filtered before being passed to
 the plotting function (to allow for routing or simply to focus on a
-particular subset of respondents). Here I show how to use the colour
-argument to the function to control the colour of the boxplot.</p>
+particular subset of respondents). Here we see examples of using the
+<code>colour</code> argument to control the colour of the boxplot and
+the <code>count_style</code> to alter the way the sample size is
+displayed.</p>
 <div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">survey_data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">gender</span><span class="op">==</span><span class="st">"Female"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">gender</span><span class="op">==</span><span class="st">"Male"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span><span class="fu"><a href="../reference/OME_boxplot_.html">OME_boxplot</a></span><span class="op">(</span></span>
 <span>  value_var <span class="op">=</span> <span class="va">study_hours</span>,</span>
 <span>  group_var <span class="op">=</span> <span class="va">school_type</span>,</span>
 <span>  titleText <span class="op">=</span> <span class="st">"Weekly study hours by school type"</span>,</span>
-<span>  colour <span class="op">=</span> <span class="st">"#2244AA"</span></span>
+<span>  colour <span class="op">=</span> <span class="st">"#2244AA"</span>,</span>
+<span>  count_style <span class="op">=</span> <span class="st">"non-missing"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><img src="dave_plotting_functions_files/figure-html/unnamed-chunk-23-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 </div>
@@ -861,6 +867,7 @@ wellbeing, and confidence.</p>
 <span>  wellbeing_score <span class="op">=</span> <span class="st">"Wellbeing score"</span>,</span>
 <span>  confidence_score <span class="op">=</span> <span class="st">"Confidence score"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co"># one is missing, so in the plot the variable name is used - avoid this if possible!</span></span>
 <span></span>
 <span><span class="va">survey_data</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">study_hours</span>, <span class="va">wellbeing_score</span>, <span class="va">confidence_score</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -918,10 +925,10 @@ created with both <code><a href="../reference/OME_boxplot_.html">OME_boxplot()</
 <h4 id="label-text-wrapping-1">Label text wrapping<a class="anchor" aria-label="anchor" href="#label-text-wrapping-1"></a>
 </h4>
 <p>If labels are particularly long then changing the way they are
-wrapped can be helpful to make the plot easier to read. This is more
-likely to be an issue with larger text size too.</p>
-<p>The <code>group_label_width</code> option controls how many
-characters wide the grouping labels should be. For example:</p>
+wrapped can be helpful to make the plot easier to read. (This is more
+likely to be an issue with larger text size.)</p>
+<p>The <code>group_label_width</code> option controls (approximately)
+how many characters wide the grouping labels should be. For example:</p>
 <div class="sourceCode" id="cb27"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">survey_data</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">wellbeing_score</span>, <span class="va">confidence_score</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -933,24 +940,44 @@ characters wide the grouping labels should be. For example:</p>
 <p><img src="dave_plotting_functions_files/figure-html/unnamed-chunk-27-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level4">
-<h4 id="setting-scale-limits-andor-guide-values">Setting scale limits and/or guide values<a class="anchor" aria-label="anchor" href="#setting-scale-limits-andor-guide-values"></a>
+<h4 id="setting-scale-limits-andor-guide-values-incl-percentages">Setting scale limits and/or guide values, incl percentages<a class="anchor" aria-label="anchor" href="#setting-scale-limits-andor-guide-values-incl-percentages"></a>
 </h4>
-<p>If the numerical variables being plotted are percentages then it
-might make sense to insist that the scale runs from 0 to 100 and that
-the guide lines should be at multiples of 25. Here’s an example where
-manually specifying the scale doesn’t make much sense, but nevertheless
-shows how it can be done. (Note that using just one of
-<code>coord_cartesian</code> and <code>scale_x_continuous</code> will
-work too.)</p>
+<p>One can also</p>
+<ul>
+<li>adjust the scale limits for the numerical variable,</li>
+<li>specify the guide lines for the numerical variable, and/or</li>
+<li>add percent signs to the numerical scale guide values.</li>
+</ul>
+<p>(Some/all of these might be useful if the numerical variable/s being
+plotted is/are percentages - then one can match the formatting to that
+in the stacked bar charts.)</p>
+<p>The following code includes all three of the above-listed changes;
+but it is possible to use just one or two of the indicated changes. (The
+data here are wholly unsuitable for presenting in this manner, but it
+illustrates the usage nonetheless.)</p>
 <div class="sourceCode" id="cb28"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">survey_data</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/OME_boxplot_.html">OME_boxplot</a></span><span class="op">(</span></span>
-<span>    <span class="va">study_hours</span>,</span>
-<span>    <span class="va">school_type</span></span>
-<span>  <span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>xlim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">50</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous</a></span><span class="op">(</span>breaks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">50</span>, by <span class="op">=</span> <span class="fl">12.5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/OME_boxplot_.html">OME_boxplot</a></span><span class="op">(</span></span>
+<span>  data <span class="op">=</span> <span class="va">survey_data</span>,</span>
+<span>  value_var <span class="op">=</span> <span class="va">study_hours</span>,</span>
+<span>  group_var <span class="op">=</span> <span class="va">school_type</span>,</span>
+<span>  value_percent_labels <span class="op">=</span> <span class="cn">TRUE</span>,                  <span class="co"># add % signs to value labels</span></span>
+<span>  value_axis_args <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>breaks<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">100</span>,<span class="fl">25</span><span class="op">)</span><span class="op">)</span>  <span class="co"># set guide line positions</span></span>
+<span><span class="op">)</span> <span class="op">+</span></span>
+<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_cartesian.html" class="external-link">coord_cartesian</a></span><span class="op">(</span>xlim<span class="op">=</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">100</span><span class="op">)</span><span class="op">)</span>                <span class="co"># set displayed axis limits</span></span></code></pre></div>
 <p><img src="dave_plotting_functions_files/figure-html/unnamed-chunk-28-1.png" class="r-plt" alt="" width="576" style="display: block; margin: auto;"></p>
+<p>(Technical aside: The formulation here is a little unusual because,
+under the hood, <code>value_percent_labels</code> uses
+<code>scale_x_continuous</code> and so the natural-seeming
+<code>OME_boxplot(...) + scale_x_continuous(breaks=seq(0,100,25))</code>
+would result in the percentage formatting being lost. I have therefore
+set up the value_axis_args argument to pass other arguments on to
+<code><a href="https://ggplot2.tidyverse.org/reference/scale_continuous.html" class="external-link">scale_x_continuous()</a></code> through the plotting function.)</p>
+<p>When <code>value_percent_labels = TRUE</code>, the plotting function
+assumes that the data are already percentages, i.e. in the range 0–100.
+If they are proportions, i.e. in the range 0–1, then one can add the
+extra argument <code>value_percent_scale = "proportion"</code> and the
+resulting plot will display as percentages, i.e. on the scale 0-100. See
+also the help for <code><a href="../reference/OME_boxplot_.html">OME_boxplot()</a></code>.</p>
 </div>
 </div>
 </div>

@@ -106,8 +106,8 @@ and
 [`survey_prepare_data()`](https://jake-powell.github.io/OMESurvey/reference/survey_prepare_data.md)
 below.
 
-    #> [1] "/tmp/RtmpNKkrov/example_data_1de957833792.csv"
-    #> [1] "/tmp/RtmpNKkrov/example_survey_dictionary_1de91768f46c.xlsx"
+    #> [1] "/tmp/RtmpMjmNVT/example_data_1c0a5ff268a.csv"
+    #> [1] "/tmp/RtmpMjmNVT/example_survey_dictionary_1c0a38f6bf87.xlsx"
 
 ## Automated summary report
 
@@ -164,11 +164,14 @@ validation_df <- prep$validation_df
 ```
 
 In order to further customise the data this produces, one can make and
-edit a copy of the data dictionary. This allows full control over which
-variables are/aren’t included, which values are treated as
-allowed/valid, etc. (One can also have establishment characteristics
-data merged into the survey data - see the SOP for info on how to do
-that, for now at least.)
+edit a copy of the data dictionary (the Excel file). This allows full
+control over which variables are/aren’t included, which values are
+treated as allowed/valid, etc. (One can also have establishment
+characteristics data merged into the survey data - see the SOP for info
+on how to do that, for now at least.) If you want to do something
+different it’s important to make a copy of the data dictionary and edit
+that - so the one used for the summary is left as-is to be a version of
+record.
 
 We can take a quick look at the prepared data, noting particularly the
 names of the variables:
@@ -709,18 +712,20 @@ OME_boxplot(
 
 As with stacked bars, the data can be filtered before being passed to
 the plotting function (to allow for routing or simply to focus on a
-particular subset of respondents). Here I show how to use the colour
-argument to the function to control the colour of the boxplot.
+particular subset of respondents). Here we see examples of using the
+`colour` argument to control the colour of the boxplot and the
+`count_style` to alter the way the sample size is displayed.
 
 ``` r
 
 survey_data |>
-  filter(gender=="Female") |>
+  filter(gender=="Male") |>
 OME_boxplot(
   value_var = study_hours,
   group_var = school_type,
   titleText = "Weekly study hours by school type",
-  colour = "#2244AA"
+  colour = "#2244AA",
+  count_style = "non-missing"
 )
 ```
 
@@ -738,6 +743,7 @@ numeric_labels <- c(
   wellbeing_score = "Wellbeing score",
   confidence_score = "Confidence score"
 )
+# one is missing, so in the plot the variable name is used - avoid this if possible!
 
 survey_data |>
   dplyr::select(study_hours, wellbeing_score, confidence_score) |>
@@ -804,11 +810,11 @@ survey_data |>
 #### Label text wrapping
 
 If labels are particularly long then changing the way they are wrapped
-can be helpful to make the plot easier to read. This is more likely to
-be an issue with larger text size too.
+can be helpful to make the plot easier to read. (This is more likely to
+be an issue with larger text size.)
 
-The `group_label_width` option controls how many characters wide the
-grouping labels should be. For example:
+The `group_label_width` option controls (approximately) how many
+characters wide the grouping labels should be. For example:
 
 ``` r
 
@@ -823,27 +829,52 @@ survey_data |>
 
 ![](dave_plotting_functions_files/figure-html/unnamed-chunk-27-1.png)
 
-#### Setting scale limits and/or guide values
+#### Setting scale limits and/or guide values, incl percentages
 
-If the numerical variables being plotted are percentages then it might
-make sense to insist that the scale runs from 0 to 100 and that the
-guide lines should be at multiples of 25. Here’s an example where
-manually specifying the scale doesn’t make much sense, but nevertheless
-shows how it can be done. (Note that using just one of `coord_cartesian`
-and `scale_x_continuous` will work too.)
+One can also
+
+- adjust the scale limits for the numerical variable,
+- specify the guide lines for the numerical variable, and/or
+- add percent signs to the numerical scale guide values.
+
+(Some/all of these might be useful if the numerical variable/s being
+plotted is/are percentages - then one can match the formatting to that
+in the stacked bar charts.)
+
+The following code includes all three of the above-listed changes; but
+it is possible to use just one or two of the indicated changes. (The
+data here are wholly unsuitable for presenting in this manner, but it
+illustrates the usage nonetheless.)
 
 ``` r
 
-survey_data |>
-  OME_boxplot(
-    study_hours,
-    school_type
-  ) +
-  coord_cartesian(xlim = c(0, 50)) +
-  scale_x_continuous(breaks = seq(0, 50, by = 12.5))
+OME_boxplot(
+  data = survey_data,
+  value_var = study_hours,
+  group_var = school_type,
+  value_percent_labels = TRUE,                  # add % signs to value labels
+  value_axis_args = list(breaks=seq(0,100,25))  # set guide line positions
+) +
+  coord_cartesian(xlim=c(0,100))                # set displayed axis limits
 ```
 
 ![](dave_plotting_functions_files/figure-html/unnamed-chunk-28-1.png)
+
+(Technical aside: The formulation here is a little unusual because,
+under the hood, `value_percent_labels` uses `scale_x_continuous` and so
+the natural-seeming
+`OME_boxplot(...) + scale_x_continuous(breaks=seq(0,100,25))` would
+result in the percentage formatting being lost. I have therefore set up
+the value_axis_args argument to pass other arguments on to
+[`scale_x_continuous()`](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
+through the plotting function.)
+
+When `value_percent_labels = TRUE`, the plotting function assumes that
+the data are already percentages, i.e. in the range 0–100. If they are
+proportions, i.e. in the range 0–1, then one can add the extra argument
+`value_percent_scale = "proportion"` and the resulting plot will display
+as percentages, i.e. on the scale 0-100. See also the help for
+[`OME_boxplot()`](https://jake-powell.github.io/OMESurvey/reference/OME_boxplot_.md).
 
 ## A generic theme and colour palettes
 
