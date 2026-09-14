@@ -16,7 +16,8 @@ summary_plot_boxplot(
   order_fun = median,
   titleText = NULL,
   value_percent_labels = FALSE,
-  value_percent_scale = c("present", "proportion"),
+  value_percent_scale = "percent",
+  value_axis_args = list(),
   group_label_width = 30,
   base_size = 14,
   ...
@@ -121,6 +122,15 @@ summary_plot_boxplot(
     multiplied by 100 for display.
 
   This argument has no effect when `value_percent_labels = FALSE`.
+
+- value_axis_args:
+
+  Named list of additional arguments passed to
+  [`ggplot2::scale_x_continuous()`](https://ggplot2.tidyverse.org/reference/scale_continuous.html)
+  for the numeric value axis. This can be used to set `breaks`,
+  `limits`, `expand`, `minor_breaks`, `oob`, and other continuous-scale
+  options. If `labels` is supplied here, it overrides the labelling
+  function selected by `value_percent_labels`.
 
 - group_label_width:
 
